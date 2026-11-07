@@ -21,6 +21,9 @@ class SamuraiGame {
       gold: 0
     };
 
+    // 無障礙與自動斬擊模式（預設開啟，免除重複點擊負擔）
+    this.autoSlashEnabled = true;
+
     this.initDefaultState();
   }
 
@@ -671,14 +674,34 @@ class SamuraiGame {
     this.spawnEnemy(true);
   }
 
+  // 切換神速自律斬擊（無障礙放置模式）
+  toggleAutoSlash() {
+    this.autoSlashEnabled = !this.autoSlashEnabled;
+    const btn = document.getElementById("btn-toggle-autoslash");
+    if (btn) {
+      if (this.autoSlashEnabled) {
+        btn.classList.add("active");
+        btn.innerHTML = "⚡ 神速自律斬：開啟中";
+        btn.title = "已開啟全自動高速出刀，完全無需點擊滑鼠！";
+      } else {
+        btn.classList.remove("active");
+        btn.innerHTML = "💤 神速自律斬：已暫停";
+        btn.title = "點擊可開啟自動高速出刀";
+      }
+    }
+    if (window.samuraiAudio) window.samuraiAudio.playSharpen();
+  }
+
   // 戰鬥計時器 Tick
   startCombatLoop() {
     if (this.combatTimer) clearInterval(this.combatTimer);
 
     let tickAccumulator = 0;
+    let autoSlashAccumulator = 0;
 
     this.combatTimer = setInterval(() => {
       tickAccumulator += 0.2; // 每 200ms 一次 tick
+      autoSlashAccumulator += 0.2;
 
       // 倒數增益效果時間
       if (this.activeBuffs.speed > 0) this.activeBuffs.speed = Math.max(0, this.activeBuffs.speed - 0.2);
@@ -699,6 +722,7 @@ class SamuraiGame {
       const stats = this.getCalculatedStats();
       const attackInterval = 1.0 / stats.speed; // 秒
 
+      // 1. 一般基礎自動攻擊
       if (tickAccumulator >= attackInterval) {
         tickAccumulator = 0;
         this.attack(false); // 自動揮刀
@@ -706,6 +730,14 @@ class SamuraiGame {
         // 敵人反擊頻率（普通怪每 2.5 秒反擊一次，BOSS 每 1.8 秒）
         if (Math.random() < (this.inBossFight ? 0.35 : 0.22)) {
           this.enemyAttack();
+        }
+      }
+
+      // 2. 神速自律極意：無障礙自律斬擊（完全免去手指重複點擊負擔）
+      if (this.autoSlashEnabled && this.currentEnemy && this.currentEnemy.hp > 0) {
+        if (autoSlashAccumulator >= 0.25) {
+          autoSlashAccumulator = 0;
+          this.attack(true); // 高頻拔刀斬擊
         }
       }
 
@@ -1147,12 +1179,65 @@ class SamuraiGame {
     }).join("");
   }
 
+  // 設置無障礙操作：支援長按連斬、按住空白鍵、Z鍵或Enter，大幅減輕手指負擔
+  setupAccessibilityControls() {
+    let isHolding = false;
+    let holdInterval = null;
+
+    const startHolding = () => {
+      if (isHolding) return;
+      isHolding = true;
+      this.attack(true);
+      if (holdInterval) clearInterval(holdInterval);
+      holdInterval = setInterval(() => {
+        if (isHolding) {
+          this.attack(true);
+        }
+      }, 200);
+    };
+
+    const stopHolding = () => {
+      isHolding = false;
+      if (holdInterval) {
+        clearInterval(holdInterval);
+        holdInterval = null;
+      }
+    };
+
+    const arena = document.getElementById("battle-stage-arena");
+    if (arena) {
+      arena.addEventListener("mousedown", startHolding);
+      window.addEventListener("mouseup", stopHolding);
+
+      arena.addEventListener("touchstart", (e) => {
+        startHolding();
+      }, { passive: true });
+      window.addEventListener("touchend", stopHolding);
+    }
+
+    // 鍵盤無障礙支援：按住空白鍵、Z 或 Enter
+    window.addEventListener("keydown", (e) => {
+      if (["INPUT", "TEXTAREA", "SELECT"].includes(document.activeElement.tagName)) return;
+      if (e.code === "Space" || e.key === " " || e.code === "KeyZ" || e.code === "Enter") {
+        e.preventDefault();
+        startHolding();
+      }
+    });
+
+    window.addEventListener("keyup", (e) => {
+      if (e.code === "Space" || e.key === " " || e.code === "KeyZ" || e.code === "Enter") {
+        stopHolding();
+      }
+    });
+  }
+
   // 初始化啟動
   start() {
     this.load();
     this.checkOfflineGains();
     this.spawnEnemy();
     this.startCombatLoop();
+    this.setupAccessibilityControls();
 
     // 每 10 秒自動存檔
     this.autoSaveTimer = setInterval(() => {
