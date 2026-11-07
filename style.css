@@ -1,0 +1,1199 @@
+/* ==========================================================
+   《無雙劍心：武士之刃》日式戰國水墨浮世繪風格樣式表
+   Samurai Blade: Idle RPG - Japanese Theme CSS
+   ========================================================== */
+
+@import url('https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@400;600;900&family=Yuji+Boku&display=swap');
+
+:root {
+  --bg-dark: #0f1012;
+  --bg-card: rgba(23, 24, 28, 0.94);
+  --bg-card-header: rgba(33, 35, 42, 0.95);
+  --border-gold: #c5a059;
+  --border-muted: #2f333d;
+  --crimson: #d9383a;
+  --crimson-glow: rgba(217, 56, 58, 0.4);
+  --gold-accent: #f59e0b;
+  --parchment: #f2eee3;
+  --text-main: #e6e4df;
+  --text-muted: #9c9991;
+  --steel-color: #60a5fa;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  user-select: none;
+}
+
+body {
+  font-family: 'Noto Serif TC', 'Songti TC', serif;
+  background-color: var(--bg-dark);
+  color: var(--text-main);
+  min-height: 100vh;
+  overflow-x: hidden;
+  position: relative;
+  background-image: 
+    radial-gradient(circle at 50% 10%, rgba(217, 56, 58, 0.08) 0%, transparent 60%),
+    radial-gradient(circle at 80% 80%, rgba(197, 160, 89, 0.05) 0%, transparent 50%);
+}
+
+/* 櫻花飄落背景 Canvas */
+#sakura-canvas {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* 主遊戲容器 */
+#app-container {
+  position: relative;
+  z-index: 2;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 12px 16px 80px 16px;
+}
+
+/* 頂部和風標題欄 */
+header.game-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 2px solid var(--border-gold);
+  padding: 10px 16px;
+  background: linear-gradient(90deg, rgba(20,20,24,0.95) 0%, rgba(45,20,22,0.95) 50%, rgba(20,20,24,0.95) 100%);
+  border-radius: 6px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.6);
+  margin-bottom: 12px;
+}
+
+.brand-title {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.brand-title h1 {
+  font-size: 1.5rem;
+  font-weight: 900;
+  color: #fff;
+  letter-spacing: 2px;
+  text-shadow: 0 0 10px var(--crimson-glow);
+}
+
+.brand-title .badge {
+  font-size: 0.75rem;
+  padding: 2px 8px;
+  background: var(--crimson);
+  color: #fff;
+  border-radius: 4px;
+  border: 1px solid #ff7b72;
+}
+
+.resource-bar {
+  display: flex;
+  gap: 18px;
+  align-items: center;
+}
+
+.res-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.95rem;
+  background: rgba(0,0,0,0.5);
+  padding: 4px 12px;
+  border-radius: 20px;
+  border: 1px solid var(--border-muted);
+}
+
+.res-item.gold span { color: #fbbf24; font-weight: bold; }
+.res-item.steel span { color: var(--steel-color); font-weight: bold; }
+
+/* 角色簡報面板 */
+.character-banner {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 16px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-gold);
+  border-radius: 8px;
+  padding: 14px 18px;
+  margin-bottom: 14px;
+  box-shadow: inset 0 0 15px rgba(0,0,0,0.5);
+}
+
+.avatar-badge {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 70px;
+  height: 70px;
+  background: radial-gradient(circle, #3d1b1d 0%, #16161a 100%);
+  border: 2px solid var(--crimson);
+  border-radius: 50%;
+  box-shadow: 0 0 12px var(--crimson-glow);
+}
+
+.avatar-icon { font-size: 2rem; }
+
+.char-info-block {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 6px;
+}
+
+.char-title-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.char-name {
+  font-size: 1.25rem;
+  font-weight: 900;
+  color: #fff;
+}
+
+.char-rank {
+  font-size: 0.85rem;
+  color: var(--border-gold);
+  background: rgba(197, 160, 89, 0.15);
+  border: 1px solid var(--border-gold);
+  padding: 1px 8px;
+  border-radius: 4px;
+}
+
+.exp-bar-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+.progress-track {
+  flex: 1;
+  height: 10px;
+  background: #1e2026;
+  border-radius: 5px;
+  overflow: hidden;
+  border: 1px solid #363a45;
+}
+
+.progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #d97706, #fbbf24);
+  transition: width 0.3s ease;
+}
+
+.stats-grid-mini {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px 16px;
+  font-size: 0.85rem;
+  align-items: center;
+}
+
+.stat-cell {
+  display: flex;
+  justify-content: space-between;
+  border-bottom: 1px dashed var(--border-muted);
+  padding-bottom: 2px;
+}
+
+.stat-cell span:last-child {
+  font-weight: bold;
+  color: #fff;
+}
+
+/* 主要操作分頁按鈕 (和風木簡標籤) */
+nav.tab-nav {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 14px;
+  border-bottom: 2px solid var(--border-muted);
+  padding-bottom: 6px;
+  overflow-x: auto;
+}
+
+.tab-btn {
+  background: #191b22;
+  border: 1px solid var(--border-muted);
+  color: var(--text-muted);
+  padding: 10px 18px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  border-radius: 6px 6px 0 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.tab-btn:hover {
+  background: #252834;
+  color: #fff;
+  border-color: var(--border-gold);
+}
+
+.tab-btn.active {
+  background: linear-gradient(180deg, #3d1b1d 0%, #1c1d24 100%);
+  color: #fff;
+  border-color: var(--crimson);
+  border-bottom: 2px solid var(--crimson);
+  box-shadow: 0 -2px 10px var(--crimson-glow);
+}
+
+/* 分頁內容面板 */
+.tab-content {
+  min-height: 480px;
+}
+
+.tab-pane {
+  display: none;
+}
+
+.tab-pane.active {
+  display: block;
+  animation: fadeIn 0.25s ease-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* ==========================================================
+   1. 戰鬥修煉面板 (Battle Tab)
+   ========================================================== */
+.battle-layout {
+  display: grid;
+  grid-template-columns: 1fr 340px;
+  gap: 16px;
+}
+
+.battle-stage-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-gold);
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 8px 30px rgba(0,0,0,0.7);
+  display: flex;
+  flex-direction: column;
+}
+
+.stage-header {
+  padding: 12px 18px;
+  background: var(--bg-card-header);
+  border-bottom: 1px solid var(--border-muted);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.zone-selector {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.zone-select-dropdown {
+  background: #111217;
+  color: #fff;
+  border: 1px solid var(--border-gold);
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-family: inherit;
+}
+
+/* 戰鬥競技場 (點擊斬擊主畫布) */
+.stage-arena {
+  position: relative;
+  height: 360px;
+  background: radial-gradient(circle at center, #261619 0%, #0c0d12 100%);
+  border-bottom: 1px solid var(--border-muted);
+  overflow: hidden;
+  cursor: crosshair;
+}
+
+#slash-canvas {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 5;
+}
+
+.enemy-wrapper {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  text-align: center;
+  z-index: 3;
+}
+
+.enemy-avatar-box {
+  width: 140px;
+  height: 140px;
+  margin: 0 auto 12px auto;
+  border-radius: 50%;
+  border: 3px solid var(--crimson);
+  background: radial-gradient(circle, #4a1518 0%, #160709 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 4rem;
+  box-shadow: 0 0 25px var(--crimson-glow);
+  animation: floatEnemy 3s ease-in-out infinite alternate;
+}
+
+@keyframes floatEnemy {
+  from { transform: translateY(-4px); }
+  to { transform: translateY(4px); }
+}
+
+.enemy-info-bar {
+  background: rgba(0,0,0,0.7);
+  padding: 8px 16px;
+  border-radius: 6px;
+  border: 1px solid #3d1b1d;
+  min-width: 240px;
+}
+
+.enemy-title-tag {
+  font-size: 0.8rem;
+  color: #ff7b72;
+  margin-bottom: 2px;
+}
+
+.enemy-name-text {
+  font-size: 1.25rem;
+  font-weight: bold;
+  color: #fff;
+  margin-bottom: 6px;
+}
+
+.enemy-hp-track {
+  height: 12px;
+  background: #252833;
+  border-radius: 6px;
+  overflow: hidden;
+  border: 1px solid #444;
+  margin-bottom: 4px;
+}
+
+.enemy-hp-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #ef4444, #f87171);
+  transition: width 0.15s ease;
+}
+
+/* 首領限時倒數條 */
+.boss-timer-box {
+  position: absolute;
+  top: 14px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(0,0,0,0.85);
+  border: 1px solid var(--crimson);
+  padding: 6px 16px;
+  border-radius: 20px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  z-index: 6;
+}
+
+.boss-timer-track {
+  width: 140px;
+  height: 8px;
+  background: #333;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.boss-timer-fill {
+  height: 100%;
+  background: #ef4444;
+  transition: width 0.2s linear;
+}
+
+/* 連擊計數器 */
+.combo-banner {
+  position: absolute;
+  top: 20px;
+  left: 20px;
+  font-size: 1.4rem;
+  font-weight: 900;
+  color: #fbbf24;
+  text-shadow: 0 0 10px rgba(251, 191, 36, 0.6);
+  z-index: 6;
+  letter-spacing: 2px;
+}
+
+/* 點擊提示 */
+.click-hint-tag {
+  position: absolute;
+  bottom: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  background: rgba(0,0,0,0.6);
+  padding: 3px 12px;
+  border-radius: 12px;
+  pointer-events: none;
+}
+
+/* 傷害飄字 */
+.dmg-popup {
+  position: absolute;
+  font-weight: 900;
+  pointer-events: none;
+  animation: dmgFloat 0.9s cubic-bezier(0.18, 0.89, 0.32, 1.28) forwards;
+  z-index: 10;
+}
+
+.dmg-popup.normal-hit {
+  color: #fff;
+  font-size: 1.3rem;
+  text-shadow: 0 0 4px #000;
+}
+
+.dmg-popup.crit-hit {
+  color: #ef4444;
+  font-size: 1.8rem;
+  text-shadow: 0 0 12px rgba(239, 68, 68, 0.8), 0 0 4px #000;
+}
+
+@keyframes dmgFloat {
+  0% { opacity: 0; transform: translate(-50%, 0) scale(0.6); }
+  25% { opacity: 1; transform: translate(-50%, -20px) scale(1.2); }
+  75% { opacity: 1; transform: translate(-50%, -45px) scale(1.0); }
+  100% { opacity: 0; transform: translate(-50%, -60px) scale(0.8); }
+}
+
+/* 戰鬥底部按鈕欄 */
+.stage-footer {
+  padding: 12px 18px;
+  background: var(--bg-card-header);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.player-battle-hp {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 0.85rem;
+  width: 50%;
+}
+
+.hp-track-player {
+  flex: 1;
+  height: 12px;
+  background: #1e2026;
+  border-radius: 6px;
+  overflow: hidden;
+  border: 1px solid #363a45;
+}
+
+.hp-fill-player {
+  height: 100%;
+  background: linear-gradient(90deg, #10b981, #34d399);
+  transition: width 0.2s ease;
+}
+
+.btn-boss-challenge {
+  background: linear-gradient(180deg, #b91c1c 0%, #7f1d1d 100%);
+  color: #fff;
+  border: 1px solid #ef4444;
+  padding: 8px 18px;
+  border-radius: 6px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-boss-challenge:hover:not(:disabled) {
+  background: #dc2626;
+  box-shadow: 0 0 15px rgba(220, 38, 38, 0.6);
+}
+
+.btn-boss-challenge:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.pulse-glow {
+  animation: pulseButton 1.5s infinite;
+}
+
+@keyframes pulseButton {
+  0%, 100% { box-shadow: 0 0 5px rgba(239, 68, 68, 0.4); }
+  50% { box-shadow: 0 0 20px rgba(239, 68, 68, 0.9); }
+}
+
+/* 戰鬥文字卷軸 Log */
+.combat-log-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-muted);
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+}
+
+.card-title-bar {
+  padding: 10px 14px;
+  background: var(--bg-card-header);
+  border-bottom: 1px solid var(--border-muted);
+  font-size: 0.95rem;
+  font-weight: bold;
+  color: var(--border-gold);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.log-scroll-area {
+  flex: 1;
+  padding: 12px;
+  overflow-y: auto;
+  font-size: 0.85rem;
+  line-height: 1.6;
+  color: var(--text-muted);
+  max-height: 420px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.log-line {
+  border-bottom: 1px solid rgba(255,255,255,0.03);
+  padding-bottom: 4px;
+}
+
+.log-time {
+  color: #555;
+  font-size: 0.75rem;
+}
+
+/* ==========================================================
+   2. 名刀鍛造面板 (Forge Tab)
+   ========================================================== */
+.forge-container {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.forge-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-gold);
+  border-radius: 8px;
+  padding: 16px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+}
+
+.forge-card h3 {
+  font-size: 1.15rem;
+  color: #fff;
+  border-bottom: 1px solid var(--border-muted);
+  padding-bottom: 8px;
+  margin-bottom: 14px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.sharpen-target-box {
+  background: #15161b;
+  border: 1px solid var(--border-muted);
+  padding: 12px;
+  border-radius: 6px;
+  margin-bottom: 14px;
+}
+
+.whetstone-options {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.whetstone-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #1a1c24;
+  padding: 8px 12px;
+  border-radius: 6px;
+  border: 1px solid var(--border-muted);
+}
+
+.btn-sharpen {
+  background: #2563eb;
+  color: #fff;
+  border: none;
+  padding: 6px 14px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: bold;
+}
+
+.btn-sharpen:hover {
+  background: #3b82f6;
+}
+
+.forge-actions-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.gacha-box {
+  background: #171821;
+  border: 1px solid var(--border-muted);
+  border-radius: 6px;
+  padding: 14px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.gacha-box h4 {
+  color: var(--border-gold);
+  margin-bottom: 6px;
+}
+
+.gacha-desc {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  margin-bottom: 12px;
+}
+
+.btn-forge {
+  background: linear-gradient(180deg, #d97706 0%, #b45309 100%);
+  color: #fff;
+  border: 1px solid #f59e0b;
+  padding: 8px 12px;
+  border-radius: 4px;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.btn-forge.master {
+  background: linear-gradient(180deg, #b91c1c 0%, #7f1d1d 100%);
+  border-color: #ef4444;
+}
+
+.btn-forge:hover {
+  filter: brightness(1.15);
+}
+
+.smelt-list-box {
+  max-height: 220px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.smelt-card {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #16171f;
+  padding: 8px 12px;
+  border-radius: 4px;
+  border: 1px solid #282a35;
+}
+
+.btn-smelt {
+  background: #374151;
+  color: #e5e7eb;
+  border: none;
+  padding: 4px 10px;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  cursor: pointer;
+}
+
+.btn-smelt:hover {
+  background: #b91c1c;
+  color: #fff;
+}
+
+.empty-hint {
+  text-align: center;
+  color: #666;
+  font-size: 0.85rem;
+  padding: 20px 0;
+}
+
+/* ==========================================================
+   3. 流派道場面板 (Dojo Tab)
+   ========================================================== */
+.dojo-header-banner {
+  background: var(--bg-card);
+  border: 1px solid var(--border-gold);
+  border-radius: 8px;
+  padding: 14px 18px;
+  margin-bottom: 14px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.dojo-skills-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+}
+
+.skill-school-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-muted);
+  border-radius: 8px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+  position: relative;
+  overflow: hidden;
+}
+
+.skill-school-card::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 4px;
+}
+
+.skill-school-card.shinkage::before { background: #38bdf8; }
+.skill-school-card.jigen::before { background: #ef4444; }
+.skill-school-card.rishin::before { background: #10b981; }
+
+.school-name {
+  font-size: 1.2rem;
+  font-weight: 900;
+  color: #fff;
+  margin-bottom: 6px;
+}
+
+.school-sub {
+  font-size: 0.8rem;
+  color: var(--border-gold);
+  margin-bottom: 12px;
+}
+
+.school-desc {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  line-height: 1.6;
+  margin-bottom: 16px;
+}
+
+.school-bonus-list {
+  background: #14151a;
+  border-radius: 4px;
+  padding: 10px;
+  font-size: 0.85rem;
+  color: #d1d5db;
+  margin-bottom: 16px;
+}
+
+.school-bonus-list li {
+  margin-left: 18px;
+  margin-bottom: 4px;
+}
+
+.btn-invest-skill {
+  background: #2563eb;
+  color: #fff;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 4px;
+  font-weight: bold;
+  cursor: pointer;
+  width: 100%;
+}
+
+.btn-invest-skill:hover {
+  background: #3b82f6;
+}
+
+/* ==========================================================
+   4. 行囊道具面板 (Inventory Tab)
+   ========================================================== */
+.inv-section-title {
+  font-size: 1.1rem;
+  color: var(--border-gold);
+  margin-bottom: 10px;
+  border-left: 3px solid var(--crimson);
+  padding-left: 8px;
+}
+
+.inventory-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+.inv-item-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-muted);
+  border-radius: 6px;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  transition: transform 0.15s ease;
+}
+
+.inv-item-card:hover {
+  transform: translateY(-2px);
+  border-color: var(--border-gold);
+}
+
+.inv-item-card.equipped {
+  box-shadow: 0 0 10px rgba(74, 222, 128, 0.2);
+}
+
+.inv-item-name {
+  font-weight: bold;
+  font-size: 1.05rem;
+}
+
+.inv-item-tier {
+  font-size: 0.75rem;
+  padding: 1px 6px;
+  border-radius: 3px;
+  color: #000;
+  font-weight: bold;
+}
+
+.inv-item-details {
+  display: flex;
+  gap: 12px;
+  font-size: 0.85rem;
+  color: #cbd5e1;
+}
+
+.inv-item-passive {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  background: #14151b;
+  padding: 6px;
+  border-radius: 4px;
+}
+
+.btn-equip {
+  background: #166534;
+  color: #fff;
+  border: none;
+  padding: 6px 14px;
+  border-radius: 4px;
+  font-size: 0.85rem;
+  cursor: pointer;
+  font-weight: bold;
+}
+
+.btn-equip.active {
+  background: #374151;
+  color: #9ca3af;
+  cursor: default;
+}
+
+/* 消耗品卡片 */
+.consumables-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 12px;
+}
+
+.consumable-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-muted);
+  border-radius: 6px;
+  padding: 12px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.con-icon {
+  font-size: 2.2rem;
+}
+
+.con-info {
+  flex: 1;
+}
+
+.con-name {
+  font-weight: bold;
+  color: #fff;
+  margin-bottom: 2px;
+}
+
+.con-qty {
+  color: #fbbf24;
+  font-size: 0.85rem;
+}
+
+.con-desc {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  line-height: 1.4;
+}
+
+.btn-use {
+  background: #d97706;
+  color: #fff;
+  border: none;
+  padding: 6px 12px;
+  border-radius: 4px;
+  font-size: 0.85rem;
+  cursor: pointer;
+  font-weight: bold;
+}
+
+.btn-use:disabled {
+  background: #4b5563;
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* ==========================================================
+   5. 名刀圖鑑面板 (Codex Tab)
+   ========================================================== */
+.codex-banner {
+  background: var(--bg-card);
+  border: 1px solid var(--border-gold);
+  border-radius: 8px;
+  padding: 14px 18px;
+  margin-bottom: 14px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.codex-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 14px;
+}
+
+.codex-item-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-muted);
+  border-radius: 8px;
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.codex-item-card.locked {
+  opacity: 0.5;
+  filter: grayscale(0.8);
+}
+
+.codex-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.codex-name {
+  font-weight: 900;
+  font-size: 1.1rem;
+}
+
+.codex-tier {
+  font-size: 0.75rem;
+  border: 1px solid;
+  padding: 1px 6px;
+  border-radius: 3px;
+}
+
+.codex-meta {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.8rem;
+  color: #888;
+}
+
+.codex-lore {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  line-height: 1.6;
+  background: rgba(0,0,0,0.3);
+  padding: 8px;
+  border-radius: 4px;
+  margin-top: 4px;
+}
+
+.codex-bonus {
+  font-size: 0.75rem;
+  color: #38bdf8;
+  margin-top: 2px;
+}
+
+/* ==========================================================
+   6. 設定與存檔面板 (Settings Tab)
+   ========================================================== */
+.settings-box {
+  background: var(--bg-card);
+  border: 1px solid var(--border-gold);
+  border-radius: 8px;
+  padding: 20px;
+  max-width: 650px;
+  margin: 0 auto;
+}
+
+.settings-box h3 {
+  font-size: 1.25rem;
+  color: #fff;
+  border-bottom: 1px solid var(--border-muted);
+  padding-bottom: 10px;
+  margin-bottom: 16px;
+}
+
+.settings-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 0;
+  border-bottom: 1px dashed var(--border-muted);
+}
+
+.btn-setting {
+  background: #374151;
+  color: #fff;
+  border: 1px solid #4b5563;
+  padding: 6px 14px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.9rem;
+}
+
+.btn-setting.danger {
+  background: #991b1b;
+  border-color: #ef4444;
+}
+
+.btn-setting:hover {
+  filter: brightness(1.2);
+}
+
+/* ==========================================================
+   浮動彈窗 Modals (Offline & Forge Showcase)
+   ========================================================== */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.8);
+  backdrop-filter: blur(4px);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+}
+
+.modal-overlay.active {
+  display: flex;
+}
+
+.modal-scroll-card {
+  background: #191a22;
+  border: 2px solid var(--border-gold);
+  border-radius: 8px;
+  padding: 24px;
+  max-width: 440px;
+  width: 90%;
+  text-align: center;
+  box-shadow: 0 0 35px rgba(217, 56, 58, 0.4);
+  animation: modalScale 0.25s cubic-bezier(0.18, 0.89, 0.32, 1.28);
+}
+
+@keyframes modalScale {
+  from { transform: scale(0.85); opacity: 0; }
+  to { transform: scale(1.0); opacity: 1; }
+}
+
+.modal-title {
+  font-size: 1.4rem;
+  color: var(--border-gold);
+  margin-bottom: 12px;
+}
+
+.modal-body {
+  font-size: 0.95rem;
+  line-height: 1.8;
+  color: var(--text-main);
+  margin-bottom: 20px;
+}
+
+.btn-modal-close {
+  background: linear-gradient(180deg, #b91c1c 0%, #7f1d1d 100%);
+  color: #fff;
+  border: 1px solid #ef4444;
+  padding: 10px 24px;
+  border-radius: 6px;
+  font-weight: bold;
+  cursor: pointer;
+  font-size: 1rem;
+}
+
+/* 響應式佈局 (Mobile Responsive) */
+@media (max-width: 768px) {
+  .battle-layout {
+    grid-template-columns: 1fr;
+  }
+  .character-banner {
+    grid-template-columns: 1fr;
+    text-align: center;
+  }
+  .avatar-badge {
+    margin: 0 auto;
+  }
+  .forge-container,
+  .dojo-skills-grid {
+    grid-template-columns: 1fr;
+  }
+  .stage-arena {
+    height: 300px;
+  }
+  .resource-bar {
+    gap: 8px;
+  }
+  .res-item {
+    font-size: 0.8rem;
+    padding: 3px 8px;
+  }
+}
