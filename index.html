@@ -78,6 +78,9 @@
       <button class="tab-btn" data-tab="codex" onclick="window.game.switchTab('codex')">
         📜 名刀鑑賞
       </button>
+      <button class="tab-btn" data-tab="community" onclick="window.game.switchTab('community')">
+        🏮 浪人茶屋
+      </button>
       <button class="tab-btn" data-tab="settings" onclick="window.game.switchTab('settings')">
         ⚙️ 修行存檔
       </button>
@@ -382,6 +385,75 @@
         </div>
       </div>
 
+      <!-- ================= 7. 浪人茶屋・意見交流分頁 ================= -->
+      <div id="tab-community" class="tab-pane">
+        <div class="community-container">
+          <!-- 頂部引言與快捷通道 -->
+          <div class="community-hero">
+            <div class="hero-text">
+              <h3>🏮 浪人茶屋・江戶交流處</h3>
+              <p>路過歇息的武士與浪人，皆可在此品茶論劍、留下心得與寶貴反饋！</p>
+            </div>
+            <div class="feedback-quick-actions">
+              <a href="https://github.com/RexChien/samurai-idle-rpg/discussions" target="_blank" rel="noopener noreferrer" class="btn-community-action">
+                💬 前往 GitHub 討論區
+              </a>
+              <a href="https://github.com/RexChien/samurai-idle-rpg/issues/new?title=%E3%80%90%E5%8F%8D%E9%A5%8F%2F%E5%BB%BA%E8%AD%B0%E3%80%91&body=%E6%82%A8%E7%9A%84%E5%BB%BA%E8%AD%B0%EF%BC%9A" target="_blank" rel="noopener noreferrer" class="btn-community-action issue">
+                🐞 提報 Bug / 建議
+              </a>
+            </div>
+          </div>
+
+          <!-- 遊戲內免登入快速意向投票 -->
+          <div class="poll-card">
+            <h4>📊 浪人意向投票：您最期待後續加入什麼新內容？</h4>
+            <div class="poll-options-grid">
+              <button class="poll-btn" onclick="voteFeature(1, this)">
+                <span>🗡️ 更多傳奇名刀（村雨丸、雷切等）</span>
+                <span id="poll-cnt-1" style="color:#fbbf24;font-weight:bold;">12 票</span>
+              </button>
+              <button class="poll-btn" onclick="voteFeature(2, this)">
+                <span>⚔️ 大名合戰（勢力戰攻城）</span>
+                <span id="poll-cnt-2" style="color:#fbbf24;font-weight:bold;">19 票</span>
+              </button>
+              <button class="poll-btn" onclick="voteFeature(3, this)">
+                <span>🥋 更多劍道流派（二天一流、無念流）</span>
+                <span id="poll-cnt-3" style="color:#fbbf24;font-weight:bold;">15 票</span>
+              </button>
+              <button class="poll-btn" onclick="voteFeature(4, this)">
+                <span>🐕 侍從寵物（柴犬、忍鷹、戰馬）</span>
+                <span id="poll-cnt-4" style="color:#fbbf24;font-weight:bold;">24 票</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Giscus GitHub Discussions 免費留言板 -->
+          <div class="giscus-section">
+            <h4>💬 玩家即時留言板（Powered by GitHub Discussions）</h4>
+            <div class="giscus-guide-box">
+              🍵 <b>留言說明</b>：使用 GitHub 帳號登入即可在下方直接留言、回覆討論與按表情符號互動。免伺服器、純免費，所有留言自動同步存入專案討論區！
+            </div>
+            <div id="giscus-container">
+              <script src="https://giscus.app/client.js"
+                      data-repo="RexChien/samurai-idle-rpg"
+                      data-repo-id="R_kgDOVmScCA"
+                      data-category="General"
+                      data-category-id="DIC_kwDOVmScCM4DKmUi"
+                      data-mapping="pathname"
+                      data-strict="0"
+                      data-reactions-enabled="1"
+                      data-emit-metadata="0"
+                      data-input-position="top"
+                      data-theme="dark_tritanopia"
+                      data-lang="zh-TW"
+                      crossorigin="anonymous"
+                      async>
+              </script>
+            </div>
+          </div>
+        </div>
+      </div>
+
     </main>
 
   </div>
@@ -556,6 +628,23 @@
         window.samuraiAudio.toggle(nextState);
         btn.textContent = nextState ? "🔊 音效：開啟" : "🔇 音效：靜音";
       }
+    }
+
+    function voteFeature(optionId, btnEl) {
+      const storageKey = "SAMURAI_POLL_VOTED";
+      if (localStorage.getItem(storageKey)) {
+        alert("🏮 您已經參與過本次浪人意向投票囉！感謝您的支持！");
+        return;
+      }
+      localStorage.setItem(storageKey, "true");
+      const span = document.getElementById(`poll-cnt-${optionId}`);
+      if (span) {
+        const current = parseInt(span.textContent) || 10;
+        span.textContent = `${current + 1} 票`;
+      }
+      btnEl.classList.add("voted");
+      if (window.samuraiAudio) window.samuraiAudio.playLevelUp();
+      alert("🍵 感謝您的寶貴投票！我們會優先考慮此項內容開發！");
     }
   </script>
 
