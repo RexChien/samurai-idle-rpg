@@ -1197,3 +1197,155 @@ nav.tab-nav {
     padding: 3px 8px;
   }
 }
+
+
+/* ==========================================================
+   7. 浪人茶屋・社群交流與意見回饋 (Community & Feedback Tab)
+   ========================================================== */
+.community-container {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.community-hero {
+  background: linear-gradient(135deg, rgba(45, 20, 22, 0.9) 0%, rgba(20, 20, 24, 0.95) 100%);
+  border: 1px solid var(--border-gold);
+  border-radius: 8px;
+  padding: 18px 24px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 16px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.6);
+}
+
+.hero-text h3 {
+  font-size: 1.4rem;
+  color: #fff;
+  margin-bottom: 6px;
+}
+
+.hero-text p {
+  color: var(--text-muted);
+  font-size: 0.9rem;
+}
+
+.feedback-quick-actions {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.btn-community-action {
+  background: rgba(30, 32, 40, 0.9);
+  color: #fff;
+  border: 1px solid var(--border-gold);
+  padding: 10px 18px;
+  border-radius: 6px;
+  font-weight: bold;
+  font-size: 0.9rem;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+
+.btn-community-action:hover {
+  background: var(--crimson);
+  border-color: #ff7b72;
+  box-shadow: 0 0 12px var(--crimson-glow);
+  transform: translateY(-2px);
+}
+
+.btn-community-action.issue {
+  border-color: #38bdf8;
+}
+
+.btn-community-action.issue:hover {
+  background: #0284c7;
+  box-shadow: 0 0 12px rgba(56, 189, 248, 0.4);
+}
+
+/* 意見調查投票卡片 */
+.poll-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-muted);
+  border-radius: 8px;
+  padding: 18px;
+}
+
+.poll-card h4 {
+  color: var(--border-gold);
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 1.1rem;
+}
+
+.poll-options-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 10px;
+}
+
+.poll-btn {
+  background: #171822;
+  border: 1px solid #333644;
+  color: #d1d5db;
+  padding: 12px 16px;
+  border-radius: 6px;
+  cursor: pointer;
+  text-align: left;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.9rem;
+  transition: all 0.2s ease;
+}
+
+.poll-btn:hover {
+  background: #252838;
+  border-color: var(--border-gold);
+  color: #fff;
+}
+
+.poll-btn.voted {
+  background: rgba(217, 56, 58, 0.2);
+  border-color: var(--crimson);
+  color: #fff;
+}
+
+/* Giscus 留言板外框 */
+.giscus-section {
+  background: var(--bg-card);
+  border: 1px solid var(--border-muted);
+  border-radius: 8px;
+  padding: 20px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+}
+
+.giscus-section h4 {
+  color: #fff;
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border-bottom: 1px solid var(--border-muted);
+  padding-bottom: 10px;
+}
+
+.giscus-guide-box {
+  background: #15161f;
+  border-left: 3px solid var(--border-gold);
+  padding: 10px 14px;
+  border-radius: 0 6px 6px 0;
+  margin-bottom: 18px;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  line-height: 1.6;
+}
