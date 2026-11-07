@@ -43,7 +43,7 @@
           <span class="char-rank" id="player-title">落魄浪人</span>
         </div>
         <div class="exp-bar-wrapper">
-          <span>修為:</span>
+          <span>劍理:</span>
           <div class="progress-track">
             <div id="player-exp-bar" class="progress-fill" style="width: 0%;"></div>
           </div>
@@ -118,7 +118,7 @@
             </div>
 
             <!-- 戰鬥點擊畫布區 -->
-            <div class="stage-arena" id="battle-stage-arena">
+            <div class="stage-arena" id="battle-stage-arena" onclick="window.game && window.game.attack(true)">
               <canvas id="slash-canvas"></canvas>
 
               <div id="combo-counter" class="combo-banner" style="display:none;"></div>
@@ -134,11 +134,11 @@
 
               <!-- 敵人模型展示 -->
               <div class="enemy-wrapper">
-                <div class="enemy-avatar-box" id="enemy-avatar">
+                <div class="enemy-avatar-box" id="enemy-avatar" onclick="window.game && window.game.attack(true)">
                   👹
                 </div>
                 <div class="enemy-info-bar">
-                  <div class="enemy-title-tag" id="enemy-title">【山野落寇】</div>
+                  <div class="enemy-title-tag" id="enemy-title">【野伏・兇賊】</div>
                   <div class="enemy-name-text" id="enemy-name">持棒野盜</div>
                   <div class="enemy-hp-track">
                     <div id="enemy-hp-fill" class="enemy-hp-fill" style="width: 100%;"></div>
@@ -150,17 +150,17 @@
               <div class="click-hint-tag">🍵 放置自律戰鬥中（已開啟神速自動出刀・免點擊）｜ 亦支援【長按滑鼠】或【空白鍵】</div>
             </div>
 
-            <!-- 戰鬥底部 (玩家氣血 & 首領挑戰) -->
+            <!-- 戰鬥底部 (玩家體力 & 首領挑戰) -->
             <div class="stage-footer">
               <div class="player-battle-hp">
-                <span style="font-weight:bold;color:#4ade80;">自身氣血:</span>
+                <span style="font-weight:bold;color:#4ade80;">武士體力:</span>
                 <div class="hp-track-player">
                   <div id="player-hp-bar" class="hp-fill-player" style="width: 100%;"></div>
                 </div>
                 <span id="player-hp-text" style="color:#cbd5e1;">100 / 100</span>
               </div>
               <button id="btn-challenge-boss" class="btn-boss-challenge" onclick="window.game.challengeBoss()">
-                討伐小怪召喚首領 (0/10)
+                掃蕩敵勢・討伐頭目 (0/10)
               </button>
             </div>
           </div>
@@ -271,7 +271,7 @@
               <ul class="school-bonus-list">
                 <li>每級提升 <b>+2% 會心率</b></li>
                 <li>每級提升 <b>+5% 會心傷害加成</b></li>
-                <li>當前修為：<b id="skill-shinkage-level" style="color:#38bdf8;">Lv.0</b></li>
+                <li>習得階級：<b id="skill-shinkage-level" style="color:#38bdf8;">Lv.0</b></li>
               </ul>
             </div>
             <button class="btn-invest-skill" onclick="window.game.investSkill('shinkage')">領悟新陰流 (+1)</button>
@@ -286,7 +286,7 @@
               <ul class="school-bonus-list">
                 <li>每級提升 <b>+5% 基礎攻擊力</b></li>
                 <li>每級提升 <b>+3% 無視敵人防禦</b></li>
-                <li>當前修為：<b id="skill-jigen-level" style="color:#ef4444;">Lv.0</b></li>
+                <li>習得階級：<b id="skill-jigen-level" style="color:#ef4444;">Lv.0</b></li>
               </ul>
             </div>
             <button class="btn-invest-skill" style="background:#b91c1c;" onclick="window.game.investSkill('jigen')">領悟示現流 (+1)</button>
@@ -296,12 +296,12 @@
           <div class="skill-school-card rishin">
             <div>
               <div class="school-name" style="color:#10b981;">天然理心流・誠之意</div>
-              <div class="school-sub">專精：鐵壁氣血・剛健不屈</div>
+              <div class="school-sub">專精：剛健不屈・體力・剛健不屈</div>
               <div class="school-desc">新選組局長近藤勇與沖田總司修習之實戰劍法。結合劍術、居合與柔術，氣魄宏偉，防禦與耐力絕倫。</div>
               <ul class="school-bonus-list">
-                <li>每級提升 <b>+8% 角色最大氣血</b></li>
+                <li>每級提升 <b>+8% 武士最大體力</b></li>
                 <li>每級提升 <b>+5 點物理防禦力</b></li>
-                <li>當前修為：<b id="skill-rishin-level" style="color:#10b981;">Lv.0</b></li>
+                <li>習得階級：<b id="skill-rishin-level" style="color:#10b981;">Lv.0</b></li>
               </ul>
             </div>
             <button class="btn-invest-skill" style="background:#166534;" onclick="window.game.investSkill('rishin')">領悟理心流 (+1)</button>
@@ -375,8 +375,8 @@
 
           <div class="settings-row">
             <div>
-              <div style="font-weight:bold;color:#ef4444;">重置修為進度</div>
-              <div style="font-size:0.8rem;color:#888;">清除所有本地存檔，重新開始浪人生涯</div>
+              <div style="font-weight:bold;color:#ef4444;">武者修行初期化</div>
+              <div style="font-size:0.8rem;color:#888;">消去本地紀錄，浪人從頭開始新旅程</div>
             </div>
             <button class="btn-setting danger" onclick="window.game.resetGame()">⚠️ 重置遊戲</button>
           </div>
@@ -424,9 +424,9 @@
 
           <!-- 100% 免登入即時留言板 -->
           <div class="teahouse-comment-wall">
-            <h4>💬 浪人茶屋・天下俠客留言壁</h4>
+            <h4>💬 浪人茶屋・天下諸士寄書板</h4>
             <div class="teahouse-banner">
-              🍵 <b>茶屋留墨</b>：直接輸入您的大俠名號與留言心得，點擊「🏮 送出留言」，即可直接刻在石壁上與大家交流！
+              🍵 <b>茶屋寄書</b>：直接輸入武士名號與心得，按下「🏮 奉納寄書」，即可直接刻印於茶屋銘木板，與天下諸士切磋！
             </div>
 
             <!-- HTMLCommentBox 免費公開留言板 -->
@@ -438,41 +438,41 @@
             
             <script type="text/javascript">
               window.hcb_user = {
-                comments_header: "📜 浪人茶屋・歷代俠客留墨",
-                name_label: "大俠名號（暱稱）",
-                content_label: "請輸入您的心得、流派打法、武器推薦或反饋建議...",
-                submit: "🏮 送出留言",
+                comments_header: "📜 浪人茶屋・諸士寄書板",
+                name_label: "武士名（御名前・流派）",
+                content_label: "請寄書留墨，品評名刃、切磋劍道、進言奉行所...",
+                submit: "🏮 奉納寄書",
                 logout_link: "",
                 admin_link: "",
-                no_comments_msg: "茶屋剛開張，尚無留言，歡迎大俠留下第一筆真跡！",
-                add: "🍵 揮筆留墨",
+                no_comments_msg: "茶屋剛開張，尚無寄書，請武士大人留下第一筆銘墨！",
+                add: "🍵 揮毫寄書",
                 again: "再留一則",
                 rss: "",
-                said: " 說道：",
+                said: " 曰く：",
                 prev_page: "« 上一頁",
                 next_page: "下一頁 »",
-                showing: "俠客留言",
+                showing: "諸士寄書",
                 to: "至",
                 website_label: "流派/道場 (選填)",
                 email_label: "飛鴿傳書 (選填)",
-                anonymous: "無名浪人",
-                mod_label: "(堂主)",
+                anonymous: "無宿浪士",
+                mod_label: "(茶屋主)",
                 subscribe: "",
                 are_you_sure: "確定要舉報這則留言嗎？",
                 reply: "💬 回覆",
                 flag: "⚠️ 檢舉",
-                like: "⚔️ 拔刀讚",
+                like: "⚔️ 見事（讚）",
                 days_ago: "天前",
                 hours_ago: "小時前",
                 minutes_ago: "分鐘前",
                 within_the_last_minute: "剛剛",
-                msg_thankyou: "感謝大俠賜教！留言已銘刻於茶屋石壁。",
+                msg_thankyou: "かたじけない！諸士の寄書、確かに銘木板に刻印仕候。",
                 msg_approval: "(審核中)",
-                msg_approval_required: "感謝大俠！留言已送出。",
+                msg_approval_required: "かたじけない！寄書完了仕候。",
                 err_bad_html: "內容格式不符",
                 err_bad_email: "電子郵件格式不正確",
-                err_too_frequent: "出刀太快了！請稍候片刻再留下一則。",
-                err_comment_empty: "留言不可為空！請輸入字句後再送出。",
+                err_too_frequent: "神速出刀過疾！請稍候片刻再行寄書。",
+                err_comment_empty: "寄書內容不可為空！請揮毫後再送出。",
                 err_denied: "留言未能送出，請稍後再試。",
                 MAX_CHARS: 800,
                 PAGE: "https://rexchien.github.io/samurai-idle-rpg/",
@@ -498,7 +498,7 @@
   <!-- 鍛造獲得名刀 Showcase Modal -->
   <div id="forge-result-modal" class="modal-overlay">
     <div class="modal-scroll-card">
-      <div style="font-size:3rem;margin-bottom:8px;">🗡️</div>
+      <div id="modal-sword-visual" class="modal-sword-visual"></div>
       <div class="modal-title" id="modal-sword-name">名刀出世</div>
       <div id="modal-sword-tier" style="font-weight:bold;margin-bottom:12px;">【良業物】打刀</div>
       <div class="modal-body">
@@ -522,7 +522,7 @@
         ⚔️ 斬獲敵人：<b id="offline-kills">0</b> 名<br>
         🪙 搜得金小判：+<b id="offline-gold" style="color:#fbbf24;">0</b><br>
         💎 提煉玉鋼：+<b id="offline-steel" style="color:#60a5fa;">0</b><br>
-        ⛩️ 累積修為：+<b id="offline-exp" style="color:#4ade80;">0</b> 經驗值
+        ⛩️ 累積修業：+<b id="offline-exp" style="color:#4ade80;">0</b> 經驗值
       </div>
       <button class="btn-modal-close" onclick="document.getElementById('offline-modal').classList.remove('active')">欣然領取</button>
     </div>
