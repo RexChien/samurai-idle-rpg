@@ -9,16 +9,16 @@ window.ZONES_DATA = [
     themeColor: "#4ade80",
     requiredLevel: 1,
     enemies: [
-      { name: "持棒野盜", title: "雜寇", hp: 160, atk: 18, def: 2, exp: 20, gold: 15, steel: 1 },
-      { name: "竹林野伏", title: "強盜", hp: 280, atk: 28, def: 5, exp: 35, gold: 28, steel: 2 },
-      { name: "落魄足輕", title: "逃兵", hp: 420, atk: 42, def: 8, exp: 55, gold: 45, steel: 3 }
+      { name: "持棒野盜", title: "雜寇", hp: 75, atk: 12, def: 1, exp: 20, gold: 18, steel: 1 },
+      { name: "竹林野伏", title: "強盜", hp: 140, atk: 20, def: 3, exp: 35, gold: 30, steel: 2 },
+      { name: "落魄足輕", title: "逃兵", hp: 220, atk: 30, def: 5, exp: 55, gold: 48, steel: 3 }
     ],
     boss: {
       name: "破戒僧・豪圓",
       title: "【第一幕 守門狂僧】",
-      hp: 1600,
-      atk: 75,
-      def: 20,
+      hp: 750,
+      atk: 55,
+      def: 12,
       exp: 300,
       gold: 250,
       steel: 15,
