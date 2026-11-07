@@ -69,7 +69,7 @@ window.ITEMS_DATA = {
       def: 8,
       rarity: 1,
       color: "#a8a8a8",
-      desc: "浪人行走江湖的麻布外衣，透氣俐落，略微防風避箭。"
+      desc: "浪人諸國巡禮武者修行的麻布外衣，透氣俐落，略微防風避箭。"
     },
     {
       id: "armor_02",
@@ -229,7 +229,7 @@ window.ITEMS_DATA = {
       critDmg: 70,
       rarity: 5,
       color: "#f59e0b",
-      desc: "日本三神器之一，凝聚萬物神靈之庇佑，大幅提升氣血與奧義威力。"
+      desc: "日本三神器之一，凝聚萬物神靈之庇佑，大幅提升體力上限與奧義威力。"
     }
   ],
 
@@ -243,7 +243,7 @@ window.ITEMS_DATA = {
       icon: "🍙",
       healPercent: 40,
       price: 30,
-      desc: "用竹葉包裹的酸梅越光米飯糰，生津止渴，立即回復 40% 氣血。"
+      desc: "用竹葉包裹的酸梅越光米飯糰，生津止渴，立即回復 40% 體力。"
     },
     {
       id: "item_hyourougan",
