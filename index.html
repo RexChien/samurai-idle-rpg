@@ -388,19 +388,11 @@
       <!-- ================= 7. 浪人茶屋・意見交流分頁 ================= -->
       <div id="tab-community" class="tab-pane">
         <div class="community-container">
-          <!-- 頂部引言與快捷通道 -->
+          <!-- 頂部引言 -->
           <div class="community-hero">
             <div class="hero-text">
-              <h3>🏮 浪人茶屋・江戶交流處</h3>
-              <p>路過歇息的武士與浪人，皆可在此品茶論劍、留下心得與寶貴反饋！</p>
-            </div>
-            <div class="feedback-quick-actions">
-              <a href="https://github.com/RexChien/samurai-idle-rpg/discussions" target="_blank" rel="noopener noreferrer" class="btn-community-action">
-                💬 前往 GitHub 討論區
-              </a>
-              <a href="https://github.com/RexChien/samurai-idle-rpg/issues/new?title=%E3%80%90%E5%8F%8D%E9%A5%8F%2F%E5%BB%BA%E8%AD%B0%E3%80%91&body=%E6%82%A8%E7%9A%84%E5%BB%BA%E8%AD%B0%EF%BC%9A" target="_blank" rel="noopener noreferrer" class="btn-community-action issue">
-                🐞 提報 Bug / 建議
-              </a>
+              <h3>🏮 浪人茶屋・天下俠客留言壁</h3>
+              <p>路過歇息的武士與浪人，皆可在此品茶論劍、留下心得、流派討論與寶貴反饋！</p>
             </div>
           </div>
 
@@ -427,28 +419,78 @@
             </div>
           </div>
 
-          <!-- Giscus GitHub Discussions 免費留言板 -->
-          <div class="giscus-section">
-            <h4>💬 玩家即時留言板（Powered by GitHub Discussions）</h4>
-            <div class="giscus-guide-box">
-              🍵 <b>留言說明</b>：使用 GitHub 帳號登入即可在下方直接留言、回覆討論與按表情符號互動。免伺服器、純免費，所有留言自動同步存入專案討論區！
+          <!-- 100% 免登入即時留言板 -->
+          <div class="teahouse-comment-wall">
+            <h4>💬 茶屋留言壁（100% 免登入・即時發送顯示）</h4>
+            <div class="teahouse-banner">
+              🍵 <b>免登入說明</b>：無須登入任何帳號或 GitHub，直接輸入您的大俠名號與留言內容，點擊「🏮 送出留言」，即可直接發送並銘刻在石壁上，所有到訪茶屋的俠客都能互相看到彼此的留言！
             </div>
-            <div id="giscus-container">
-              <script src="https://giscus.app/client.js"
-                      data-repo="RexChien/samurai-idle-rpg"
-                      data-repo-id="R_kgDOVmScCA"
-                      data-category="General"
-                      data-category-id="DIC_kwDOVmScCM4DKmUi"
-                      data-mapping="pathname"
-                      data-strict="0"
-                      data-reactions-enabled="1"
-                      data-emit-metadata="0"
-                      data-input-position="top"
-                      data-theme="dark_tritanopia"
-                      data-lang="zh-TW"
-                      crossorigin="anonymous"
-                      async>
-              </script>
+
+            <!-- HTMLCommentBox 免費公開留言板 -->
+            <div id="HCB_comment_box">
+              <div style="text-align:center;padding:20px;color:#d4af37;">
+                🏮 正在召喚茶屋留言石壁，請稍候...
+              </div>
+            </div>
+            
+            <script type="text/javascript">
+              window.hcb_user = {
+                comments_header: "📜 浪人茶屋・歷代俠客留墨",
+                name_label: "大俠名號（暱稱）",
+                content_label: "請輸入您的心得、流派打法、武器推薦或反饋建議...",
+                submit: "🏮 送出留言",
+                logout_link: "",
+                admin_link: "",
+                no_comments_msg: "茶屋剛開張，尚無留言，歡迎大俠留下第一筆真跡！",
+                add: "🍵 揮筆留墨（完全免登入）",
+                again: "再留一則",
+                rss: "",
+                said: " 說道：",
+                prev_page: "« 上一頁",
+                next_page: "下一頁 »",
+                showing: "俠客留言",
+                to: "至",
+                website_label: "流派/道場 (選填)",
+                email_label: "飛鴿傳書 (Email，選填)",
+                anonymous: "無名浪人",
+                mod_label: "(堂主)",
+                subscribe: "",
+                are_you_sure: "確定要舉報這則留言嗎？",
+                reply: "💬 回覆",
+                flag: "⚠️ 檢舉",
+                like: "⚔️ 拔刀讚",
+                days_ago: "天前",
+                hours_ago: "小時前",
+                minutes_ago: "分鐘前",
+                within_the_last_minute: "剛剛",
+                msg_thankyou: "感謝大俠賜教！留言已銘刻於茶屋石壁。",
+                msg_approval: "(審核中)",
+                msg_approval_required: "感謝大俠！留言已送出。",
+                err_bad_html: "內容格式不符",
+                err_bad_email: "電子郵件格式不正確",
+                err_too_frequent: "出刀太快了！請稍候片刻再留下一則。",
+                err_comment_empty: "留言不可為空！請輸入字句後再送出。",
+                err_denied: "留言未能送出，請稍後再試。",
+                MAX_CHARS: 800,
+                PAGE: "https://rexchien.github.io/samurai-idle-rpg/",
+                RELATIVE_DATES: true
+              };
+
+              (function(){
+                var s = document.createElement("script");
+                var l = window.hcb_user.PAGE || ("" + window.location).replace(/'/g, "%27");
+                s.type = "text/javascript";
+                s.src = "https://www.htmlcommentbox.com/jread?page=" + encodeURIComponent(l).replace("+", "%2B") + "&opts=16862&num=25";
+                document.head.appendChild(s);
+              })();
+            </script>
+
+            <!-- 底部備用 GitHub 開源連結（供開發者查看） -->
+            <div style="margin-top:24px;padding-top:14px;border-top:1px dashed rgba(212,175,55,0.2);text-align:center;font-size:0.8rem;color:#888;">
+              <span>喜歡這款遊戲嗎？想查看原始碼或提交開發 PR：</span>
+              <a href="https://github.com/RexChien/samurai-idle-rpg" target="_blank" rel="noopener noreferrer" style="color:#d4af37;text-decoration:underline;margin-left:4px;">
+                GitHub 專案倉庫 (RexChien/samurai-idle-rpg)
+              </a>
             </div>
           </div>
         </div>
