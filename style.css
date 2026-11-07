@@ -1512,3 +1512,41 @@ nav.tab-nav {
 #HCB_comment_box .home-desc a {
   color: #aaa !important;
 }
+
+/* 隱藏任何外部後台登入門戶與外鏈 */
+.admin-link,
+.hcb-icon.hcb-door-in,
+.hcb-icon.hcb-door-out,
+#HCB_comment_box .admin-link {
+  display: none !important;
+}
+
+/* 自動出刀快捷開關按鈕 (無障礙設計) */
+.btn-autoslash {
+  background: rgba(30, 25, 35, 0.9);
+  color: #a8a29e;
+  border: 1px solid rgba(212, 175, 55, 0.35);
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-size: 0.82rem;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  user-select: none;
+  margin-left: 8px;
+}
+
+.btn-autoslash.active {
+  background: linear-gradient(135deg, #166534, #15803d);
+  color: #fef08a;
+  border-color: #facc15;
+  box-shadow: 0 0 10px rgba(34, 197, 94, 0.4);
+}
+
+.btn-autoslash:hover {
+  transform: translateY(-1px);
+  filter: brightness(1.1);
+}
