@@ -111,11 +111,14 @@
                   <option value="6">第 6 幕・關原血河</option>
                   <option value="7">第 7 幕・江戶天守閣</option>
                 </select>
+                <button id="btn-toggle-autoslash" class="btn-autoslash active" onclick="window.game.toggleAutoSlash()" title="全自動出刀，徹底免除手部點擊負擔">
+                  ⚡ 神速自律斬：開啟中
+                </button>
               </div>
             </div>
 
             <!-- 戰鬥點擊畫布區 -->
-            <div class="stage-arena" id="battle-stage-arena" onclick="window.game.attack(true)">
+            <div class="stage-arena" id="battle-stage-arena">
               <canvas id="slash-canvas"></canvas>
 
               <div id="combo-counter" class="combo-banner" style="display:none;"></div>
@@ -144,7 +147,7 @@
                 </div>
               </div>
 
-              <div class="click-hint-tag">⚡ 點擊畫面任意處立即拔刀揮斬！</div>
+              <div class="click-hint-tag">🍵 放置自律戰鬥中（已開啟神速自動出刀・免點擊）｜ 亦支援【長按滑鼠】或【空白鍵】</div>
             </div>
 
             <!-- 戰鬥底部 (玩家氣血 & 首領挑戰) -->
@@ -421,9 +424,9 @@
 
           <!-- 100% 免登入即時留言板 -->
           <div class="teahouse-comment-wall">
-            <h4>💬 茶屋留言壁（100% 免登入・即時發送顯示）</h4>
+            <h4>💬 浪人茶屋・天下俠客留言壁</h4>
             <div class="teahouse-banner">
-              🍵 <b>免登入說明</b>：無須登入任何帳號或 GitHub，直接輸入您的大俠名號與留言內容，點擊「🏮 送出留言」，即可直接發送並銘刻在石壁上，所有到訪茶屋的俠客都能互相看到彼此的留言！
+              🍵 <b>茶屋留墨</b>：直接輸入您的大俠名號與留言心得，點擊「🏮 送出留言」，即可直接刻在石壁上與大家交流！
             </div>
 
             <!-- HTMLCommentBox 免費公開留言板 -->
@@ -442,7 +445,7 @@
                 logout_link: "",
                 admin_link: "",
                 no_comments_msg: "茶屋剛開張，尚無留言，歡迎大俠留下第一筆真跡！",
-                add: "🍵 揮筆留墨（完全免登入）",
+                add: "🍵 揮筆留墨",
                 again: "再留一則",
                 rss: "",
                 said: " 說道：",
@@ -451,7 +454,7 @@
                 showing: "俠客留言",
                 to: "至",
                 website_label: "流派/道場 (選填)",
-                email_label: "飛鴿傳書 (Email，選填)",
+                email_label: "飛鴿傳書 (選填)",
                 anonymous: "無名浪人",
                 mod_label: "(堂主)",
                 subscribe: "",
@@ -484,14 +487,6 @@
                 document.head.appendChild(s);
               })();
             </script>
-
-            <!-- 底部備用 GitHub 開源連結（供開發者查看） -->
-            <div style="margin-top:24px;padding-top:14px;border-top:1px dashed rgba(212,175,55,0.2);text-align:center;font-size:0.8rem;color:#888;">
-              <span>喜歡這款遊戲嗎？想查看原始碼或提交開發 PR：</span>
-              <a href="https://github.com/RexChien/samurai-idle-rpg" target="_blank" rel="noopener noreferrer" style="color:#d4af37;text-decoration:underline;margin-left:4px;">
-                GitHub 專案倉庫 (RexChien/samurai-idle-rpg)
-              </a>
-            </div>
           </div>
         </div>
       </div>
