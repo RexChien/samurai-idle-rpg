@@ -42,7 +42,7 @@ class SamuraiGame {
       skills: {
         shinkage: 0,  // 新陰流: +2% 暴擊率 / 級, +5% 暴擊傷害
         jigen: 0,     // 示現流: +5% 基礎攻擊力 / 級, +3% 破甲
-        rishin: 0     // 天然理心流: +8% 最大氣血 / 級, +2% 傷害減免
+        rishin: 0     // 天然理心流: +8% 最大體力 / 級, +2% 傷害減免
       },
 
       // 裝備位
@@ -111,8 +111,12 @@ class SamuraiGame {
       color: base.color,
       type: base.type,
       smith: base.smith,
+      era: base.era || "日本古作",
+      master: base.master || "無名武士",
+      hamon: base.hamon || "直刃",
+      svg: base.svg || "",
       baseAtk: base.atk,
-      refine: refine, // 磨刀研磨等級
+      refine: refine,
       crit: base.crit,
       critDmg: base.critDmg,
       speed: base.speed,
@@ -124,7 +128,7 @@ class SamuraiGame {
 
   // 計算玩家武士位階稱號
   getRankTitle(level) {
-    if (level < 10) return "落魄浪人";
+    if (level < 10) return "無宿浪士";
     if (level < 25) return "足輕組頭";
     if (level < 45) return "直參旗本";
     if (level < 65) return "精銳劍士";
@@ -287,7 +291,7 @@ class SamuraiGame {
       damage = Math.floor(damage * (0.92 + Math.random() * 0.16));
     }
 
-    // 扣除敵人氣血
+    // 扣除敵人體力
     this.currentEnemy.hp = Math.max(0, this.currentEnemy.hp - damage);
 
     // 吸血效果
@@ -431,7 +435,7 @@ class SamuraiGame {
 
   // 玩家戰敗處理
   handlePlayerDefeated() {
-    this.addCombatLog(`<span style="color:#ef4444;font-weight:bold;">⚠️ 氣力耗盡！你暫時退回道場調養生息，氣血已完全恢復。</span>`);
+    this.addCombatLog(`<span style="color:#ef4444;font-weight:bold;">⚠️ 氣力耗盡！你暫時退回道場調養生息，體力已完全恢復。</span>`);
     const stats = this.getCalculatedStats();
     this.playerCurrentHp = stats.maxHp;
     this.inBossFight = false;
@@ -498,7 +502,7 @@ class SamuraiGame {
     if (consumable.type === "heal") {
       const healAmount = Math.floor(stats.maxHp * (consumable.healPercent / 100));
       this.playerCurrentHp = Math.min(stats.maxHp, this.playerCurrentHp + healAmount);
-      this.addCombatLog(`🍙 食用了【${consumable.name}】，瞬間回復了 ${healAmount} 點氣血！`);
+      this.addCombatLog(`🍙 食用了【${consumable.name}】，瞬間回復了 ${healAmount} 點體力！`);
     } else if (consumable.type === "buff_speed") {
       this.activeBuffs.speed = consumable.duration;
       this.addCombatLog(`💊 服下了【${consumable.name}】，出刀神速提升 35%（持續 ${consumable.duration} 秒）！`);
@@ -617,7 +621,7 @@ class SamuraiGame {
     if (!sword) return;
     this.player.equipped.weapon = sword;
     if (window.samuraiAudio) window.samuraiAudio.playSharpen();
-    this.addCombatLog(`🗡️ 更換佩刀！拔出名刀【${sword.name}】，殺氣大盛！`);
+    this.addCombatLog(`🗡️ 帶刀一新！拔出日本名刃【${sword.name}】，殺氣大盛！`);
     this.updateCharacterUI();
     this.updateInventoryUI();
     this.updateBattleUI();
@@ -741,7 +745,7 @@ class SamuraiGame {
         }
       }
 
-      // 自動自然氣血回調
+      // 自動自然體力回調
       if (this.playerCurrentHp < stats.maxHp) {
         this.playerCurrentHp = Math.min(stats.maxHp, this.playerCurrentHp + Math.max(1, Math.floor(stats.maxHp * 0.005)));
         this.updateBattleUI();
@@ -809,7 +813,7 @@ class SamuraiGame {
     popup.className = `dmg-popup ${isCrit ? "crit-hit" : "normal-hit"}`;
     popup.textContent = (isCrit ? "會心！ " : "") + `-${dmg}`;
 
-    // 隨機在敵人身周位置
+    // 隨機在敵人身辺位置
     const randomX = 45 + (Math.random() * 20 - 10);
     const randomY = 40 + (Math.random() * 15 - 7);
     popup.style.left = `${randomX}%`;
@@ -827,9 +831,11 @@ class SamuraiGame {
     if (!modal) return;
     document.getElementById("modal-sword-name").textContent = sword.name;
     document.getElementById("modal-sword-name").style.color = sword.color;
-    document.getElementById("modal-sword-tier").textContent = `【${sword.tierName}】${sword.type}`;
+    document.getElementById("modal-sword-tier").textContent = `【${sword.tierName}】${sword.type}（${sword.era || "日本名刀"}）`;
     document.getElementById("modal-sword-tier").style.color = sword.color;
-    document.getElementById("modal-sword-smith").textContent = `名匠：${sword.smith}`;
+    const modalVisual = document.getElementById("modal-sword-visual");
+    if (modalVisual) modalVisual.innerHTML = sword.svg || "";
+    document.getElementById("modal-sword-smith").textContent = `刀工：${sword.smith} | 刃文：${sword.hamon || "直刃"}`;
     document.getElementById("modal-sword-atk").textContent = `基礎攻擊：+${sword.baseAtk}`;
     document.getElementById("modal-sword-crit").textContent = `會心率：+${sword.crit}%`;
     document.getElementById("modal-sword-passive").textContent = sword.passive;
@@ -871,6 +877,30 @@ class SamuraiGame {
       if (data) {
         const parsed = JSON.parse(data);
         this.player = Object.assign(this.player, parsed);
+        if (this.player.swordsInventory && window.SWORDS_DATA) {
+          this.player.swordsInventory.forEach(s => {
+            const base = window.SWORDS_DATA.find(b => b.id === s.id);
+            if (base) {
+              s.svg = base.svg || "";
+              s.era = base.era || "日本古作";
+              s.master = base.master || "無名武士";
+              s.hamon = base.hamon || "直刃";
+              s.lore = base.lore;
+              s.passive = base.passive;
+              s.passiveDesc = base.passiveDesc;
+            }
+          });
+        }
+        if (this.player.equipped && this.player.equipped.weapon && window.SWORDS_DATA) {
+          const base = window.SWORDS_DATA.find(b => b.id === this.player.equipped.weapon.id);
+          if (base) {
+            this.player.equipped.weapon.svg = base.svg || "";
+            this.player.equipped.weapon.era = base.era || "日本古作";
+            this.player.equipped.weapon.master = base.master || "無名武士";
+            this.player.equipped.weapon.hamon = base.hamon || "直刃";
+            this.player.equipped.weapon.lore = base.lore;
+          }
+        }
         return true;
       }
     } catch (e) {
@@ -909,7 +939,7 @@ class SamuraiGame {
   }
 
   resetGame() {
-    if (confirm("⚠️ 警告：確定要重置所有遊戲進度嗎？所有刀劍、修為與玉鋼將重歸虛無！")) {
+    if (confirm("⚠️ 警告：確定要重置所有遊戲進度嗎？所有刀劍、劍理與玉鋼將重歸虛無！")) {
       if (confirm("最後確認：真的要重新開始修行？")) {
         localStorage.removeItem(this.SAVE_KEY);
         window.location.reload();
@@ -967,7 +997,10 @@ class SamuraiGame {
           <div class="equip-name" style="color:${weapon.color}">
             ${weapon.name} ${weapon.refine > 0 ? `+${weapon.refine}` : ""}
           </div>
-          <div class="equip-sub">${weapon.type}・${weapon.smith}</div>
+          <div class="equip-sword-visual">
+            ${weapon.svg || ""}
+          </div>
+          <div class="equip-sub">${weapon.type}・${weapon.smith}（${weapon.era || "日本古作"}）</div>
           <div class="equip-stat">攻 +${weapon.baseAtk + (weapon.refine * 15)} | 會心 +${weapon.crit}%</div>
           <div class="equip-passive">${weapon.passive}</div>
         </div>
@@ -978,7 +1011,7 @@ class SamuraiGame {
   updateBattleUI() {
     const stats = this.getCalculatedStats();
 
-    // 玩家氣血條
+    // 玩家體力條
     const hpPercent = Math.max(0, Math.min(100, Math.floor((this.playerCurrentHp / stats.maxHp) * 100)));
     const playerBar = document.getElementById("player-hp-bar");
     if (playerBar) {
@@ -986,14 +1019,19 @@ class SamuraiGame {
       document.getElementById("player-hp-text").textContent = `${this.playerCurrentHp} / ${stats.maxHp}`;
     }
 
-    // 敵人氣血條與資訊
+    // 敵人體力條與資訊
     if (this.currentEnemy) {
       const e = this.currentEnemy;
       document.getElementById("enemy-name").textContent = e.name;
-      document.getElementById("enemy-title").textContent = e.title;
       const enemyHpPercent = Math.max(0, Math.min(100, Math.floor((e.hp / e.maxHp) * 100)));
-      document.getElementById("enemy-hp-bar").style.width = `${enemyHpPercent}%`;
-      document.getElementById("enemy-hp-text").textContent = `${e.hp} / ${e.maxHp}`;
+      const enemyBar = document.getElementById("enemy-hp-fill") || document.getElementById("enemy-hp-bar");
+      if (enemyBar) {
+        enemyBar.style.width = `${enemyHpPercent}%`;
+      }
+      const enemyHpText = document.getElementById("enemy-hp-text");
+      if (enemyHpText) {
+        enemyHpText.textContent = `${e.hp} / ${e.maxHp}`;
+      }
 
       // 首領倒數時鐘
       const bossClock = document.getElementById("boss-timer-box");
@@ -1039,8 +1077,10 @@ class SamuraiGame {
   }
 
   updateForgeUI() {
-    document.getElementById("forge-steel").textContent = this.player.steel.toLocaleString();
-    document.getElementById("forge-gold").textContent = this.player.gold.toLocaleString();
+    const fSteel = document.getElementById("forge-steel");
+    if (fSteel) fSteel.textContent = this.player.steel.toLocaleString();
+    const fGold = document.getElementById("forge-gold");
+    if (fGold) fGold.textContent = this.player.gold.toLocaleString();
 
     // 磨刀石庫存
     document.getElementById("count-whetstone-rough").textContent = this.player.items.mat_whetstone_rough || 0;
@@ -1108,16 +1148,22 @@ class SamuraiGame {
               </span>
               <span class="inv-item-tier" style="background:${s.color}">${s.tierName}</span>
             </div>
+            <div class="inv-sword-visual">
+              ${s.svg || ""}
+            </div>
             <div class="inv-item-details">
               <span>攻 +${s.baseAtk + s.refine * 15}</span>
               <span>會心 +${s.crit}%</span>
               <span>速 x${s.speed.toFixed(2)}</span>
             </div>
+            <div class="inv-item-meta" style="font-size:0.8rem;color:#a8a29e;margin:4px 0;">
+              <span>${s.type}・${s.smith}</span> | <span>${s.era || "日本古作"}</span>
+            </div>
             <div class="inv-item-passive">${s.passive}</div>
             <div class="inv-item-actions">
               ${isEquipped ?
-                `<button class="btn-equip active" disabled>已佩戴</button>` :
-                `<button class="btn-equip" onclick="window.game.equipSword('${s.instanceId}')">佩戴此刃</button>`
+                `<button class="btn-equip active" disabled>已裝著</button>` :
+                `<button class="btn-equip" onclick="window.game.equipSword('${s.instanceId}')">帶刀（裝備）</button>`
               }
             </div>
           </div>
@@ -1166,14 +1212,18 @@ class SamuraiGame {
               ${s.tierName}
             </span>
           </div>
+          ${isUnlocked && s.svg ? `<div class="codex-sword-visual">${s.svg}</div>` : ""}
           <div class="codex-meta">
             <span>${isUnlocked ? s.romaji : "---"}</span>
-            <span>鍛匠：${isUnlocked ? s.smith : "？？？"}</span>
+            <span>刀工：${isUnlocked ? s.smith : "？？？"}</span>
+            <span>時代：${isUnlocked ? (s.era || "古傳") : "？？？"}</span>
           </div>
+          ${isUnlocked && s.master ? `<div class="codex-extra-info"><b>傳承名將：</b>${s.master}</div>` : ""}
+          ${isUnlocked && s.hamon ? `<div class="codex-extra-info"><b>刃文樣式：</b>${s.hamon}</div>` : ""}
           <div class="codex-lore">
-            ${isUnlocked ? s.lore : "斬殺更高難度首領或在鍛造屋尋求名匠秘鍛，以解鎖此名刃之歷史因緣。"}
+            ${isUnlocked ? s.lore : "討伐戰國頭目或於鍛冶屋行淬火秘鍛，以解鎖此名刃銘鑑傳承。"}
           </div>
-          ${isUnlocked ? `<div class="codex-bonus">✨ 收藏加成：全屬性提升，攻擊力 +5，氣血 +30</div>` : ""}
+          ${isUnlocked ? `<div class="codex-bonus">✨ 銘鑑之證：全武士體力 +30，攻擊力 +5</div>` : ""}
         </div>
       `;
     }).join("");
@@ -1254,8 +1304,16 @@ class SamuraiGame {
   }
 }
 
-// 實例化全域 Game 物件
+// 實例化全域 Game 物件並確保可靠啟動
 window.game = new SamuraiGame();
-window.addEventListener("DOMContentLoaded", () => {
-  window.game.start();
-});
+function initSamuraiGame() {
+  if (window.game && !window.game.isStarted) {
+    window.game.isStarted = true;
+    window.game.start();
+  }
+}
+if (document.readyState === "loading") {
+  document.addEventListener("DOMContentLoaded", initSamuraiGame);
+} else {
+  initSamuraiGame();
+}
