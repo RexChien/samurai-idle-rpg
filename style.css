@@ -1550,3 +1550,66 @@ nav.tab-nav {
   transform: translateY(-1px);
   filter: brightness(1.1);
 }
+
+
+/* ==================== 日本名刀造型向量圖樣樣式 ==================== */
+.sword-illu {
+  width: 100%;
+  height: 52px;
+  display: block;
+  filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.7));
+  margin: 6px 0;
+}
+
+.inv-sword-visual {
+  background: radial-gradient(circle at center, rgba(30, 25, 38, 0.9) 0%, rgba(10, 8, 14, 0.95) 100%);
+  border: 1px solid rgba(212, 175, 55, 0.25);
+  border-radius: 6px;
+  padding: 4px 6px;
+  margin: 8px 0;
+}
+
+.codex-sword-visual {
+  background: radial-gradient(circle at center, rgba(35, 28, 45, 0.95) 0%, rgba(12, 10, 16, 0.98) 100%);
+  border: 1px solid rgba(212, 175, 55, 0.3);
+  border-radius: 8px;
+  padding: 8px 12px;
+  margin: 10px 0;
+}
+
+.equip-sword-visual {
+  background: rgba(15, 12, 20, 0.85);
+  border: 1px solid rgba(212, 175, 55, 0.3);
+  border-radius: 6px;
+  padding: 4px 8px;
+  margin: 8px 0;
+}
+
+.sharpen-sword-visual {
+  background: rgba(15, 12, 20, 0.85);
+  border: 1px solid rgba(212, 175, 55, 0.3);
+  border-radius: 6px;
+  padding: 6px 12px;
+  margin: 8px 0;
+}
+
+.modal-sword-visual {
+  width: 100%;
+  max-width: 380px;
+  margin: 0 auto 12px auto;
+  background: radial-gradient(circle at center, rgba(40, 25, 30, 0.9) 0%, rgba(10, 8, 12, 0.95) 100%);
+  border: 1px solid #d4af37;
+  border-radius: 8px;
+  padding: 10px;
+  box-shadow: 0 0 20px rgba(212, 175, 55, 0.3);
+}
+
+.codex-extra-info {
+  font-size: 0.82rem;
+  color: #e2e8f0;
+  margin: 3px 0;
+}
+.codex-extra-info b {
+  color: #fbbf24;
+  margin-right: 4px;
+}
