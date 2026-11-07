@@ -1,0 +1,569 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>《無雙劍心：武士之刃》- 日式名刀放置RPG</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🗡️</text></svg>">
+</head>
+<body>
+
+  <!-- 櫻花飄落背景畫布 -->
+  <canvas id="sakura-canvas"></canvas>
+
+  <div id="app-container">
+
+    <!-- 頂部標題與貨幣欄 -->
+    <header class="game-header">
+      <div class="brand-title">
+        <h1>🗡️ 無雙劍心</h1>
+        <span class="badge">武士之刃・放置RPG</span>
+      </div>
+      <div class="resource-bar">
+        <div class="res-item gold" title="金小判（擊敵與熔煉獲得，用於鍛造與研磨）">
+          🪙 金小判: <span id="res-gold">0</span>
+        </div>
+        <div class="res-item steel" title="踏鞴玉鋼（名刀核心鍛造與強化材料）">
+          💎 玉鋼: <span id="res-steel">0</span>
+        </div>
+      </div>
+    </header>
+
+    <!-- 角色境界與簡報欄 -->
+    <section class="character-banner">
+      <div class="avatar-badge">
+        <span class="avatar-icon">🥷</span>
+        <span style="font-size:0.7rem;color:#f59e0b;" id="player-level">Lv.1</span>
+      </div>
+
+      <div class="char-info-block">
+        <div class="char-title-row">
+          <span class="char-name" id="player-name">無名浪人</span>
+          <span class="char-rank" id="player-title">落魄浪人</span>
+        </div>
+        <div class="exp-bar-wrapper">
+          <span>修為:</span>
+          <div class="progress-track">
+            <div id="player-exp-bar" class="progress-fill" style="width: 0%;"></div>
+          </div>
+          <span id="player-exp-text">0 / 60 (0%)</span>
+        </div>
+      </div>
+
+      <div class="stats-grid-mini">
+        <div class="stat-cell"><span>攻擊力</span><span id="stat-atk">0</span></div>
+        <div class="stat-cell"><span>防禦力</span><span id="stat-def">0</span></div>
+        <div class="stat-cell"><span>會心率</span><span id="stat-crit">0%</span></div>
+        <div class="stat-cell"><span>會心傷</span><span id="stat-critdmg">0%</span></div>
+        <div class="stat-cell"><span>拔刀速度</span><span id="stat-speed">0 次/秒</span></div>
+        <div class="stat-cell"><span>破甲穿透</span><span id="stat-pen">0%</span></div>
+      </div>
+    </section>
+
+    <!-- 導航分頁 -->
+    <nav class="tab-nav">
+      <button class="tab-btn active" data-tab="battle" onclick="window.game.switchTab('battle')">
+        ⚔️ 討伐修煉
+      </button>
+      <button class="tab-btn" data-tab="forge" onclick="window.game.switchTab('forge')">
+        ⚒️ 名刀鍛造
+      </button>
+      <button class="tab-btn" data-tab="dojo" onclick="window.game.switchTab('dojo')">
+        ⛩️ 流派奧義
+      </button>
+      <button class="tab-btn" data-tab="inventory" onclick="window.game.switchTab('inventory')">
+        🎒 行囊裝備
+      </button>
+      <button class="tab-btn" data-tab="codex" onclick="window.game.switchTab('codex')">
+        📜 名刀鑑賞
+      </button>
+      <button class="tab-btn" data-tab="settings" onclick="window.game.switchTab('settings')">
+        ⚙️ 修行存檔
+      </button>
+    </nav>
+
+    <!-- 主內容區 -->
+    <main class="tab-content">
+
+      <!-- ================= 1. 討伐戰鬥分頁 ================= -->
+      <div id="tab-battle" class="tab-pane active">
+        <div class="battle-layout">
+
+          <!-- 戰鬥主舞台 -->
+          <div class="battle-stage-card">
+            <div class="stage-header">
+              <div>
+                <h3 id="current-zone-name" style="color: #fff; font-size: 1.15rem;">第 1 幕・尾張荒野竹林</h3>
+                <span id="current-zone-sub" style="font-size: 0.8rem; color: #a8a29e;">落魄浪人之歷練</span>
+              </div>
+              <div class="zone-selector">
+                <label for="zone-select" style="font-size:0.85rem;color:#ccc;">疆界:</label>
+                <select id="zone-select" class="zone-select-dropdown" onchange="window.game.changeZone(parseInt(this.value))">
+                  <option value="1">第 1 幕・尾張竹林</option>
+                  <option value="2">第 2 幕・伏見鳥居</option>
+                  <option value="3">第 3 幕・京都三條</option>
+                  <option value="4">第 4 幕・越後雪嶺</option>
+                  <option value="5">第 5 幕・本能寺業火</option>
+                  <option value="6">第 6 幕・關原血河</option>
+                  <option value="7">第 7 幕・江戶天守閣</option>
+                </select>
+              </div>
+            </div>
+
+            <!-- 戰鬥點擊畫布區 -->
+            <div class="stage-arena" id="battle-stage-arena" onclick="window.game.attack(true)">
+              <canvas id="slash-canvas"></canvas>
+
+              <div id="combo-counter" class="combo-banner" style="display:none;"></div>
+
+              <!-- 首領倒數 -->
+              <div id="boss-timer-box" class="boss-timer-box" style="display:none;">
+                <span style="color:#ef4444;font-size:0.85rem;font-weight:bold;">⏳ 狂暴倒數:</span>
+                <div class="boss-timer-track">
+                  <div id="boss-timer-fill" class="boss-timer-fill" style="width:100%;"></div>
+                </div>
+                <span id="boss-timer-num" style="color:#fff;font-weight:bold;font-size:0.85rem;">30</span>
+              </div>
+
+              <!-- 敵人模型展示 -->
+              <div class="enemy-wrapper">
+                <div class="enemy-avatar-box" id="enemy-avatar">
+                  👹
+                </div>
+                <div class="enemy-info-bar">
+                  <div class="enemy-title-tag" id="enemy-title">【山野落寇】</div>
+                  <div class="enemy-name-text" id="enemy-name">持棒野盜</div>
+                  <div class="enemy-hp-track">
+                    <div id="enemy-hp-fill" class="enemy-hp-fill" style="width: 100%;"></div>
+                  </div>
+                  <span id="enemy-hp-text" style="font-size: 0.75rem; color: #d1d5db;">160 / 160</span>
+                </div>
+              </div>
+
+              <div class="click-hint-tag">⚡ 點擊畫面任意處立即拔刀揮斬！</div>
+            </div>
+
+            <!-- 戰鬥底部 (玩家氣血 & 首領挑戰) -->
+            <div class="stage-footer">
+              <div class="player-battle-hp">
+                <span style="font-weight:bold;color:#4ade80;">自身氣血:</span>
+                <div class="hp-track-player">
+                  <div id="player-hp-bar" class="hp-fill-player" style="width: 100%;"></div>
+                </div>
+                <span id="player-hp-text" style="color:#cbd5e1;">100 / 100</span>
+              </div>
+              <button id="btn-challenge-boss" class="btn-boss-challenge" onclick="window.game.challengeBoss()">
+                討伐小怪召喚首領 (0/10)
+              </button>
+            </div>
+          </div>
+
+          <!-- 戰鬥戰報日誌 -->
+          <div class="combat-log-card">
+            <div class="card-title-bar">
+              <span>📜 討伐戰報記錄</span>
+              <button style="background:none;border:none;color:#999;cursor:pointer;font-size:0.8rem;" onclick="document.getElementById('combat-log-container').innerHTML=''">清空</button>
+            </div>
+            <div id="combat-log-container" class="log-scroll-area">
+              <div class="log-line">🌸 風吹櫻落，浪人拔出腰間名刀，開始踏上戰國修羅歷練之路...</div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- ================= 2. 名刀鍛造分頁 ================= -->
+      <div id="tab-forge" class="tab-pane">
+        <div class="forge-container">
+
+          <!-- 鍛造名刀 Gacha -->
+          <div class="forge-card">
+            <h3>⚒️ 刀匠踏鞴鍛造</h3>
+            <div class="forge-actions-grid">
+              <div class="gacha-box">
+                <h4>傳統踏鞴鍛打</h4>
+                <div class="gacha-desc">以傳統折返鍛打技藝鑄刀。<br>消耗：<b>25 玉鋼</b> + <b>100 金幣</b><br>機率產出：凡鐵、業物、良業物</div>
+                <button class="btn-forge" onclick="window.game.forgeSword('standard')">🔥 開始鍛造</button>
+              </div>
+              <div class="gacha-box" style="border-color:#ef4444;">
+                <h4 style="color:#ef4444;">名匠淬火秘鍛</h4>
+                <div class="gacha-desc">三條宗近、千子村正親手淬火。<br>消耗：<b>80 玉鋼</b> + <b>500 金幣</b><br>極高機率產出【大業物】與【天下五劍】！</div>
+                <button class="btn-forge master" onclick="window.game.forgeSword('master')">⚡ 秘境神鍛</button>
+              </div>
+            </div>
+
+            <!-- 熔煉多餘名刀 -->
+            <h3 style="margin-top:20px;">🔥 刀劍熔融分解</h3>
+            <div style="font-size:0.85rem;color:#a8a29e;margin-bottom:8px;">將淘汰的多餘刀刃熔煉為大量玉鋼與金小判：</div>
+            <div id="smelt-swords-list" class="smelt-list-box"></div>
+          </div>
+
+          <!-- 磨刀石研磨強化 -->
+          <div class="forge-card">
+            <h3>✨ 砥石研磨鋒利度</h3>
+            <div class="sharpen-target-box" id="sharpen-weapon-target">
+              <!-- 當前佩刀預覽 -->
+            </div>
+
+            <div class="whetstone-options">
+              <div class="whetstone-row">
+                <div>
+                  <div style="font-weight:bold;color:#a8a29e;">🪨 荒砥石 (攻擊力 +15)</div>
+                  <div style="font-size:0.8rem;color:#78716c;">粗磨修補刃口 | 剩餘: <span id="count-whetstone-rough" style="color:#fff;">0</span></div>
+                </div>
+                <button class="btn-sharpen" onclick="window.game.sharpenWeapon('mat_whetstone_rough')">研磨</button>
+              </div>
+
+              <div class="whetstone-row">
+                <div>
+                  <div style="font-weight:bold;color:#4ade80;">🧱 中砥石 (攻擊力 +15)</div>
+                  <div style="font-size:0.8rem;color:#78716c;">平滑肉置刃線 | 剩餘: <span id="count-whetstone-mid" style="color:#fff;">0</span></div>
+                </div>
+                <button class="btn-sharpen" onclick="window.game.sharpenWeapon('mat_whetstone_mid')">研磨</button>
+              </div>
+
+              <div class="whetstone-row">
+                <div>
+                  <div style="font-weight:bold;color:#38bdf8;">✨ 天然仕上砥石 (攻擊力 +15)</div>
+                  <div style="font-size:0.8rem;color:#78716c;">青幽水石極致研磨 | 剩餘: <span id="count-whetstone-fine" style="color:#fff;">0</span></div>
+                </div>
+                <button class="btn-sharpen" onclick="window.game.sharpenWeapon('mat_whetstone_fine')">研磨</button>
+              </div>
+            </div>
+
+            <div style="margin-top:16px;background:#15161b;padding:12px;border-radius:6px;font-size:0.85rem;color:#888;">
+              💡 <b>名刀研磨訣竅</b>：每次研磨使武器強化等級 +1，攻擊力永久提升 15 點。砥石可在擊殺關卡敵人或首領時隨機拾取。
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- ================= 3. 流派奧義分頁 ================= -->
+      <div id="tab-dojo" class="tab-pane">
+        <div class="dojo-header-banner">
+          <div>
+            <h3 style="color:#fff;">⛩️ 武士三大流派心法</h3>
+            <div style="font-size:0.85rem;color:#a8a29e;">每提升 1 級境界可獲得 2 點天賦點，自由加點強化各派專長</div>
+          </div>
+          <div style="display:flex;align-items:center;gap:16px;">
+            <div style="font-size:1.1rem;color:#fbbf24;font-weight:bold;">
+              剩餘天賦點: <span id="dojo-skill-points">0</span>
+            </div>
+            <button class="btn-setting" onclick="window.game.resetSkills()">重置天賦 (100金)</button>
+          </div>
+        </div>
+
+        <div class="dojo-skills-grid">
+          <!-- 新陰流 -->
+          <div class="skill-school-card shinkage">
+            <div>
+              <div class="school-name" style="color:#38bdf8;">新陰流・活人劍</div>
+              <div class="school-sub">專精：神速拔刀・會心燕返</div>
+              <div class="school-desc">由上泉信綱所創，柳生宗嚴發揚之名門流派。講求「不斬之斬，以心眼洞察先機」，招式迅捷如電。</div>
+              <ul class="school-bonus-list">
+                <li>每級提升 <b>+2% 會心率</b></li>
+                <li>每級提升 <b>+5% 會心傷害加成</b></li>
+                <li>當前修為：<b id="skill-shinkage-level" style="color:#38bdf8;">Lv.0</b></li>
+              </ul>
+            </div>
+            <button class="btn-invest-skill" onclick="window.game.investSkill('shinkage')">領悟新陰流 (+1)</button>
+          </div>
+
+          <!-- 示現流 -->
+          <div class="skill-school-card jigen">
+            <div>
+              <div class="school-name" style="color:#ef4444;">示現流・一之太刀</div>
+              <div class="school-sub">專精：剛烈無匹・霸氣破甲</div>
+              <div class="school-desc">薩摩藩武士秘傳劍法。講求「一之太刀，捨生忘死，當頭劈下，初擊不中即為不祥」，具有毀天滅地的破壞力。</div>
+              <ul class="school-bonus-list">
+                <li>每級提升 <b>+5% 基礎攻擊力</b></li>
+                <li>每級提升 <b>+3% 無視敵人防禦</b></li>
+                <li>當前修為：<b id="skill-jigen-level" style="color:#ef4444;">Lv.0</b></li>
+              </ul>
+            </div>
+            <button class="btn-invest-skill" style="background:#b91c1c;" onclick="window.game.investSkill('jigen')">領悟示現流 (+1)</button>
+          </div>
+
+          <!-- 天然理心流 -->
+          <div class="skill-school-card rishin">
+            <div>
+              <div class="school-name" style="color:#10b981;">天然理心流・誠之意</div>
+              <div class="school-sub">專精：鐵壁氣血・剛健不屈</div>
+              <div class="school-desc">新選組局長近藤勇與沖田總司修習之實戰劍法。結合劍術、居合與柔術，氣魄宏偉，防禦與耐力絕倫。</div>
+              <ul class="school-bonus-list">
+                <li>每級提升 <b>+8% 角色最大氣血</b></li>
+                <li>每級提升 <b>+5 點物理防禦力</b></li>
+                <li>當前修為：<b id="skill-rishin-level" style="color:#10b981;">Lv.0</b></li>
+              </ul>
+            </div>
+            <button class="btn-invest-skill" style="background:#166534;" onclick="window.game.investSkill('rishin')">領悟理心流 (+1)</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ================= 4. 行囊裝備分頁 ================= -->
+      <div id="tab-inventory" class="tab-pane">
+        <div class="inv-section-title">🗡️ 當前佩戴名刀</div>
+        <div id="equip-weapon-display" style="margin-bottom:20px;"></div>
+
+        <div class="inv-section-title">🎒 行囊名刀庫存（點擊更換佩戴）</div>
+        <div id="inventory-swords-grid" class="inventory-grid"></div>
+
+        <div class="inv-section-title" style="margin-top:20px;">🍱 戰國乾糧與增益秘藥</div>
+        <div id="inventory-consumables-grid" class="consumables-grid"></div>
+      </div>
+
+      <!-- ================= 5. 名刀圖鑑分頁 ================= -->
+      <div id="tab-codex" class="tab-pane">
+        <div class="codex-banner">
+          <div>
+            <h3 style="color:#fff;">📜 名刀鑑賞圖鑑 (Sword Codex)</h3>
+            <div style="font-size:0.85rem;color:#a8a29e;">收錄日本歷史上最負盛名之天下五劍、名匠傑作與傳奇妖刀</div>
+          </div>
+          <div style="font-size:1.1rem;color:#38bdf8;font-weight:bold;">
+            解鎖進度: <span id="codex-progress">0 / 22</span>
+          </div>
+        </div>
+
+        <div id="codex-swords-list" class="codex-grid"></div>
+      </div>
+
+      <!-- ================= 6. 設定與存檔分頁 ================= -->
+      <div id="tab-settings" class="tab-pane">
+        <div class="settings-box">
+          <h3>⚙️ 修行存檔與系統設定</h3>
+
+          <div class="settings-row">
+            <div>
+              <div style="font-weight:bold;color:#fff;">和風音效</div>
+              <div style="font-size:0.8rem;color:#888;">拔刀聲、斬鐵聲與金屬交擊音效</div>
+            </div>
+            <button id="btn-toggle-sound" class="btn-setting" onclick="toggleSound()">🔊 音效：開啟</button>
+          </div>
+
+          <div class="settings-row">
+            <div>
+              <div style="font-weight:bold;color:#fff;">手動儲存進度</div>
+              <div style="font-size:0.8rem;color:#888;">遊戲每 10 秒自動存檔一次</div>
+            </div>
+            <button class="btn-setting" onclick="window.game.save(); alert('✅ 遊戲進度已手動儲存！');">💾 立即保存</button>
+          </div>
+
+          <div class="settings-row">
+            <div>
+              <div style="font-weight:bold;color:#fff;">匯出存檔代碼</div>
+              <div style="font-size:0.8rem;color:#888;">複製存檔代碼至其他裝置遊玩</div>
+            </div>
+            <button class="btn-setting" onclick="window.game.exportSave()">📋 複製代碼</button>
+          </div>
+
+          <div class="settings-row">
+            <div>
+              <div style="font-weight:bold;color:#fff;">匯入存檔代碼</div>
+              <div style="font-size:0.8rem;color:#888;">貼上備份存檔碼以恢復進度</div>
+            </div>
+            <button class="btn-setting" onclick="window.game.importSave()">📥 貼上匯入</button>
+          </div>
+
+          <div class="settings-row">
+            <div>
+              <div style="font-weight:bold;color:#ef4444;">重置修為進度</div>
+              <div style="font-size:0.8rem;color:#888;">清除所有本地存檔，重新開始浪人生涯</div>
+            </div>
+            <button class="btn-setting danger" onclick="window.game.resetGame()">⚠️ 重置遊戲</button>
+          </div>
+
+          <div style="margin-top:24px;text-align:center;font-size:0.8rem;color:#666;">
+            《無雙劍心：武士之刃》放置 RPG v1.0.0<br>
+            Hosted with ❤️ on GitHub Pages
+          </div>
+        </div>
+      </div>
+
+    </main>
+
+  </div>
+
+  <!-- 鍛造獲得名刀 Showcase Modal -->
+  <div id="forge-result-modal" class="modal-overlay">
+    <div class="modal-scroll-card">
+      <div style="font-size:3rem;margin-bottom:8px;">🗡️</div>
+      <div class="modal-title" id="modal-sword-name">名刀出世</div>
+      <div id="modal-sword-tier" style="font-weight:bold;margin-bottom:12px;">【良業物】打刀</div>
+      <div class="modal-body">
+        <div id="modal-sword-smith" style="color:#aaa;">名匠：備前長船</div>
+        <div id="modal-sword-atk" style="color:#fbbf24;font-weight:bold;margin:4px 0;">基礎攻擊：+120</div>
+        <div id="modal-sword-crit" style="color:#38bdf8;">會心率：+15%</div>
+        <div id="modal-sword-passive" style="color:#4ade80;background:#111;padding:8px;border-radius:4px;margin:8px 0;font-size:0.85rem;">被動特性</div>
+        <div id="modal-sword-lore" style="font-size:0.8rem;color:#888;font-style:italic;">歷史背景典故</div>
+      </div>
+      <button class="btn-modal-close" onclick="document.getElementById('forge-result-modal').classList.remove('active')">納刀入鞘</button>
+    </div>
+  </div>
+
+  <!-- 離線收益結算 Modal -->
+  <div id="offline-modal" class="modal-overlay">
+    <div class="modal-scroll-card">
+      <div style="font-size:3rem;margin-bottom:8px;">🏮</div>
+      <div class="modal-title">浪人雲遊歷練結算</div>
+      <div class="modal-body">
+        在您閉關離線的 <b id="offline-time" style="color:#fbbf24;">0 分鐘</b> 裡，浪人持續在戰場奮戰：<br><br>
+        ⚔️ 斬獲敵人：<b id="offline-kills">0</b> 名<br>
+        🪙 搜得金小判：+<b id="offline-gold" style="color:#fbbf24;">0</b><br>
+        💎 提煉玉鋼：+<b id="offline-steel" style="color:#60a5fa;">0</b><br>
+        ⛩️ 累積修為：+<b id="offline-exp" style="color:#4ade80;">0</b> 經驗值
+      </div>
+      <button class="btn-modal-close" onclick="document.getElementById('offline-modal').classList.remove('active')">欣然領取</button>
+    </div>
+  </div>
+
+  <!-- 櫻花飄落與刀光畫布腳本 -->
+  <script>
+    // 1. 櫻花粒子背景引擎 (Sakura Petals Canvas)
+    (function initSakura() {
+      const canvas = document.getElementById("sakura-canvas");
+      const ctx = canvas.getContext("2d");
+      let w = canvas.width = window.innerWidth;
+      let h = canvas.height = window.innerHeight;
+
+      window.addEventListener("resize", () => {
+        w = canvas.width = window.innerWidth;
+        h = canvas.height = window.innerHeight;
+      });
+
+      const petals = [];
+      const TOTAL_PETALS = 40;
+
+      for (let i = 0; i < TOTAL_PETALS; i++) {
+        petals.push({
+          x: Math.random() * w,
+          y: Math.random() * h,
+          size: Math.random() * 8 + 6,
+          speedX: Math.random() * 1.5 - 0.2,
+          speedY: Math.random() * 1.2 + 0.8,
+          rotation: Math.random() * 360,
+          rotationSpeed: Math.random() * 2 - 1,
+          opacity: Math.random() * 0.5 + 0.3
+        });
+      }
+
+      function drawPetal(p) {
+        ctx.save();
+        ctx.translate(p.x, p.y);
+        ctx.rotate((p.rotation * Math.PI) / 180);
+        ctx.beginPath();
+        ctx.moveTo(0, 0);
+        ctx.bezierCurveTo(p.size / 2, -p.size / 2, p.size, 0, 0, p.size);
+        ctx.bezierCurveTo(-p.size, 0, -p.size / 2, -p.size / 2, 0, 0);
+        ctx.fillStyle = `rgba(244, 114, 182, ${p.opacity})`;
+        ctx.fill();
+        ctx.restore();
+      }
+
+      function animateSakura() {
+        ctx.clearRect(0, 0, w, h);
+        for (let p of petals) {
+          p.x += p.speedX;
+          p.y += p.speedY;
+          p.rotation += p.rotationSpeed;
+
+          if (p.y > h + 20) {
+            p.y = -20;
+            p.x = Math.random() * w;
+          }
+          if (p.x > w + 20) p.x = -20;
+          if (p.x < -20) p.x = w + 20;
+
+          drawPetal(p);
+        }
+        requestAnimationFrame(animateSakura);
+      }
+      animateSakura();
+    })();
+
+    // 2. 拔刀斬擊刀光粒子畫布 (Slash Effect Canvas)
+    (function initSlash() {
+      const canvas = document.getElementById("slash-canvas");
+      const ctx = canvas.getContext("2d");
+      let slashes = [];
+
+      function resize() {
+        if (!canvas) return;
+        canvas.width = canvas.parentElement.clientWidth;
+        canvas.height = canvas.parentElement.clientHeight;
+      }
+      window.addEventListener("resize", resize);
+      setTimeout(resize, 100);
+
+      window.renderSlashEffect = function(isCrit) {
+        if (!canvas) return;
+        const w = canvas.width;
+        const h = canvas.height;
+
+        // 刀光隨機斜角揮斬
+        const angle = -45 + (Math.random() * 30 - 15);
+        const startX = w * 0.2 + Math.random() * (w * 0.2);
+        const startY = h * 0.2 + Math.random() * (h * 0.2);
+        const length = w * (isCrit ? 0.75 : 0.55);
+
+        slashes.push({
+          x: startX,
+          y: startY,
+          length: length,
+          angle: angle * Math.PI / 180,
+          color: isCrit ? "#ef4444" : "#e0e7ff",
+          life: 1.0,
+          isCrit: isCrit
+        });
+      };
+
+      function animateSlash() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        for (let i = slashes.length - 1; i >= 0; i--) {
+          const s = slashes[i];
+          s.life -= 0.08;
+          if (s.life <= 0) {
+            slashes.splice(i, 1);
+            continue;
+          }
+
+          ctx.save();
+          ctx.translate(s.x, s.y);
+          ctx.rotate(s.angle);
+          ctx.beginPath();
+          ctx.moveTo(0, 0);
+          ctx.lineTo(s.length, 0);
+
+          ctx.lineWidth = s.isCrit ? (s.life * 12) : (s.life * 6);
+          ctx.strokeStyle = s.color;
+          ctx.shadowColor = s.color;
+          ctx.shadowBlur = s.isCrit ? 20 : 8;
+          ctx.lineCap = "round";
+          ctx.stroke();
+          ctx.restore();
+        }
+        requestAnimationFrame(animateSlash);
+      }
+      animateSlash();
+    })();
+
+    function toggleSound() {
+      const btn = document.getElementById("btn-toggle-sound");
+      if (window.samuraiAudio) {
+        const nextState = !window.samuraiAudio.enabled;
+        window.samuraiAudio.toggle(nextState);
+        btn.textContent = nextState ? "🔊 音效：開啟" : "🔇 音效：靜音";
+      }
+    }
+  </script>
+
+  <!-- 引入遊戲數據庫與引擎腳本 -->
+  <script src="data/swords.js"></script>
+  <script src="data/items.js"></script>
+  <script src="data/enemies.js"></script>
+  <script src="src/audio.js"></script>
+  <script src="src/game.js"></script>
+</body>
+</html>
