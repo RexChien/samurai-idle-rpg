@@ -1,0 +1,1176 @@
+// 《無雙劍心：武士之刃》遊戲核心邏輯引擎 (Samurai Blade Game Engine)
+
+class SamuraiGame {
+  constructor() {
+    this.SAVE_KEY = "SAMURAI_BLADE_RPG_SAVE_V1";
+    this.activeTab = "battle"; // battle, forge, dojo, inventory, codex, settings
+    this.audioEnabled = true;
+
+    // 戰鬥狀態暫存
+    this.combatTimer = null;
+    this.autoSaveTimer = null;
+    this.inBossFight = false;
+    this.bossTimeRemaining = 30;
+    this.bossMaxTime = 30;
+    this.comboCount = 0;
+    this.lastHitTime = 0;
+    this.zoneKillProgress = 0; // 0 to 10
+    this.activeBuffs = {
+      speed: 0,
+      atk: 0,
+      gold: 0
+    };
+
+    this.initDefaultState();
+  }
+
+  // 初始化預設存檔
+  initDefaultState() {
+    this.player = {
+      name: "無名浪人",
+      level: 1,
+      exp: 0,
+      gold: 100,
+      steel: 30,
+      meteorite: 0,
+      skillPoints: 0,
+
+      // 流派天賦 (Dojo Skills)
+      skills: {
+        shinkage: 0,  // 新陰流: +2% 暴擊率 / 級, +5% 暴擊傷害
+        jigen: 0,     // 示現流: +5% 基礎攻擊力 / 級, +3% 破甲
+        rishin: 0     // 天然理心流: +8% 最大氣血 / 級, +2% 傷害減免
+      },
+
+      // 裝備位
+      equipped: {
+        weapon: null,
+        head: null,
+        body: null,
+        acc: null
+      },
+
+      // 擁有名刀庫存
+      swordsInventory: [],
+      // 擁有防具庫存
+      armorsInventory: [],
+      // 道具庫存
+      items: {
+        mat_whetstone_rough: 3,
+        mat_whetstone_mid: 1,
+        mat_whetstone_fine: 0,
+        item_onigiri: 5,
+        item_hyourougan: 2,
+        item_sake_onigoroshi: 1,
+        item_matcha: 1
+      },
+
+      // 名刀圖鑑已解鎖 ID
+      codex: ["sword_01"],
+
+      // 統計數據
+      stats: {
+        totalKills: 0,
+        bossKills: 0,
+        swordsForged: 0,
+        highestZone: 1,
+        currentZone: 1
+      },
+
+      lastTimestamp: Date.now()
+    };
+
+    // 初始配發新手木刀與草帽
+    const starterSword = this.createSwordInstance("sword_01");
+    this.player.swordsInventory.push(starterSword);
+    this.player.equipped.weapon = starterSword;
+
+    const starterHelm = window.ITEMS_DATA.helmets[0];
+    const starterArmor = window.ITEMS_DATA.armors[0];
+    this.player.equipped.head = starterHelm;
+    this.player.equipped.body = starterArmor;
+
+    this.currentEnemy = null;
+    this.playerCurrentHp = 100;
+  }
+
+  // 創建名刀實例（包含強化等級與隨機詞條）
+  createSwordInstance(swordId, refine = 0) {
+    const base = window.SWORDS_DATA.find(s => s.id === swordId);
+    if (!base) return null;
+    return {
+      instanceId: "sw_" + Date.now() + "_" + Math.floor(Math.random() * 10000),
+      id: base.id,
+      name: base.name,
+      romaji: base.romaji,
+      tier: base.tier,
+      tierName: base.tierName,
+      color: base.color,
+      type: base.type,
+      smith: base.smith,
+      baseAtk: base.atk,
+      refine: refine, // 磨刀研磨等級
+      crit: base.crit,
+      critDmg: base.critDmg,
+      speed: base.speed,
+      passive: base.passive,
+      passiveDesc: base.passiveDesc,
+      lore: base.lore
+    };
+  }
+
+  // 計算玩家武士位階稱號
+  getRankTitle(level) {
+    if (level < 10) return "落魄浪人";
+    if (level < 25) return "足輕組頭";
+    if (level < 45) return "直參旗本";
+    if (level < 65) return "精銳劍士";
+    if (level < 85) return "當世劍豪";
+    if (level < 105) return "一代劍聖";
+    return "天下無雙・修羅";
+  }
+
+  // 計算升級所需經驗值
+  getRequiredExp(level) {
+    return Math.floor(60 * Math.pow(1.22, level - 1) + (level - 1) * 35);
+  }
+
+  // 計算角色全屬性（裝備 + 流派 + 增益）
+  getCalculatedStats() {
+    let baseHp = 150 + (this.player.level - 1) * 35;
+    let baseAtk = 20 + (this.player.level - 1) * 8;
+    let baseDef = 5 + (this.player.level - 1) * 3;
+    let crit = 5;
+    let critDmg = 140; // %
+    let speed = 1.0; // 攻速倍率
+    let armorPen = 0; // 破甲 %
+    let lifesteal = 0; // 吸血 %
+
+    // 武器屬性
+    const weapon = this.player.equipped.weapon;
+    if (weapon) {
+      const sharpenAtk = weapon.refine * 15;
+      baseAtk += (weapon.baseAtk + sharpenAtk);
+      crit += weapon.crit;
+      critDmg += (weapon.critDmg - 100);
+      speed *= weapon.speed;
+
+      // 武器專屬被動加成
+      if (weapon.id === "sword_04") baseAtk = Math.floor(baseAtk * 1.1); // 和泉守兼定 +10%
+      if (weapon.id === "sword_05") speed *= 1.1; // 加州清光
+      if (weapon.id === "sword_07") speed *= 1.15; // 堀川國廣
+      if (weapon.id === "sword_08") armorPen += 25; // 同田貫正國破甲
+      if (weapon.id === "sword_12") lifesteal += 15; // 千子村正吸血
+      if (weapon.id === "sword_20") lifesteal += 25; // 妙法村正吸血
+      if (weapon.id === "sword_21") armorPen += 100; // 十拳劍全穿透
+    }
+
+    // 防具屬性
+    const head = this.player.equipped.head;
+    if (head) {
+      baseHp += (head.hp || 0);
+      baseDef += (head.def || 0);
+      crit += (head.crit || 0);
+    }
+    const body = this.player.equipped.body;
+    if (body) {
+      baseHp += (body.hp || 0);
+      baseDef += (body.def || 0);
+    }
+    const acc = this.player.equipped.acc;
+    if (acc) {
+      baseHp += (acc.hp || 0);
+      baseAtk += (acc.atk || 0);
+      critDmg += (acc.critDmg || 0);
+    }
+
+    // 流派天賦加成
+    // 新陰流
+    crit += this.player.skills.shinkage * 2;
+    critDmg += this.player.skills.shinkage * 5;
+    // 示現流
+    baseAtk = Math.floor(baseAtk * (1 + this.player.skills.jigen * 0.05));
+    armorPen += this.player.skills.jigen * 3;
+    // 天然理心流
+    baseHp = Math.floor(baseHp * (1 + this.player.skills.rishin * 0.08));
+    baseDef += this.player.skills.rishin * 5;
+
+    // 料理/藥物 Buff
+    if (this.activeBuffs.atk > 0) baseAtk = Math.floor(baseAtk * 1.5);
+    if (this.activeBuffs.speed > 0) speed *= 1.35;
+
+    // 圖鑑收集羈絆加成
+    const codexCount = this.player.codex.length;
+    baseAtk += codexCount * 5;
+    baseHp += codexCount * 30;
+
+    return {
+      maxHp: baseHp,
+      atk: baseAtk,
+      def: baseDef,
+      crit: Math.min(85, crit),
+      critDmg: critDmg,
+      speed: Math.max(0.6, Math.min(2.5, speed)),
+      armorPen: Math.min(90, armorPen),
+      lifesteal: lifesteal
+    };
+  }
+
+  // 生成下一位敵人
+  spawnEnemy(forceBoss = false) {
+    const zone = window.ZONES_DATA.find(z => z.id === this.player.stats.currentZone) || window.ZONES_DATA[0];
+
+    if (forceBoss || (this.inBossFight)) {
+      this.inBossFight = true;
+      this.bossTimeRemaining = this.bossMaxTime;
+      const b = zone.boss;
+      this.currentEnemy = {
+        name: b.name,
+        title: b.title,
+        maxHp: b.hp,
+        hp: b.hp,
+        atk: b.atk,
+        def: b.def,
+        exp: b.exp,
+        gold: b.gold,
+        steel: b.steel,
+        isBoss: true,
+        dropSword: b.dropSword,
+        dropItem: b.dropItem
+      };
+      if (window.samuraiAudio) window.samuraiAudio.playBossBoom();
+      this.addCombatLog(`<span style="color:#ef4444;font-weight:bold;">【強敵來襲】${b.title} ${b.name} 現身！限時 ${this.bossMaxTime} 秒！</span>`);
+    } else {
+      this.inBossFight = false;
+      const tpl = zone.enemies[Math.floor(Math.random() * zone.enemies.length)];
+      // 隨機浮動 10%
+      const variance = 0.9 + Math.random() * 0.2;
+      const hp = Math.floor(tpl.hp * variance);
+      this.currentEnemy = {
+        name: tpl.name,
+        title: tpl.title,
+        maxHp: hp,
+        hp: hp,
+        atk: Math.floor(tpl.atk * variance),
+        def: tpl.def,
+        exp: tpl.exp,
+        gold: tpl.gold,
+        steel: tpl.steel,
+        isBoss: false
+      };
+    }
+
+    this.updateBattleUI();
+  }
+
+  // 玩家普通揮刀／點擊斬擊
+  attack(isManual = false) {
+    if (!this.currentEnemy || this.currentEnemy.hp <= 0) return;
+
+    const stats = this.getCalculatedStats();
+
+    // 判斷暴擊
+    const isCrit = Math.random() * 100 < stats.crit;
+    let damage = stats.atk;
+
+    // 防禦減免與破甲計算
+    const effectiveDef = Math.max(0, this.currentEnemy.def * (1 - stats.armorPen / 100));
+    damage = Math.max(1, damage - effectiveDef * 0.5);
+
+    if (isCrit) {
+      damage = Math.floor(damage * (stats.critDmg / 100));
+    } else {
+      // 輕微傷害浮動 ±10%
+      damage = Math.floor(damage * (0.92 + Math.random() * 0.16));
+    }
+
+    // 扣除敵人氣血
+    this.currentEnemy.hp = Math.max(0, this.currentEnemy.hp - damage);
+
+    // 吸血效果
+    if (stats.lifesteal > 0) {
+      const heal = Math.floor(damage * (stats.lifesteal / 100));
+      this.playerCurrentHp = Math.min(stats.maxHp, this.playerCurrentHp + heal);
+    }
+
+    // 連擊計數
+    const now = Date.now();
+    if (now - this.lastHitTime < 2500) {
+      this.comboCount++;
+    } else {
+      this.comboCount = 1;
+    }
+    this.lastHitTime = now;
+
+    // 音效
+    if (window.samuraiAudio) {
+      if (isCrit) {
+        window.samuraiAudio.playCrit();
+      } else {
+        window.samuraiAudio.playSlash();
+      }
+    }
+
+    // 觸發視覺特效（刀光粒子與飄字）
+    if (window.renderSlashEffect) {
+      window.renderSlashEffect(isCrit);
+    }
+    this.showDamagePopup(damage, isCrit);
+
+    // 戰鬥記錄
+    const weaponName = this.player.equipped.weapon ? this.player.equipped.weapon.name : "拳腳";
+    if (isCrit) {
+      this.addCombatLog(`💥 刀芒如電！出刀【${weaponName}】會心一閃，重創「${this.currentEnemy.name}」造成 <b style="color:#ef4444">${damage}</b> 點巨額破甲傷害！`);
+    } else if (isManual) {
+      this.addCombatLog(`⚡ 玩家疾風拔刀！【${weaponName}】斬中「${this.currentEnemy.name}」造成 ${damage} 點傷害！`);
+    }
+
+    // 檢查敵人是否被擊破
+    if (this.currentEnemy.hp <= 0) {
+      this.handleEnemyDefeated();
+    }
+
+    this.updateBattleUI();
+  }
+
+  // 敵人反擊玩家
+  enemyAttack() {
+    if (!this.currentEnemy || this.currentEnemy.hp <= 0) return;
+
+    const stats = this.getCalculatedStats();
+    let enemyDmg = this.currentEnemy.atk;
+
+    // 玩家防禦減傷公式
+    const defReduction = stats.def / (stats.def + 300);
+    enemyDmg = Math.max(1, Math.floor(enemyDmg * (1 - defReduction)));
+
+    this.playerCurrentHp = Math.max(0, this.playerCurrentHp - enemyDmg);
+
+    if (Math.random() < 0.2 && window.samuraiAudio) {
+      window.samuraiAudio.playClash();
+    }
+
+    if (this.playerCurrentHp <= 0) {
+      this.handlePlayerDefeated();
+    }
+
+    this.updateBattleUI();
+  }
+
+  // 擊破敵人結算
+  handleEnemyDefeated() {
+    const e = this.currentEnemy;
+    this.player.stats.totalKills++;
+
+    // 收益加成
+    let goldGain = e.gold;
+    let expGain = e.exp;
+    let steelGain = e.steel;
+
+    if (this.activeBuffs.gold > 0) goldGain *= 2;
+    if (this.player.equipped.weapon && this.player.equipped.weapon.id === "sword_06") {
+      goldGain = Math.floor(goldGain * 1.15); // 陸奧守吉行加成
+    }
+
+    this.player.gold += goldGain;
+    this.player.steel += steelGain;
+    this.gainExp(expGain);
+
+    this.addCombatLog(`⚔️ 成功斬殺「${e.title} ${e.name}」！獲得 <b>${goldGain} 金小判</b>、<b>${steelGain} 玉鋼</b>、<b>${expGain} 經驗</b>！`);
+
+    // 首領擊破
+    if (e.isBoss) {
+      this.player.stats.bossKills++;
+      this.inBossFight = false;
+      this.zoneKillProgress = 0;
+
+      // 首領掉落專屬名刀
+      if (e.dropSword) {
+        this.acquireSword(e.dropSword, "首領戰利品");
+      }
+      if (e.dropItem) {
+        this.acquireItem(e.dropItem, 1);
+      }
+
+      // 如果當前關卡是最高關卡，解鎖下一關
+      if (this.player.stats.currentZone === this.player.stats.highestZone && this.player.stats.highestZone < 7) {
+        this.player.stats.highestZone++;
+        this.player.stats.currentZone++;
+        this.addCombatLog(`<span style="color:#f59e0b;font-weight:bold;">🏆 突破當前疆界！已解鎖新戰役關卡：第 ${this.player.stats.currentZone} 幕！</span>`);
+      }
+
+      if (window.samuraiAudio) window.samuraiAudio.playLevelUp();
+    } else {
+      // 普通怪進度增加
+      if (this.zoneKillProgress < 10) {
+        this.zoneKillProgress++;
+      }
+
+      // 一般怪物掉落判定 (15% 磨刀石或飯糰)
+      const dropRoll = Math.random();
+      if (dropRoll < 0.08) {
+        this.acquireItem("mat_whetstone_rough", 1);
+        this.addCombatLog(`🎁 搜獲戰利品：獲得【荒砥石】x1`);
+      } else if (dropRoll < 0.16) {
+        this.acquireItem("item_onigiri", 1);
+        this.addCombatLog(`🍙 拾得乾糧：獲得【梅干飯糰】x1`);
+      } else if (dropRoll < 0.19) {
+        this.acquireItem("mat_whetstone_mid", 1);
+        this.addCombatLog(`🎁 搜獲戰利品：獲得【中砥石】x1`);
+      }
+    }
+
+    // 自動生成下一位敵人
+    setTimeout(() => {
+      this.spawnEnemy();
+    }, 600);
+  }
+
+  // 玩家戰敗處理
+  handlePlayerDefeated() {
+    this.addCombatLog(`<span style="color:#ef4444;font-weight:bold;">⚠️ 氣力耗盡！你暫時退回道場調養生息，氣血已完全恢復。</span>`);
+    const stats = this.getCalculatedStats();
+    this.playerCurrentHp = stats.maxHp;
+    this.inBossFight = false;
+    this.comboCount = 0;
+    setTimeout(() => {
+      this.spawnEnemy();
+    }, 1200);
+  }
+
+  // 獲得經驗與升級
+  gainExp(amount) {
+    this.player.exp += amount;
+    let req = this.getRequiredExp(this.player.level);
+    while (this.player.exp >= req) {
+      this.player.exp -= req;
+      this.player.level++;
+      this.player.skillPoints += 2;
+      const stats = this.getCalculatedStats();
+      this.playerCurrentHp = stats.maxHp; // 升級回滿血
+
+      this.addCombatLog(`<span style="color:#eab308;font-size:1.1em;font-weight:bold;">⛩️ 頓悟突破！境界提升至等級 ${this.player.level}（${this.getRankTitle(this.player.level)}）！獲得 2 點天賦點！</span>`);
+      if (window.samuraiAudio) window.samuraiAudio.playLevelUp();
+      req = this.getRequiredExp(this.player.level);
+    }
+    this.updateCharacterUI();
+  }
+
+  // 獲得新名刀
+  acquireSword(swordId, source = "鍛造獲得") {
+    const instance = this.createSwordInstance(swordId);
+    if (!instance) return;
+
+    this.player.swordsInventory.push(instance);
+
+    // 加入圖鑑
+    if (!this.player.codex.includes(swordId)) {
+      this.player.codex.push(swordId);
+      this.addCombatLog(`<span style="color:#38bdf8;font-weight:bold;">📖 【名刀鑑賞錄】收錄新名刀：【${instance.tierName}】${instance.name}！全屬性永久提昇！</span>`);
+    }
+
+    this.addCombatLog(`<span style="color:${instance.color};font-weight:bold;">🗡️ ${source}：獲得名刀【${instance.tierName}】${instance.name}（${instance.type}・${instance.smith}）！</span>`);
+    return instance;
+  }
+
+  // 獲得道具
+  acquireItem(itemId, qty = 1) {
+    if (!this.player.items[itemId]) {
+      this.player.items[itemId] = 0;
+    }
+    this.player.items[itemId] += qty;
+    this.updateInventoryUI();
+  }
+
+  // 使用消耗品
+  useItem(itemId) {
+    if (!this.player.items[itemId] || this.player.items[itemId] <= 0) return;
+
+    const consumable = window.ITEMS_DATA.consumables.find(c => c.id === itemId);
+    if (!consumable) return;
+
+    this.player.items[itemId]--;
+    const stats = this.getCalculatedStats();
+
+    if (consumable.type === "heal") {
+      const healAmount = Math.floor(stats.maxHp * (consumable.healPercent / 100));
+      this.playerCurrentHp = Math.min(stats.maxHp, this.playerCurrentHp + healAmount);
+      this.addCombatLog(`🍙 食用了【${consumable.name}】，瞬間回復了 ${healAmount} 點氣血！`);
+    } else if (consumable.type === "buff_speed") {
+      this.activeBuffs.speed = consumable.duration;
+      this.addCombatLog(`💊 服下了【${consumable.name}】，出刀神速提升 35%（持續 ${consumable.duration} 秒）！`);
+    } else if (consumable.type === "buff_berserk") {
+      this.activeBuffs.atk = consumable.duration;
+      this.addCombatLog(`🍶 豪飲【${consumable.name}】，狂暴殺氣提升 50% 攻擊力（持續 ${consumable.duration} 秒）！`);
+    } else if (consumable.type === "buff_gold") {
+      this.activeBuffs.gold = consumable.duration;
+      this.addCombatLog(`🍵 品味【${consumable.name}】，擊敵收穫金小判翻倍（持續 ${consumable.duration} 秒）！`);
+    }
+
+    if (window.samuraiAudio) window.samuraiAudio.playSharpen();
+    this.updateInventoryUI();
+    this.updateBattleUI();
+  }
+
+  // 磨刀石研磨強化
+  sharpenWeapon(whetstoneId) {
+    const weapon = this.player.equipped.weapon;
+    if (!weapon) {
+      alert("請先配備名刀！");
+      return;
+    }
+    if (!this.player.items[whetstoneId] || this.player.items[whetstoneId] <= 0) {
+      alert("磨刀石不足！");
+      return;
+    }
+
+    this.player.items[whetstoneId]--;
+    weapon.refine = (weapon.refine || 0) + 1;
+    this.player.gold += 0; // 磨刀微量花費或免費
+
+    if (window.samuraiAudio) window.samuraiAudio.playSharpen();
+    this.addCombatLog(`✨ 使用砥石細心研磨！佩刀【${weapon.name}】磨礪至 +${weapon.refine}！鋒利度大幅提昇！`);
+
+    this.updateForgeUI();
+    this.updateCharacterUI();
+    this.updateInventoryUI();
+  }
+
+  // 鍛造新名刀 (Blacksmith Gacha)
+  forgeSword(type = "standard") {
+    let costSteel = (type === "master") ? 80 : 25;
+    let costGold = (type === "master") ? 500 : 100;
+
+    if (this.player.steel < costSteel || this.player.gold < costGold) {
+      alert(`鍛造資源不足！需要 ${costSteel} 玉鋼與 ${costGold} 金小判。`);
+      return;
+    }
+
+    this.player.steel -= costSteel;
+    this.player.gold -= costGold;
+    this.player.stats.swordsForged++;
+
+    if (window.samuraiAudio) window.samuraiAudio.playHammer();
+
+    // 抽卡機率計算
+    const roll = Math.random() * 100;
+    let targetTier = 1;
+
+    if (type === "master") {
+      // 名匠大鍛：保底良業物(3)，高機率大業物(4)，有機會最上大業物(5)甚至神具(6)
+      if (roll < 3) targetTier = 6;      // 3% 妖刀・神具
+      else if (roll < 20) targetTier = 5; // 17% 最上大業物 (天下五劍)
+      else if (roll < 55) targetTier = 4; // 35% 大業物
+      else targetTier = 3;               // 45% 良業物
+    } else {
+      // 標準踏鞴鍛造
+      if (roll < 2) targetTier = 5;      // 2% 最上大業物
+      else if (roll < 12) targetTier = 4; // 10% 大業物
+      else if (roll < 35) targetTier = 3; // 23% 良業物
+      else if (roll < 70) targetTier = 2; // 35% 業物
+      else targetTier = 1;               // 30% 凡鐵
+    }
+
+    const candidateSwords = window.SWORDS_DATA.filter(s => s.tier === targetTier);
+    const chosen = candidateSwords[Math.floor(Math.random() * candidateSwords.length)];
+
+    const sword = this.acquireSword(chosen.id, (type === "master" ? "🔥【名匠淬火秘鍛】" : "⚒️【傳統踏鞴鍛打】"));
+
+    // 彈出鍛造獲得提示動畫
+    this.showForgeResultModal(sword);
+    this.updateForgeUI();
+    this.updateCharacterUI();
+  }
+
+  // 熔煉分解多餘刀刃換取玉鋼
+  smeltSword(instanceId) {
+    const idx = this.player.swordsInventory.findIndex(s => s.instanceId === instanceId);
+    if (idx === -1) return;
+
+    const sword = this.player.swordsInventory[idx];
+    if (this.player.equipped.weapon && this.player.equipped.weapon.instanceId === instanceId) {
+      alert("無法熔煉當前裝備中的佩刀！請先更換其他刀刃。");
+      return;
+    }
+
+    // 依品階返還玉鋼與金小判
+    const steelRefund = sword.tier * 15 + (sword.refine || 0) * 8;
+    const goldRefund = sword.tier * 40;
+
+    this.player.swordsInventory.splice(idx, 1);
+    this.player.steel += steelRefund;
+    this.player.gold += goldRefund;
+
+    if (window.samuraiAudio) window.samuraiAudio.playHammer();
+    this.addCombatLog(`🔥 投入熔爐！將【${sword.tierName}】${sword.name} 分解回融，獲得 ${steelRefund} 玉鋼、${goldRefund} 金小判！`);
+
+    this.updateForgeUI();
+    this.updateInventoryUI();
+  }
+
+  // 裝備刀劍
+  equipSword(instanceId) {
+    const sword = this.player.swordsInventory.find(s => s.instanceId === instanceId);
+    if (!sword) return;
+    this.player.equipped.weapon = sword;
+    if (window.samuraiAudio) window.samuraiAudio.playSharpen();
+    this.addCombatLog(`🗡️ 更換佩刀！拔出名刀【${sword.name}】，殺氣大盛！`);
+    this.updateCharacterUI();
+    this.updateInventoryUI();
+    this.updateBattleUI();
+  }
+
+  // 流派升級加點
+  investSkill(skillName) {
+    if (this.player.skillPoints <= 0) {
+      alert("天賦點數不足！請通過歷練提升角色等級獲取點數。");
+      return;
+    }
+    this.player.skillPoints--;
+    this.player.skills[skillName] = (this.player.skills[skillName] || 0) + 1;
+    if (window.samuraiAudio) window.samuraiAudio.playLevelUp();
+    this.updateDojoUI();
+    this.updateCharacterUI();
+  }
+
+  // 重置流派天賦
+  resetSkills() {
+    const totalSpent = this.player.skills.shinkage + this.player.skills.jigen + this.player.skills.rishin;
+    if (totalSpent === 0) return;
+    if (confirm("是否花費 100 金小判洗鍊重置所有流派天賦點？")) {
+      if (this.player.gold < 100) {
+        alert("金小判不足 100！");
+        return;
+      }
+      this.player.gold -= 100;
+      this.player.skillPoints += totalSpent;
+      this.player.skills.shinkage = 0;
+      this.player.skills.jigen = 0;
+      this.player.skills.rishin = 0;
+      this.updateDojoUI();
+      this.updateCharacterUI();
+    }
+  }
+
+  // 切換戰役關卡
+  changeZone(zoneId) {
+    if (zoneId > this.player.stats.highestZone) {
+      alert("該戰役區域尚未解鎖！請先擊破前一區域的守關頭目。");
+      return;
+    }
+    this.player.stats.currentZone = zoneId;
+    this.inBossFight = false;
+    this.zoneKillProgress = 0;
+    this.spawnEnemy();
+    this.updateBattleUI();
+  }
+
+  // 手動挑戰首領
+  challengeBoss() {
+    if (this.inBossFight) return;
+    this.spawnEnemy(true);
+  }
+
+  // 戰鬥計時器 Tick
+  startCombatLoop() {
+    if (this.combatTimer) clearInterval(this.combatTimer);
+
+    let tickAccumulator = 0;
+
+    this.combatTimer = setInterval(() => {
+      tickAccumulator += 0.2; // 每 200ms 一次 tick
+
+      // 倒數增益效果時間
+      if (this.activeBuffs.speed > 0) this.activeBuffs.speed = Math.max(0, this.activeBuffs.speed - 0.2);
+      if (this.activeBuffs.atk > 0) this.activeBuffs.atk = Math.max(0, this.activeBuffs.atk - 0.2);
+      if (this.activeBuffs.gold > 0) this.activeBuffs.gold = Math.max(0, this.activeBuffs.gold - 0.2);
+
+      // BOSS 狂暴倒數
+      if (this.inBossFight) {
+        this.bossTimeRemaining = Math.max(0, this.bossTimeRemaining - 0.2);
+        if (this.bossTimeRemaining <= 0) {
+          this.addCombatLog(`<span style="color:#ef4444;font-weight:bold;">⏳ 首領狂暴！時限已過，挑戰失敗！</span>`);
+          this.inBossFight = false;
+          this.spawnEnemy();
+        }
+      }
+
+      // 自動出刀攻擊頻率計算
+      const stats = this.getCalculatedStats();
+      const attackInterval = 1.0 / stats.speed; // 秒
+
+      if (tickAccumulator >= attackInterval) {
+        tickAccumulator = 0;
+        this.attack(false); // 自動揮刀
+
+        // 敵人反擊頻率（普通怪每 2.5 秒反擊一次，BOSS 每 1.8 秒）
+        if (Math.random() < (this.inBossFight ? 0.35 : 0.22)) {
+          this.enemyAttack();
+        }
+      }
+
+      // 自動自然氣血回調
+      if (this.playerCurrentHp < stats.maxHp) {
+        this.playerCurrentHp = Math.min(stats.maxHp, this.playerCurrentHp + Math.max(1, Math.floor(stats.maxHp * 0.005)));
+        this.updateBattleUI();
+      }
+    }, 200);
+  }
+
+  // 離線收益結算 (Offline Progression)
+  checkOfflineGains() {
+    const now = Date.now();
+    const last = this.player.lastTimestamp || now;
+    const diffSec = Math.floor((now - last) / 1000);
+
+    // 如果離線超過 30 秒
+    if (diffSec >= 30) {
+      // 最長結算 12 小時 (43200 秒)
+      const effectiveSec = Math.min(43200, diffSec);
+      const zone = window.ZONES_DATA.find(z => z.id === this.player.stats.currentZone) || window.ZONES_DATA[0];
+      const stats = this.getCalculatedStats();
+
+      // 平均擊敵耗時（秒）
+      const avgKillTime = Math.max(2.5, 6.0 / stats.speed);
+      const estimatedKills = Math.floor(effectiveSec / avgKillTime);
+
+      const tpl = zone.enemies[0];
+      const expGain = Math.floor(estimatedKills * tpl.exp * 0.65);
+      const goldGain = Math.floor(estimatedKills * tpl.gold * 0.65);
+      const steelGain = Math.floor(estimatedKills * tpl.steel * 0.5);
+
+      this.player.gold += goldGain;
+      this.player.steel += steelGain;
+      this.player.stats.totalKills += estimatedKills;
+      this.gainExp(expGain);
+
+      // 彈出離線結算卷軸
+      this.showOfflineModal(effectiveSec, estimatedKills, goldGain, steelGain, expGain);
+    }
+
+    this.player.lastTimestamp = now;
+  }
+
+  // 戰鬥記錄追加
+  addCombatLog(msg) {
+    const box = document.getElementById("combat-log-container");
+    if (!box) return;
+    const timeStr = new Date().toTimeString().split(" ")[0];
+    const line = document.createElement("div");
+    line.className = "log-line";
+    line.innerHTML = `<span class="log-time">[${timeStr}]</span> ${msg}`;
+    box.appendChild(line);
+
+    // 最多保留 40 條日誌
+    while (box.children.length > 40) {
+      box.removeChild(box.firstChild);
+    }
+    box.scrollTop = box.scrollHeight;
+  }
+
+  // 飄字傷害浮動動畫
+  showDamagePopup(dmg, isCrit) {
+    const arena = document.getElementById("battle-stage-arena");
+    if (!arena) return;
+
+    const popup = document.createElement("div");
+    popup.className = `dmg-popup ${isCrit ? "crit-hit" : "normal-hit"}`;
+    popup.textContent = (isCrit ? "會心！ " : "") + `-${dmg}`;
+
+    // 隨機在敵人身周位置
+    const randomX = 45 + (Math.random() * 20 - 10);
+    const randomY = 40 + (Math.random() * 15 - 7);
+    popup.style.left = `${randomX}%`;
+    popup.style.top = `${randomY}%`;
+
+    arena.appendChild(popup);
+    setTimeout(() => {
+      popup.remove();
+    }, 900);
+  }
+
+  // 彈出鍛造獲得名刀 Modal
+  showForgeResultModal(sword) {
+    const modal = document.getElementById("forge-result-modal");
+    if (!modal) return;
+    document.getElementById("modal-sword-name").textContent = sword.name;
+    document.getElementById("modal-sword-name").style.color = sword.color;
+    document.getElementById("modal-sword-tier").textContent = `【${sword.tierName}】${sword.type}`;
+    document.getElementById("modal-sword-tier").style.color = sword.color;
+    document.getElementById("modal-sword-smith").textContent = `名匠：${sword.smith}`;
+    document.getElementById("modal-sword-atk").textContent = `基礎攻擊：+${sword.baseAtk}`;
+    document.getElementById("modal-sword-crit").textContent = `會心率：+${sword.crit}%`;
+    document.getElementById("modal-sword-passive").textContent = sword.passive;
+    document.getElementById("modal-sword-lore").textContent = sword.lore;
+
+    modal.classList.add("active");
+  }
+
+  // 離線歷練收益 Modal
+  showOfflineModal(sec, kills, gold, steel, exp) {
+    const modal = document.getElementById("offline-modal");
+    if (!modal) return;
+    const mins = Math.floor(sec / 60);
+    const hours = (mins / 60).toFixed(1);
+    document.getElementById("offline-time").textContent = `${mins} 分鐘 (${hours} 小時)`;
+    document.getElementById("offline-kills").textContent = kills;
+    document.getElementById("offline-gold").textContent = gold;
+    document.getElementById("offline-steel").textContent = steel;
+    document.getElementById("offline-exp").textContent = exp;
+
+    modal.classList.add("active");
+  }
+
+  // 存檔與讀檔
+  save() {
+    this.player.lastTimestamp = Date.now();
+    try {
+      localStorage.setItem(this.SAVE_KEY, JSON.stringify(this.player));
+      return true;
+    } catch (e) {
+      console.error("Save failed:", e);
+      return false;
+    }
+  }
+
+  load() {
+    try {
+      const data = localStorage.getItem(this.SAVE_KEY);
+      if (data) {
+        const parsed = JSON.parse(data);
+        this.player = Object.assign(this.player, parsed);
+        return true;
+      }
+    } catch (e) {
+      console.error("Load failed:", e);
+    }
+    return false;
+  }
+
+  exportSave() {
+    this.save();
+    const jsonStr = btoa(encodeURIComponent(JSON.stringify(this.player)));
+    navigator.clipboard.writeText(jsonStr).then(() => {
+      alert("✅ 存檔代碼已成功複製至剪貼簿！可妥善保管。");
+    }).catch(() => {
+      prompt("請手動複製存檔代碼：", jsonStr);
+    });
+  }
+
+  importSave() {
+    const input = prompt("請貼上存檔代碼：");
+    if (!input) return;
+    try {
+      const jsonStr = decodeURIComponent(atob(input.trim()));
+      const parsed = JSON.parse(jsonStr);
+      if (parsed && parsed.level) {
+        this.player = parsed;
+        this.save();
+        alert("✅ 存檔匯入成功！即將重新載入遊戲。");
+        window.location.reload();
+      } else {
+        alert("❌ 存檔格式不正確！");
+      }
+    } catch (e) {
+      alert("❌ 存檔代碼無效，解析失敗！");
+    }
+  }
+
+  resetGame() {
+    if (confirm("⚠️ 警告：確定要重置所有遊戲進度嗎？所有刀劍、修為與玉鋼將重歸虛無！")) {
+      if (confirm("最後確認：真的要重新開始修行？")) {
+        localStorage.removeItem(this.SAVE_KEY);
+        window.location.reload();
+      }
+    }
+  }
+
+  // 切換分頁 UI
+  switchTab(tabName) {
+    this.activeTab = tabName;
+    document.querySelectorAll(".tab-btn").forEach(btn => {
+      btn.classList.toggle("active", btn.dataset.tab === tabName);
+    });
+    document.querySelectorAll(".tab-pane").forEach(pane => {
+      pane.classList.toggle("active", pane.id === `tab-${tabName}`);
+    });
+
+    if (tabName === "forge") this.updateForgeUI();
+    if (tabName === "dojo") this.updateDojoUI();
+    if (tabName === "inventory") this.updateInventoryUI();
+    if (tabName === "codex") this.updateCodexUI();
+  }
+
+  // UI 渲染更新整合
+  updateCharacterUI() {
+    const stats = this.getCalculatedStats();
+    document.getElementById("player-name").textContent = this.player.name;
+    document.getElementById("player-title").textContent = this.getRankTitle(this.player.level);
+    document.getElementById("player-level").textContent = `Lv.${this.player.level}`;
+
+    const reqExp = this.getRequiredExp(this.player.level);
+    const expPercent = Math.min(100, Math.floor((this.player.exp / reqExp) * 100));
+    document.getElementById("player-exp-bar").style.width = `${expPercent}%`;
+    document.getElementById("player-exp-text").textContent = `${this.player.exp} / ${reqExp} (${expPercent}%)`;
+
+    // 資源
+    document.getElementById("res-gold").textContent = this.player.gold.toLocaleString();
+    document.getElementById("res-steel").textContent = this.player.steel.toLocaleString();
+
+    // 戰鬥屬性面板
+    document.getElementById("stat-atk").textContent = stats.atk.toLocaleString();
+    document.getElementById("stat-def").textContent = stats.def.toLocaleString();
+    document.getElementById("stat-crit").textContent = `${stats.crit}%`;
+    document.getElementById("stat-critdmg").textContent = `${stats.critDmg}%`;
+    document.getElementById("stat-speed").textContent = `${stats.speed.toFixed(2)} 次/秒`;
+    document.getElementById("stat-pen").textContent = `${stats.armorPen}%`;
+
+    // 武器展示
+    const weapon = this.player.equipped.weapon;
+    const weaponEl = document.getElementById("equip-weapon-display");
+    if (weapon) {
+      weaponEl.innerHTML = `
+        <div class="equip-card" style="border-color:${weapon.color}">
+          <span class="equip-tier" style="background:${weapon.color}">${weapon.tierName}</span>
+          <div class="equip-name" style="color:${weapon.color}">
+            ${weapon.name} ${weapon.refine > 0 ? `+${weapon.refine}` : ""}
+          </div>
+          <div class="equip-sub">${weapon.type}・${weapon.smith}</div>
+          <div class="equip-stat">攻 +${weapon.baseAtk + (weapon.refine * 15)} | 會心 +${weapon.crit}%</div>
+          <div class="equip-passive">${weapon.passive}</div>
+        </div>
+      `;
+    }
+  }
+
+  updateBattleUI() {
+    const stats = this.getCalculatedStats();
+
+    // 玩家氣血條
+    const hpPercent = Math.max(0, Math.min(100, Math.floor((this.playerCurrentHp / stats.maxHp) * 100)));
+    const playerBar = document.getElementById("player-hp-bar");
+    if (playerBar) {
+      playerBar.style.width = `${hpPercent}%`;
+      document.getElementById("player-hp-text").textContent = `${this.playerCurrentHp} / ${stats.maxHp}`;
+    }
+
+    // 敵人氣血條與資訊
+    if (this.currentEnemy) {
+      const e = this.currentEnemy;
+      document.getElementById("enemy-name").textContent = e.name;
+      document.getElementById("enemy-title").textContent = e.title;
+      const enemyHpPercent = Math.max(0, Math.min(100, Math.floor((e.hp / e.maxHp) * 100)));
+      document.getElementById("enemy-hp-bar").style.width = `${enemyHpPercent}%`;
+      document.getElementById("enemy-hp-text").textContent = `${e.hp} / ${e.maxHp}`;
+
+      // 首領倒數時鐘
+      const bossClock = document.getElementById("boss-timer-box");
+      if (this.inBossFight) {
+        bossClock.style.display = "block";
+        document.getElementById("boss-timer-num").textContent = Math.ceil(this.bossTimeRemaining);
+        document.getElementById("boss-timer-fill").style.width = `${(this.bossTimeRemaining / this.bossMaxTime) * 100}%`;
+      } else {
+        bossClock.style.display = "none";
+      }
+
+      // 首領按鈕狀態
+      const challengeBtn = document.getElementById("btn-challenge-boss");
+      if (challengeBtn) {
+        challengeBtn.disabled = this.inBossFight;
+        if (this.inBossFight) {
+          challengeBtn.textContent = "⚔️ 首領決戰激鬥中...";
+        } else if (this.zoneKillProgress >= 10) {
+          challengeBtn.textContent = "⚡ 首領挑戰已解鎖！點擊拔刀！";
+          challengeBtn.classList.add("pulse-glow");
+        } else {
+          challengeBtn.textContent = `討伐小怪召喚首領 (${this.zoneKillProgress}/10)`;
+          challengeBtn.classList.remove("pulse-glow");
+        }
+      }
+    }
+
+    // 當前戰役地圖名稱
+    const zone = window.ZONES_DATA.find(z => z.id === this.player.stats.currentZone) || window.ZONES_DATA[0];
+    document.getElementById("current-zone-name").textContent = `第 ${zone.id} 幕・${zone.name}`;
+    document.getElementById("current-zone-sub").textContent = zone.subtitle;
+
+    // 連擊計數
+    const comboEl = document.getElementById("combo-counter");
+    if (comboEl) {
+      if (this.comboCount > 1) {
+        comboEl.style.display = "block";
+        comboEl.textContent = `${this.comboCount} 連斬！`;
+      } else {
+        comboEl.style.display = "none";
+      }
+    }
+  }
+
+  updateForgeUI() {
+    document.getElementById("forge-steel").textContent = this.player.steel.toLocaleString();
+    document.getElementById("forge-gold").textContent = this.player.gold.toLocaleString();
+
+    // 磨刀石庫存
+    document.getElementById("count-whetstone-rough").textContent = this.player.items.mat_whetstone_rough || 0;
+    document.getElementById("count-whetstone-mid").textContent = this.player.items.mat_whetstone_mid || 0;
+    document.getElementById("count-whetstone-fine").textContent = this.player.items.mat_whetstone_fine || 0;
+
+    // 當前武器磨刀預覽
+    const weapon = this.player.equipped.weapon;
+    const sharpenBox = document.getElementById("sharpen-weapon-target");
+    if (weapon) {
+      sharpenBox.innerHTML = `
+        <div style="color:${weapon.color};font-weight:bold;font-size:1.15em;">
+          【${weapon.tierName}】${weapon.name} ${weapon.refine > 0 ? `+${weapon.refine}` : ""}
+        </div>
+        <div style="font-size:0.9em;color:#a8a29e;margin-top:4px;">
+          當前攻擊力：+${weapon.baseAtk + weapon.refine * 15}
+          <span style="color:#4ade80;">➡️ 研磨後：+${weapon.baseAtk + (weapon.refine + 1) * 15} (+15)</span>
+        </div>
+      `;
+    }
+
+    // 熔煉列表渲染（可分解之名刀）
+    const smeltList = document.getElementById("smelt-swords-list");
+    if (smeltList) {
+      const redundantSwords = this.player.swordsInventory.filter(s =>
+        !this.player.equipped.weapon || s.instanceId !== this.player.equipped.weapon.instanceId
+      );
+
+      if (redundantSwords.length === 0) {
+        smeltList.innerHTML = `<div class="empty-hint">暫無可熔煉之多餘名刀</div>`;
+      } else {
+        smeltList.innerHTML = redundantSwords.map(s => `
+          <div class="smelt-card">
+            <div>
+              <span style="color:${s.color};font-weight:bold;">【${s.tierName}】${s.name} ${s.refine > 0 ? `+${s.refine}` : ""}</span>
+              <span style="font-size:0.85em;color:#78716c;margin-left:8px;">${s.type}</span>
+            </div>
+            <button class="btn-smelt" onclick="window.game.smeltSword('${s.instanceId}')">
+              熔煉 (+${s.tier * 15} 玉鋼)
+            </button>
+          </div>
+        `).join("");
+      }
+    }
+  }
+
+  updateDojoUI() {
+    document.getElementById("dojo-skill-points").textContent = this.player.skillPoints;
+    document.getElementById("skill-shinkage-level").textContent = `Lv.${this.player.skills.shinkage}`;
+    document.getElementById("skill-jigen-level").textContent = `Lv.${this.player.skills.jigen}`;
+    document.getElementById("skill-rishin-level").textContent = `Lv.${this.player.skills.rishin}`;
+  }
+
+  updateInventoryUI() {
+    // 渲染背包內名刀列表
+    const swordsGrid = document.getElementById("inventory-swords-grid");
+    if (swordsGrid) {
+      swordsGrid.innerHTML = this.player.swordsInventory.map(s => {
+        const isEquipped = this.player.equipped.weapon && this.player.equipped.weapon.instanceId === s.instanceId;
+        return `
+          <div class="inv-item-card ${isEquipped ? 'equipped' : ''}" style="border-left: 4px solid ${s.color}">
+            <div style="display:flex;justify-content:space-between;align-items:center;">
+              <span class="inv-item-name" style="color:${s.color}">
+                ${s.name} ${s.refine > 0 ? `+${s.refine}` : ""}
+              </span>
+              <span class="inv-item-tier" style="background:${s.color}">${s.tierName}</span>
+            </div>
+            <div class="inv-item-details">
+              <span>攻 +${s.baseAtk + s.refine * 15}</span>
+              <span>會心 +${s.crit}%</span>
+              <span>速 x${s.speed.toFixed(2)}</span>
+            </div>
+            <div class="inv-item-passive">${s.passive}</div>
+            <div class="inv-item-actions">
+              ${isEquipped ?
+                `<button class="btn-equip active" disabled>已佩戴</button>` :
+                `<button class="btn-equip" onclick="window.game.equipSword('${s.instanceId}')">佩戴此刃</button>`
+              }
+            </div>
+          </div>
+        `;
+      }).join("");
+    }
+
+    // 渲染消耗品
+    const consumablesBox = document.getElementById("inventory-consumables-grid");
+    if (consumablesBox) {
+      consumablesBox.innerHTML = window.ITEMS_DATA.consumables.map(c => {
+        const count = this.player.items[c.id] || 0;
+        return `
+          <div class="consumable-card">
+            <div class="con-icon">${c.icon}</div>
+            <div class="con-info">
+              <div class="con-name">${c.name} <span class="con-qty">x${count}</span></div>
+              <div class="con-desc">${c.desc}</div>
+            </div>
+            <button class="btn-use" ${count <= 0 ? "disabled" : ""} onclick="window.game.useItem('${c.id}')">
+              使用
+            </button>
+          </div>
+        `;
+      }).join("");
+    }
+  }
+
+  updateCodexUI() {
+    const list = document.getElementById("codex-swords-list");
+    if (!list) return;
+
+    const totalSwords = window.SWORDS_DATA.length;
+    const unlockedCount = this.player.codex.length;
+    document.getElementById("codex-progress").textContent = `${unlockedCount} / ${totalSwords} (${Math.floor((unlockedCount / totalSwords) * 100)}%)`;
+
+    list.innerHTML = window.SWORDS_DATA.map(s => {
+      const isUnlocked = this.player.codex.includes(s.id);
+      return `
+        <div class="codex-item-card ${isUnlocked ? 'unlocked' : 'locked'}">
+          <div class="codex-header">
+            <span class="codex-name" style="color: ${isUnlocked ? s.color : '#78716c'}">
+              ${isUnlocked ? s.name : "？？？？（未解鎖）"}
+            </span>
+            <span class="codex-tier" style="border-color:${isUnlocked ? s.color : '#444'}; color:${isUnlocked ? s.color : '#777'}">
+              ${s.tierName}
+            </span>
+          </div>
+          <div class="codex-meta">
+            <span>${isUnlocked ? s.romaji : "---"}</span>
+            <span>鍛匠：${isUnlocked ? s.smith : "？？？"}</span>
+          </div>
+          <div class="codex-lore">
+            ${isUnlocked ? s.lore : "斬殺更高難度首領或在鍛造屋尋求名匠秘鍛，以解鎖此名刃之歷史因緣。"}
+          </div>
+          ${isUnlocked ? `<div class="codex-bonus">✨ 收藏加成：全屬性提升，攻擊力 +5，氣血 +30</div>` : ""}
+        </div>
+      `;
+    }).join("");
+  }
+
+  // 初始化啟動
+  start() {
+    this.load();
+    this.checkOfflineGains();
+    this.spawnEnemy();
+    this.startCombatLoop();
+
+    // 每 10 秒自動存檔
+    this.autoSaveTimer = setInterval(() => {
+      this.save();
+    }, 10000);
+
+    // 初始 UI 渲染
+    this.updateCharacterUI();
+    this.updateBattleUI();
+    this.updateInventoryUI();
+    this.updateForgeUI();
+    this.updateDojoUI();
+    this.updateCodexUI();
+  }
+}
+
+// 實例化全域 Game 物件
+window.game = new SamuraiGame();
+window.addEventListener("DOMContentLoaded", () => {
+  window.game.start();
+});
