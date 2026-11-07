@@ -12,12 +12,12 @@ window.SWORDS_DATA = [
     color: "#a8a8a8",
     type: "打刀",
     smith: "無名工匠",
-    atk: 12,
-    crit: 3,
-    critDmg: 130,
-    speed: 1.0,
-    passive: "無 (初心之刃)",
-    passiveDesc: "身無長物之浪人隨身木竹刀，雖難稱利刃，卻是劍術修行的起點。",
+    atk: 25,
+    crit: 6,
+    critDmg: 135,
+    speed: 1.25,
+    passive: "心流神速 (無負擔出刀)",
+    passiveDesc: "人刀合一之境。附帶神速極意：自動高速揮斬敵寇，無需頻繁點擊滑鼠即可行雲流水歷練，保護雙手！",
     lore: "以堅竹削成刀形塗漆偽裝之刀。在太平之世，貧困落魄的武士常將真刀變賣度日，腰間僅佩此物以全武士之面容。"
   },
   {
