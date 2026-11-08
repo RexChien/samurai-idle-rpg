@@ -637,6 +637,7 @@ window.I18N = {
       "en": { title: "Shura Tempest: Night Parade of Hundred Demons", epilogue: "Your blade drinks the last drops of human strife; beneath a blood-red moon, you stand alone. Transcending mortality, man and demon blade become one. Shogunate and Empire alike crumble before your peerless dominion. For centuries, folklore speaks of the immortal Shura who severed gods, demons, and destiny alike." },
       "ja": { title: "修羅の狂嵐・百鬼夜行", epilogue: "刃は此の世の血を飲み尽くし、天と地の間には紅き月のみが浮かぶ。もはや人の身を超越したあなたは、妖刀と一体化した斬殺の鬼神と化した。幕府も維新も、その無双の覇道の前には灰燼に帰す。「逢う魔を斬り、神仏をも断つ」——その永劫の狂嵐が語り継がれる。" }
     },
+    ending_hermit: window.I18N && window.I18N.endings && window.I18N.endings.ending_wanderer ? window.I18N.endings.ending_wanderer : undefined,
     ending_wanderer: {
       "zh-TW": { title: "清茶洗刃・隱退之鶴", epilogue: "看透了陣營紛爭與天下大勢，你在七幕激鬥後悄然收刀入鞘。在京都郊外落櫻繽紛的茶舍中，你煮上一壺甘泉清茶，倚窗坐看世事變遷。不求功名，不問青史，唯願杯中茶香常在，心如止水。" },
       "en": { title: "Tea & Sheathed Steel: The Crane's Retirement", epilogue: "Having seen through the conflicts of men and the turns of fate, you gently sheath your sword after Seven Acts of battle. In a quiet teahouse amidst falling cherry blossoms outside Kyoto, you brew sweet spring tea and watch the changing world. Desiring neither fame nor legacy, your mind rests calm as still water." },
