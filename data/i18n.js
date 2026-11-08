@@ -264,7 +264,135 @@ window.I18N = {
       logVowFaction: "⚔️ 【天命抉擇】你立下誓言，正式投身【{faction}】！獲得專屬陣營庇佑：{desc}！",
       logCodexAdd: "📖 【名刀鑑賞錄】收錄新名刀：【{tier}】{name}！全屬性永久提昇！",
       logAcquireSword: "🗡️ {source}：獲得名刀【{tier}】{name}（{type}・{smith}）！",
-      sourceBossLoot: "首領戰利品"
+      sourceBossLoot: "首領戰利品",
+
+      // 天下地圖 (World Map)
+      btnWorldMap: "🗺️ 天下地圖",
+      worldMapTitle: "🗾 天下全圖・諸國遊歷",
+      worldMapSub: "走訪戰國名勝，歷練劍道宗師；策馬前往已解鎖之國度。",
+      worldMapCurrent: "📍 當前駐足",
+      worldMapTravel: "🏇 策馬遷往",
+      worldMapLocked: "🔒 封鎖中",
+      worldMapReqLevel: "需等級 Lv.{level}",
+      worldMapBoss: "守關首領：{boss}",
+      worldMapDrops: "掉落遺珍：{drops}",
+      mapLegendCurrent: "📍 當前征戰",
+      mapLegendCleared: "✅ 已踏破",
+      mapLegendLocked: "🔒 妖霧封鎖",
+      logTravel: "🏇 策馬奔馳！你跨過崇山峻嶺，抵達了【{zone}】！",
+
+      // 彈窗 (Modals)
+      offlineModalTitle: "🌙 宿場歇息・放置修業結算",
+      offlineModalText: "在您閉關離線期間，浪人意志持續在亂世奮戰修行：",
+      offlineModalKills: "⚔️ 斬獲敵人：",
+      offlineModalGold: "🪙 搜得金小判：",
+      offlineModalSteel: "💎 提煉玉鋼：",
+      offlineModalExp: "⛩️ 累積修業：",
+      offlineModalBtn: "欣然領取",
+      offlineUnitMins: "{time} 分鐘",
+      forgeModalSmith: "名匠：",
+      forgeModalHamon: "刃文：",
+      forgeModalAtk: "基礎攻擊：",
+      forgeModalCrit: "會心率：",
+      forgeModalBtn: "納刀入鞘",
+      endingModalTitle: "史詩天命終章",
+      endingModalReward: "🎁 獲得歷史通關天命獎勵：",
+      endingModalBtn: "銘記天命・繼續前行",
+
+      // 鍛造與研磨 (Forge & Sharpen)
+      forgeTitle: "⚒️ 刀匠踏鞴鍛造",
+      forgeStandardTitle: "傳統踏鞴鍛打",
+      forgeStandardDesc: "以傳統折返鍛打技藝鑄刀。<br>消耗：<b>25 玉鋼</b> + <b>100 金小判</b><br>機率產出：凡鐵、業物、良業物",
+      forgeStandardBtn: "🔥 開始鍛造",
+      forgeMasterTitle: "名匠淬火秘鍛",
+      forgeMasterDesc: "三條宗近、千子村正親手淬火。<br>消耗：<b>80 玉鋼</b> + <b>500 金小判</b><br>極高機率產出【大業物】與【天下五劍】！",
+      forgeMasterBtn: "⚡ 秘境神鍛",
+      forgeSmeltTitle: "🔥 刀劍熔融分解",
+      forgeSmeltDesc: "將淘汰的多餘刀刃熔煉為大量玉鋼與金小判：",
+      sharpenTitle: "✨ 砥石研磨鋒利度",
+      sharpenCurrentAtk: "當前攻擊力：",
+      sharpenNextAtk: "研磨後：",
+      sharpenBtn: "研磨",
+      sharpenTip: "💡 <b>名刀研磨訣竅</b>：每次研磨使武器強化等級 +1，攻擊力永久提升 15 點。砥石可在擊殺關卡敵人或首領時隨機拾取。",
+      whetstoneRoughTitle: "🪨 荒砥石 (攻擊力 +15)",
+      whetstoneRoughDesc: "粗磨修補刃口 | 剩餘: ",
+      whetstoneMidTitle: "🧱 中砥石 (攻擊力 +15)",
+      whetstoneMidDesc: "平滑肉置刃線 | 剩餘: ",
+      whetstoneFineTitle: "✨ 天然仕上砥石 (攻擊力 +15)",
+      whetstoneFineDesc: "青幽水石極致研磨 | 剩餘: ",
+      smeltEmptyHint: "暫無可熔煉之多餘名刀",
+      smeltBtnText: "熔煉 (+{steel} 玉鋼)",
+
+      // 道場流派 (Dojo)
+      dojoTitle: "⛩️ 武士三大流派心法",
+      dojoSub: "每提升 1 級境界可獲得 2 點天賦點，自由加點強化各派專長",
+      dojoPointsLabel: "剩餘天賦點:",
+      dojoResetBtn: "重置天賦 (100金)",
+      dojoInvestShinkage: "領悟新陰流 (+1)",
+      dojoInvestJigen: "領悟示現流 (+1)",
+      dojoInvestRishin: "領悟理心流 (+1)",
+      dojoRankLabel: "習得階級：",
+
+      // 行囊 (Inventory)
+      invCurrentWeapon: "🗡️ 當前佩戴名刀",
+      invSwordsList: "🎒 行囊名刀庫存（點擊更換佩戴）",
+      invConsumablesList: "🍱 戰國乾糧與增益秘藥",
+      invAtkLabel: "攻 ",
+      invCritLabel: "會心 ",
+      invSpeedLabel: "速 ",
+
+      // 圖鑑 (Codex)
+      codexTitle: "📜 名刀鑑賞圖鑑 (Sword Codex)",
+      codexSub: "收錄日本歷史上最負盛名之天下五劍、名匠傑作與傳奇妖刀",
+      codexProgressLabel: "解鎖進度:",
+
+      // 輪迴 (Prestige)
+      prestigeTitle: "🌀 劍心輪迴・宿命轉生",
+      prestigeSub: "破繭重生，勘破生死之境。將凡胎肉身化為宿命魂火，在輪迴神龕中換取永恆不滅之劍聖神力！",
+      prestigeCountLabel: "輪迴次數:",
+      prestigeKarmaLabel: "持有魂火:",
+      prestigeGainLabel: "本次可領:",
+      prestigeBtn: "🌀 啟動劍心輪迴",
+      prestigeKeepTitle: "✅ 輪迴保留（永不遺失）：",
+      prestigeKeepDesc: "所有名刀與強化等級、圖鑑全收集、已點亮之輪迴神龕天賦、歷史大結局繪卷。",
+      prestigeResetTitle: "🔄 輪迴重置（換取新生）：",
+      prestigeResetDesc: "角色等級重置（受輪迴宿慧天賦保留）、關卡進度重置、故事線重開（可自由重選其他分歧路線！）。",
+      prestigeAltarHeader: "⛩️ 輪迴天賦神龕（永久全域加成・跨轉生繼承）",
+
+      // 設定 (Settings)
+      settingSoundTitle: "和風音效",
+      settingSoundDesc: "拔刀聲、斬鐵聲與金屬交擊音效",
+      settingManualSaveTitle: "手動儲存進度",
+      settingManualSaveDesc: "遊戲每 10 秒自動存檔一次",
+      settingManualSaveBtn: "💾 立即保存",
+      settingExportTitle: "匯出存檔代碼",
+      settingExportDesc: "複製存檔代碼至其他裝置遊玩",
+      settingExportBtn: "📋 複製代碼",
+      settingImportTitle: "匯入存檔代碼",
+      settingImportDesc: "貼上備份存檔碼以恢復進度",
+      settingImportBtn: "📥 貼上匯入",
+      settingResetTitle: "武者修行初期化",
+      settingResetDesc: "消去本地紀錄，浪人從頭開始新旅程",
+      settingResetBtn: "⚠️ 重置遊戲",
+
+      // 社群交流 (Community)
+      communityTitle: "🏮 浪人茶屋・天下俠客留言壁",
+      communitySub: "路過歇息的武士與浪人，皆可在此品茶論劍、留下心得、流派討論與寶貴反饋！",
+      pollTitle: "📊 浪人意向投票：您最期待後續加入什麼新內容？",
+      pollOpt1: "🗡️ 更多傳奇名刀（村雨丸、雷切等）",
+      pollOpt2: "⚔️ 大名合戰（勢力戰攻城）",
+      pollOpt3: "🥋 更多劍道流派（二天一流、無念流）",
+      pollOpt4: "🐕 侍從寵物（柴犬、忍鷹、戰馬）",
+      commentWallTitle: "💬 浪人茶屋・天下諸士寄書板",
+      commentWallBanner: "🍵 <b>茶屋寄書</b>：直接輸入武士名號與心得，按下「🏮 奉納寄書」，即可直接刻印於茶屋銘木板，與天下諸士切磋！",
+
+      // 提示與對話框 (Alerts & Prompts)
+      promptCopySave: "請手動複製存檔代碼：",
+      promptPasteSave: "請貼上存檔代碼：",
+      alertManualSaveOk: "💾 遊戲進度已手動儲存！",
+      initialCombatLog: "🌸 風吹櫻落，浪人拔出腰間名刀，開始踏上戰國修羅歷練之路...",
+      autoSlashOn: "⚔️ 自律拔刀連斬中（點擊切換為手動）",
+      autoSlashOff: "💤 手動出刀模式（點擊開啟自律斬）"
     },
 
     "en": {
@@ -524,7 +652,135 @@ window.I18N = {
       logVowFaction: "⚔️ [Destiny Vow] You pledged to [{faction}]! Gained faction blessing: {desc}!",
       logCodexAdd: "📖 [Sword Codex] New blade cataloged: [{tier}] {name}! Permanent stats increased!",
       logAcquireSword: "🗡️ {source}: Acquired Katana [{tier}] {name} ({type} / {smith})!",
-      sourceBossLoot: "Boss Trophy"
+      sourceBossLoot: "Boss Trophy",
+
+      // World Map
+      btnWorldMap: "🗺️ World Map",
+      worldMapTitle: "🗾 Realm World Map - Journey of Provinces",
+      worldMapSub: "Roam legendary Sengoku provinces, challenge masters, and travel across unlocked realms.",
+      worldMapCurrent: "📍 Current Location",
+      worldMapTravel: "🏇 Travel Here",
+      worldMapLocked: "🔒 Locked",
+      worldMapReqLevel: "Requires Lv.{level}",
+      worldMapBoss: "Guardian Boss: {boss}",
+      worldMapDrops: "Special Loots: {drops}",
+      mapLegendCurrent: "📍 Active Realm",
+      mapLegendCleared: "✅ Conquered",
+      mapLegendLocked: "🔒 Shrouded in Mist",
+      logTravel: "🏇 Riding swift steeds! You traversed craggy mountains and arrived at [{zone}]!",
+
+      // Modals
+      offlineModalTitle: "🌙 Inn Rest - Offline Meditation Report",
+      offlineModalText: "While you rested, your martial spirit continued to hone the blade in the turbulent era:",
+      offlineModalKills: "⚔️ Foes Defeated: ",
+      offlineModalGold: "🪙 Koban Gathered: +",
+      offlineModalSteel: "💎 Tamahagane Forged: +",
+      offlineModalExp: "⛩️ EXP Cultivated: +",
+      offlineModalBtn: "Sheathe Blade & Claim",
+      offlineUnitMins: "{time} min",
+      forgeModalSmith: "Master Swordsmith: ",
+      forgeModalHamon: "Hamon Pattern: ",
+      forgeModalAtk: "Base ATK: ",
+      forgeModalCrit: "Critical Rate: ",
+      forgeModalBtn: "Sheathe Blade",
+      endingModalTitle: "Historical Epilogue Achieved",
+      endingModalReward: "🎁 Historical Destiny Reward: ",
+      endingModalBtn: "Embrace Destiny & Continue",
+
+      // Forge & Sharpen
+      forgeTitle: "⚒️ Tatara Master Forge",
+      forgeStandardTitle: "Standard Katana Forging",
+      forgeStandardDesc: "Folded steel forged in traditional fires.<br>Cost: <b>25 Tamahagane</b> + <b>100 Koban</b><br>Drops: Standard, Wazamono, Ryo-wazamono",
+      forgeStandardBtn: "🔥 Begin Forging",
+      forgeMasterTitle: "Master Secret Forge",
+      forgeMasterDesc: "Quenched by masters Munechika & Muramasa.<br>Cost: <b>80 Tamahagane</b> + <b>500 Koban</b><br>High chance of O-Wazamono & Tenka-Goken!",
+      forgeMasterBtn: "⚡ Master Forge",
+      forgeSmeltTitle: "🔥 Katana Smelting & Recycling",
+      forgeSmeltDesc: "Smelt redundant katanas into abundant Tamahagane and Koban:",
+      sharpenTitle: "✨ Whetstone Sharpening",
+      sharpenCurrentAtk: "Current ATK: ",
+      sharpenNextAtk: "Sharpened: ",
+      sharpenBtn: "Sharpen",
+      sharpenTip: "💡 <b>Sharpening Tip</b>: Each sharpening adds +1 enhance level, boosting ATK permanently by 15. Whetstones drop randomly from foes and bosses.",
+      whetstoneRoughTitle: "🪨 Coarse Whetstone (ATK +15)",
+      whetstoneRoughDesc: "Repair nicks & chips | Owned: ",
+      whetstoneMidTitle: "🧱 Medium Nagura (ATK +15)",
+      whetstoneMidDesc: "Smooth blade & hamon line | Owned: ",
+      whetstoneFineTitle: "✨ Fine Finishing Stone (ATK +15)",
+      whetstoneFineDesc: "Mirror finish water stone | Owned: ",
+      smeltEmptyHint: "No spare blades available to smelt",
+      smeltBtnText: "Smelt (+{steel} Steel)",
+
+      // Dojo
+      dojoTitle: "⛩️ Three Martial Schools of the Samurai",
+      dojoSub: "Gain 2 skill points per level to master school techniques.",
+      dojoPointsLabel: "Skill Points:",
+      dojoResetBtn: "Reset Skills (100 Gold)",
+      dojoInvestShinkage: "Master Shinkage-ryu (+1)",
+      dojoInvestJigen: "Master Jigen-ryu (+1)",
+      dojoInvestRishin: "Master Rishin-ryu (+1)",
+      dojoRankLabel: "Rank: ",
+
+      // Inventory
+      invCurrentWeapon: "🗡️ Equipped Katana",
+      invSwordsList: "🎒 Katana Arsenal (Click to Equip)",
+      invConsumablesList: "🍱 Rations, Elixirs & Items",
+      invAtkLabel: "ATK ",
+      invCritLabel: "Crit ",
+      invSpeedLabel: "Spd ",
+
+      // Codex
+      codexTitle: "📜 Legendary Blade Codex",
+      codexSub: "Cataloging the Tenka-Goken, legendary masterworks, and cursed blades of Japan",
+      codexProgressLabel: "Completion:",
+
+      // Prestige
+      prestigeTitle: "🌀 Karma Reincarnation - Transmigration",
+      prestigeSub: "Sever earthly karma and reincarnate into the turbulent era with undying sword will. All stats reset, but divine embers endure!",
+      prestigeCountLabel: "Reincarnations:",
+      prestigeKarmaLabel: "Karma Embers:",
+      prestigeGainLabel: "Gain Upon Rebirth:",
+      prestigeBtn: "🌀 Transmigrate",
+      prestigeKeepTitle: "✅ Carried Over (Permanent):",
+      prestigeKeepDesc: "All swords and refine levels, completed codex entries, unlocked Shrine perks, and ending scrolls.",
+      prestigeResetTitle: "🔄 Reset Upon Rebirth:",
+      prestigeResetDesc: "Character Lv resets (mitigated by Wisdom perk), zone progress resets, story path reopens (freely choose other factions!).",
+      prestigeAltarHeader: "⛩️ Karma Shrine (Permanent Global Boons)",
+
+      // Settings
+      settingSoundTitle: "Samurai Sound Effects",
+      settingSoundDesc: "Blade unsheathing, steel clashes, and impact sounds",
+      settingManualSaveTitle: "Manual Save Progress",
+      settingManualSaveDesc: "Game automatically saves every 10 seconds",
+      settingManualSaveBtn: "💾 Save Now",
+      settingExportTitle: "Export Save Code",
+      settingExportDesc: "Copy save code to play on other devices",
+      settingExportBtn: "📋 Copy Code",
+      settingImportTitle: "Import Save Code",
+      settingImportDesc: "Paste backup save code to restore progress",
+      settingImportBtn: "📥 Import Code",
+      settingResetTitle: "Martial Journey Reset",
+      settingResetDesc: "Erase local records to restart journey from scratch",
+      settingResetBtn: "⚠️ Hard Reset",
+
+      // Community
+      communityTitle: "🏮 Ronin Teahouse - Realm Board",
+      communitySub: "Resting samurai and ronin gather here to drink tea, discuss swordsmanship, and leave feedback!",
+      pollTitle: "📊 Ronin Poll: What new feature do you desire most?",
+      pollOpt1: "🗡️ More Legendary Katanas (Murasame, Raikiri)",
+      pollOpt2: "⚔️ Daimyo Faction Sieges",
+      pollOpt3: "🥋 More Martial Schools (Niten Ichi-ryu, Munen-ryu)",
+      pollOpt4: "🐕 Samurai Animal Companions (Shiba, Hawk, Steed)",
+      commentWallTitle: "💬 Ronin Teahouse Message Wall",
+      commentWallBanner: "🍵 <b>Teahouse Inscription</b>: Enter your samurai moniker and thoughts, then submit to engrave upon the cedar board!",
+
+      // Alerts & Prompts
+      promptCopySave: "Please manually copy your save code:",
+      promptPasteSave: "Please paste your save code here:",
+      alertManualSaveOk: "💾 Progress securely saved!",
+      initialCombatLog: "🌸 Cherry blossoms drift as the ronin draws the blade, embarking on the path of the samurai...",
+      autoSlashOn: "⚔️ Auto-slashing in rhythm (Click to switch to manual)",
+      autoSlashOff: "💤 Manual strike mode (Click to activate auto-slash)"
     },
 
     "ja": {
@@ -784,7 +1040,135 @@ window.I18N = {
       logVowFaction: "⚔️ 【天命選択】誓いを立て【{faction}】へ身を投じた！勢力加護「{desc}」を獲得！",
       logCodexAdd: "📖 【名刀鑑賞録】新たな名刀を登録：【{tier}】{name}！全能力が永久向上！",
       logAcquireSword: "🗡️ {source}：名刀【{tier}】{name}（{type}・刀工：{smith}）を獲得！",
-      sourceBossLoot: "頭目の戦利品"
+      sourceBossLoot: "頭目の戦利品",
+
+      // 天下地図 (World Map)
+      btnWorldMap: "🗺️ 天下地図",
+      worldMapTitle: "🗾 天下全図・諸国巡礼",
+      worldMapSub: "戦国の名所を巡り、剣客と競い、解放されし国々を馳せよ。",
+      worldMapCurrent: "📍 現在地",
+      worldMapTravel: "🏇 馳せ参じる",
+      worldMapLocked: "🔒 未踏の地",
+      worldMapReqLevel: "必要等級 Lv.{level}",
+      worldMapBoss: "守護頭目：{boss}",
+      worldMapDrops: "名産遺宝：{drops}",
+      mapLegendCurrent: "📍 現在地",
+      mapLegendCleared: "✅ 踏破済",
+      mapLegendLocked: "🔒 霧封鎖",
+      logTravel: "🏇 駿馬を駆り、険しき山河を越えて【{zone}】へと至った！",
+
+      // 弾出窓 (Modals)
+      offlineModalTitle: "🌙 宿場での休息・放置修行精算",
+      offlineModalText: "お留守の間も、武士の剣気は途切れることなく乱世で研ぎ澄まされていました：",
+      offlineModalKills: "⚔️ 討伐敵数：",
+      offlineModalGold: "🪙 獲得金小判：+",
+      offlineModalSteel: "💎 鍛造玉鋼：+",
+      offlineModalExp: "⛩️ 修練経験値：+",
+      offlineModalBtn: "刀を収めて受領",
+      offlineUnitMins: "{time} 分",
+      forgeModalSmith: "銘刀匠：",
+      forgeModalHamon: "刃文：",
+      forgeModalAtk: "基本攻撃力：",
+      forgeModalCrit: "会心率：",
+      forgeModalBtn: "受領して納刀",
+      endingModalTitle: "歴史大団円達成",
+      endingModalReward: "🎁 歴史大団円の天命報酬：",
+      endingModalBtn: "天命を胸に・歩みを続行",
+
+      // 鍛造と研磨 (Forge & Sharpen)
+      forgeTitle: "⚒️ たたら名刀大鍛冶",
+      forgeStandardTitle: "百錬名刀鍛造",
+      forgeStandardDesc: "伝統の折り返し鍛錬で刀を打つ。<br>消費：<b>25 玉鋼</b> + <b>100 金小判</b><br>確率：凡鉄・業物・良業物",
+      forgeStandardBtn: "🔥 鍛造開始",
+      forgeMasterTitle: "宗師秘伝古式鍛造",
+      forgeMasterDesc: "三条宗近、千子村正による入魂の焼き入れ。<br>消費：<b>80 玉鋼</b> + <b>500 金小判</b><br>【大業物】や【天下五剣】の出現率大幅上昇！",
+      forgeMasterBtn: "⚡ 宗師神鍛",
+      forgeSmeltTitle: "🔥 刀剣熔錬分解",
+      forgeSmeltDesc: "不要な名刀を熔解し、大量の玉鋼と金小判を回収：",
+      sharpenTitle: "✨ 砥石研磨（佩刀の磨き）",
+      sharpenCurrentAtk: "現在の攻撃力：",
+      sharpenNextAtk: "研磨後：",
+      sharpenBtn: "研磨",
+      sharpenTip: "💡 <b>名刀研磨の極意</b>：研磨毎に武器の強化等級が+1、攻撃力が恒久的に15上昇。砥石は敵や頭目から稀に獲得できます。",
+      whetstoneRoughTitle: "🪨 荒砥石 (攻撃力 +15)",
+      whetstoneRoughDesc: "刃こぼれ修復 | 所持数: ",
+      whetstoneMidTitle: "🧱 中名倉砥石 (攻撃力 +15)",
+      whetstoneMidDesc: "平肉と刃文を整える | 所持数: ",
+      whetstoneFineTitle: "✨ 天然仕上砥石 (攻撃力 +15)",
+      whetstoneFineDesc: "青幽砥石極上鏡面研磨 | 所持数: ",
+      smeltEmptyHint: "分解可能な余剰名刀はありません",
+      smeltBtnText: "熔錬 (+{steel} 玉鋼)",
+
+      // 道場流派 (Dojo)
+      dojoTitle: "⛩️ 武士三大流派心法",
+      dojoSub: "等級が1上がる毎に修練点数を2獲得、各流派の極意を強化せよ",
+      dojoPointsLabel: "残り修練点数:",
+      dojoResetBtn: "修練の振り直し (100金)",
+      dojoInvestShinkage: "新陰流の参究 (+1)",
+      dojoInvestJigen: "示現流の鍛錬 (+1)",
+      dojoInvestRishin: "理心流の瞑想 (+1)",
+      dojoRankLabel: "習得位階：",
+
+      // 携行品 (Inventory)
+      invCurrentWeapon: "🗡️ 佩用中の名刀",
+      invSwordsList: "🎒 所持名刀一覧（選択して佩用）",
+      invConsumablesList: "🍱 兵糧・霊薬・携行品",
+      invAtkLabel: "攻 ",
+      invCritLabel: "会心 ",
+      invSpeedLabel: "振速 ",
+
+      // 名刀図録 (Codex)
+      codexTitle: "📜 名刀鑑賞図録 (Sword Codex)",
+      codexSub: "天下五剣、名匠の傑作、伝説の妖刀を収録",
+      codexProgressLabel: "収集進度:",
+
+      // 輪廻 (Prestige)
+      prestigeTitle: "🌀 剣心輪廻・宿命転生",
+      prestigeSub: "因果を断ち切り、剣心を携えて再び乱世へ。肉体は初めに戻れど、神力と剣客の記憶は不滅！",
+      prestigeCountLabel: "輪廻回数:",
+      prestigeKarmaLabel: "所持魂火:",
+      prestigeGainLabel: "今回獲得見込:",
+      prestigeBtn: "🌀 剣心輪廻を発動",
+      prestigeKeepTitle: "✅ 輪廻継承（永久保持）：",
+      prestigeKeepDesc: "すべての名刀と強化等級、名刀図録収集、強化済みの輪廻神籬、歴史大団円絵巻。",
+      prestigeResetTitle: "🔄 輪廻初期化（新生の代償）：",
+      prestigeResetDesc: "等級初期化（宿慧天賦により一部保持）、関所進捗初期化、物語再開（他陣営の分岐を再選択可能！）。",
+      prestigeAltarHeader: "⛩️ 輪廻神籬（永続加護・転生越境継承）",
+
+      // 設定 (Settings)
+      settingSoundTitle: "和風効果音",
+      settingSoundDesc: "抜刀音、斬鉄音、金属打撃音",
+      settingManualSaveTitle: "手動進捗保存",
+      settingManualSaveDesc: "ゲームは10秒毎に自動保存されます",
+      settingManualSaveBtn: "💾 今すぐ保存",
+      settingExportTitle: "進捗暗号の書き出し",
+      settingExportDesc: "進捗暗号を複写して他端末で再開",
+      settingExportBtn: "📋 暗号を複写",
+      settingImportTitle: "進捗暗号の読み込み",
+      settingImportDesc: "進捗暗号を貼り付けて進行度を復元",
+      settingImportBtn: "📥 暗号を読込",
+      settingResetTitle: "武者修行の初期化",
+      settingResetDesc: "記憶を消去し、最初から旅をやり直す",
+      settingResetBtn: "⚠️ ゲーム初期化",
+
+      // 交流 (Community)
+      communityTitle: "🏮 浪人茶屋・天下諸士寄書板",
+      communitySub: "立ち寄る武士や浪人が茶を飲み交わし、剣道や感想、要望を語り合う場！",
+      pollTitle: "📊 浪人意向投票：次回改変で最も期待するものは？",
+      pollOpt1: "🗡️ 伝説の名刀追加（村雨丸、雷切など）",
+      pollOpt2: "⚔️ 大名合戦（勢力攻城戦）",
+      pollOpt3: "🥋 剣道流派追加（二天一流、無念流など）",
+      pollOpt4: "🐕 侍の供・相棒（柴犬、忍鷹、名馬）",
+      commentWallTitle: "💬 浪人茶屋・天下諸士寄書板",
+      commentWallBanner: "🍵 <b>茶屋寄書</b>：武士の御名と心得を記し、「🏮 奉納寄書」を押せば茶屋の銘木板に刻印されます！",
+
+      // 警告と対話 (Alerts & Prompts)
+      promptCopySave: "以下の進捗暗号を複写してください：",
+      promptPasteSave: "進捗暗号を貼り付けてください：",
+      alertManualSaveOk: "💾 修業の進捗が正常に保存されました！",
+      initialCombatLog: "🌸 桜舞い散る中、浪人は腰の名刀を抜き放ち、戦国修羅の旅へ出立した……",
+      autoSlashOn: "⚔️ 自律抜刀連斬中（手動に切替）",
+      autoSlashOff: "💤 手動出刀（自律斬を開始）"
     }
   },
 
@@ -1041,7 +1425,12 @@ window.setLanguage = function(lang) {
   // 更新帶有 data-i18n 的靜態文字
   document.querySelectorAll("[data-i18n]").forEach(el => {
     const key = el.getAttribute("data-i18n");
-    el.textContent = window.t(key);
+    const val = window.t(key);
+    if (val && (val.includes("<") && val.includes(">"))) {
+      el.innerHTML = val;
+    } else {
+      el.textContent = val;
+    }
   });
 
   // 更新帶有 data-i18n-html 的靜態內容
