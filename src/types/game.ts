@@ -1,5 +1,5 @@
 /**
- * 天明武士・五輪百鬼譚 (Samurai Tenmei 7 RPG) — 核心 TypeScript 型別定義
+ * 新武士道列傳 RPG (Shin Bushido Retsuden RPG) — 核心 TypeScript 型別定義
  */
 
 export type GearSlot = 'weapon' | 'offhand' | 'helm' | 'armor' | 'boots' | 'accessory';
@@ -67,6 +67,9 @@ export interface SamuraiArt {
   powerMult: number;
   desc: string;
   reqLevel: number;
+  spCost?: number;
+  targetType?: 'single' | 'all' | 'heal_party';
+  casterName?: string;
   burnTrueDmg?: number;
   healPct?: number;
   bleedTurns?: number;
@@ -139,6 +142,41 @@ export interface MapYokai {
   isBoss?: boolean;
 }
 
+export interface BattleUnitEnemy {
+  id: string;
+  name: string;
+  avatar: string;
+  level: number;
+  hp: number;
+  maxHp: number;
+  atk: number;
+  def: number;
+  stance: 'earth' | 'water' | 'fire' | 'wind' | 'void';
+  isBoss?: boolean;
+  defBrokenTurns?: number;
+}
+
+export interface PartyMemberStatus {
+  id: 'leader' | 'kaede' | 'hayate';
+  name: string;
+  roleTitle: string;
+  avatar: string;
+  hp: number;
+  maxHp: number;
+  sp: number;
+  maxSp: number;
+  pow: number; // 怒氣槽 0 ~ 100
+}
+
+export interface ConsumableItem {
+  id: 'dango' | 'matcha' | 'sake' | 'elixir';
+  name: string;
+  icon: string;
+  desc: string;
+  price: number;
+  count: number;
+}
+
 export interface PvPOpponent {
   id: string;
   name: string;
@@ -188,6 +226,7 @@ export interface PlayerData {
   mapY: number;
   targetMapX: number | null;
   targetMapY: number | null;
+  consumables?: Record<string, number>;
   cosmetics: {
     avatar: string;
     bladeTrail: string;

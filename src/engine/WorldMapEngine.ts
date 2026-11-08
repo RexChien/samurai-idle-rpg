@@ -63,6 +63,7 @@ export interface WorldMapState {
   scenery: SceneryProp[];
   particles: WeatherParticle[];
   slashEffects: SlashEffect[];
+  trailHistory: { x: number; y: number; facing: 'down' | 'up' | 'left' | 'right' }[];
   activeCombatYokaiId: string | null;
   encounterCooldownUntil: number;
   cameraX: number;
@@ -258,6 +259,11 @@ export class WorldMapEngine {
       scenery: [],
       particles: [],
       slashEffects: [],
+      trailHistory: Array.from({ length: 28 }, (_, idx) => ({
+        x: initialX - (idx + 1) * 2.2,
+        y: initialY + (idx % 2) * 1.5,
+        facing: 'down' as const
+      })),
       activeCombatYokaiId: null,
       encounterCooldownUntil: 0,
       cameraX: initialX - canvas.width / 2,
@@ -810,6 +816,17 @@ export class WorldMapEngine {
 
     if (this.state.isWalking) {
       this.state.walkFrame = (this.state.walkFrame + dt * 7.5) % 4;
+      const head = this.state.trailHistory[0];
+      if (!head || Math.hypot(this.state.playerX - head.x, this.state.playerY - head.y) >= 4) {
+        this.state.trailHistory.unshift({
+          x: this.state.playerX,
+          y: this.state.playerY,
+          facing: this.state.facing
+        });
+        if (this.state.trailHistory.length > 32) {
+          this.state.trailHistory.pop();
+        }
+      }
     } else {
       this.state.walkFrame = 0;
     }
@@ -1041,7 +1058,31 @@ export class WorldMapEngine {
       ctx.fillText(`Lv.${yk.level} ${yk.name}`, yx, barY - 5);
     }
 
-    // 10. 繪製主角 3頭身像素武士 (Player Character)
+    // 10. 繪製《新武士道列傳》三人同行小隊：夥伴【影縫疾風】、【神無月楓】排隊跟隨主角行走
+    const hayatePos = this.state.trailHistory[Math.min(20, this.state.trailHistory.length - 1)];
+    const kaedePos = this.state.trailHistory[Math.min(10, this.state.trailHistory.length - 1)];
+
+    if (hayatePos) {
+      const hx = hayatePos.x - camX;
+      const hy = hayatePos.y - camY;
+      ctx.beginPath();
+      ctx.ellipse(hx, hy + 3, 15, 6, 0, 0, Math.PI * 2);
+      ctx.fillStyle = 'rgba(56, 189, 248, 0.28)';
+      ctx.fill();
+      drawChibiSprite(ctx, 'npc_hayate', hx, hy + 3, 2, hayatePos.facing, this.state.isWalking ? (this.state.walkFrame + 2) % 4 : 0);
+    }
+
+    if (kaedePos) {
+      const kx = kaedePos.x - camX;
+      const ky = kaedePos.y - camY;
+      ctx.beginPath();
+      ctx.ellipse(kx, ky + 3, 15, 6, 0, 0, Math.PI * 2);
+      ctx.fillStyle = 'rgba(244, 63, 94, 0.28)';
+      ctx.fill();
+      drawChibiSprite(ctx, 'samurai_female', kx, ky + 3, 2, kaedePos.facing, this.state.isWalking ? (this.state.walkFrame + 1) % 4 : 0);
+    }
+
+    // 繪製領隊主角 3頭身像素武士 (Player Leader)
     const px = this.state.playerX - camX;
     const py = this.state.playerY - camY;
 

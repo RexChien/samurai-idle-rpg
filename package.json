@@ -1,7 +1,7 @@
 {
-  "name": "samurai-tenmei-rpg",
-  "version": "2.0.0",
-  "description": "《天明武士・五輪百鬼譚》(Samurai Tenmei 7 RPG) — Svelte 5 + TypeScript + Canvas 2D 3頭身像素風開放世界 × 暗黑刷寶武士 RPG",
+  "name": "shin-bushido-retsuden-rpg",
+  "version": "3.0.0",
+  "description": "《新武士道列傳 RPG》(Shin Bushido Retsuden RPG) — 王道和風三人小隊回合指令制 JRPG（Svelte 5 + TypeScript + Canvas 2D 全彩地圖與和風 BGM）",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -10,12 +10,11 @@
     "test": "vitest run test/*.test.ts"
   },
   "keywords": [
+    "bushido",
+    "jrpg",
     "samurai",
-    "tenmei",
-    "open-world",
+    "turn-based",
     "pixel-art",
-    "diablo-loot",
-    "rpg",
     "svelte5",
     "typescript"
   ],

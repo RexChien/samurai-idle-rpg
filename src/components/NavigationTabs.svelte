@@ -2,13 +2,13 @@
   import { gameStore } from '../engine/GameStore.svelte';
 
   const tabs = [
-    { id: 'battle', label: '⚔️ 征戰＆大地圖', primary: true },
-    { id: 'quests', label: '📜 任務＆劇情' },
-    { id: 'gear', label: '🎒 神兵＆行囊' },
-    { id: 'talents', label: '☯️ 武學＆天賦' },
-    { id: 'pvp', label: '🏆 武道＆奈落' },
-    { id: 'market', label: '🏪 交易＆茶館' },
-    { id: 'achievements', label: '🎖️ 成就＆簽到' }
+    { id: 'battle', label: '🗺️ 探索＆指令戰', primary: true },
+    { id: 'quests', label: '📜 劇情＆委託' },
+    { id: 'gear', label: '🗡️ 名刀＆鍛冶' },
+    { id: 'talents', label: '☯️ 五輪＆流派' },
+    { id: 'pvp', label: '🏆 御前試合＆奈落' },
+    { id: 'market', label: '🍵 樂市＆茶屋' },
+    { id: 'achievements', label: '🎖️ 傳記＆奉行所' }
   ];
 </script>
 

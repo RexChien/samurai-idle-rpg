@@ -31,15 +31,15 @@
     <div class="title-panel">
       {#if !isCreating}
         <div class="title-content">
-          <div class="era-tag">【{TENMEI_LORE.era}】</div>
-          <h1 class="game-main-title">天明武士・五輪百鬼譚</h1>
-          <div class="game-subtitle">二天一流・暗黑神兵與城下町物語</div>
+          <div class="era-tag">【{TENMEI_LORE.era}・王道和風指令制 JRPG】</div>
+          <h1 class="game-main-title">新武士道列傳 RPG</h1>
+          <div class="game-subtitle">二天一流・三人小隊與五輪百鬼譚 (Shin Bushido Retsuden RPG)</div>
 
           <div class="title-pixel-showcase">
             <PixelPortrait spriteId="samurai_general" scale={3} />
             <PixelPortrait spriteId="samurai_female" scale={3} />
+            <PixelPortrait spriteId="npc_hayate" scale={3} />
             <PixelPortrait spriteId="npc_yagyu" scale={3} />
-            <PixelPortrait spriteId="npc_town_girl" scale={3} />
           </div>
 
           <div class="lore-summary">
@@ -48,7 +48,7 @@
 
           <div class="title-actions">
             <button class="btn btn-gold btn-xl btn-block" onclick={startCreation}>
-              ⚔️ 踏入城下町・新遊戲創角
+              ⚔️ 結成三人小隊・新遊戲創角
             </button>
           </div>
         </div>

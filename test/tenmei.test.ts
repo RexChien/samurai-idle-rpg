@@ -184,3 +184,14 @@ describe('8. Multi-Track Japanese Edo / Samurai BGM Synthesizer', () => {
     expect(audio.autoSwitchByZone).toBe(false);
   });
 });
+
+describe('9. Shin Bushido Retsuden Traditional JRPG Party & Command Skills', () => {
+  it('defines 6 party skills across Leader, Kaede (Miko), and Hayate (Ninja) and 4 Edo consumables', async () => {
+    const { JRPG_PARTY_SKILLS, JRPG_CONSUMABLES } = await import('../src/engine/GameStore.svelte');
+    expect(JRPG_PARTY_SKILLS).toHaveLength(6);
+    expect(JRPG_PARTY_SKILLS.some(s => s.caster === 'kaede' && s.target === 'heal_party')).toBe(true);
+    expect(JRPG_PARTY_SKILLS.some(s => s.caster === 'hayate' && s.target === 'all')).toBe(true);
+    expect(JRPG_CONSUMABLES).toHaveLength(4);
+    expect(JRPG_CONSUMABLES.map(c => c.id)).toEqual(['dango', 'matcha', 'sake', 'elixir']);
+  });
+});

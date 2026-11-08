@@ -3,6 +3,7 @@
   import { WorldMapEngine, MAP_ZONES } from '../engine/WorldMapEngine';
   import { audio, BGM_TRACKS, type BgmTrackId } from '../engine/AudioEngine';
   import { gameStore } from '../engine/GameStore.svelte';
+  import PixelPortrait from './PixelPortrait.svelte';
   import type { MapPOI, MapYokai } from '../types/game';
 
   let canvasEl: HTMLCanvasElement;
@@ -11,33 +12,18 @@
 
   let bgmPlaying = $state(audio.bgmEnabled);
   let currentTrack = $state<BgmTrackId>(audio.currentTrackId);
+  const npcModal = $derived(gameStore.npcModal);
 
   function handleEncounter(yokai: MapYokai) {
-    gameStore.currentEnemy = {
-      id: yokai.id,
-      name: yokai.name,
-      avatar: yokai.avatar,
-      hp: yokai.hp,
-      maxHp: yokai.maxHp,
-      atk: yokai.atk,
-      def: yokai.def,
-      isBoss: !!yokai.isBoss
-    };
-    gameStore.executeSlash(false);
+    gameStore.startJrpgEncounter(yokai);
   }
 
   function handleInteractPOI(poi: MapPOI) {
-    if (poi.type === 'shrine') {
-      gameStore.player.townBuffUntil = Date.now() + 300000;
-      gameStore.showToast(`⛩️ 參拜【${poi.name}】！獲得出雲武運祝福 (+15% 全屬性戰力，持續5分鐘)！`, 'success');
-    } else if (poi.type === 'chest') {
+    if (poi.type === 'chest') {
       gameStore.openMapChest(poi.id, poi.name);
-    } else if (poi.type === 'town') {
-      gameStore.showToast(`🔨 進入【${poi.name}】！可打造與強化暗黑神兵`, 'info');
-      gameStore.activeTab = 'gear';
-    } else if (poi.type === 'npc') {
-      gameStore.showToast(`💬 【${poi.name}】：${poi.desc}`, 'info');
+      return;
     }
+    gameStore.openNpcDialogue(poi);
   }
 
   function switchZone(zoneId: string) {
@@ -45,7 +31,8 @@
     engine.initZone(zoneId);
     currentTrack = audio.currentTrackId;
     gameStore.player.currentMapZone = zoneId;
-    gameStore.showToast(`📍 抵達【${MAP_ZONES.find(z => z.id === zoneId)?.name}】！`, 'info');
+    gameStore.spawnEncounterGroup(false);
+    gameStore.showToast(`📍 小隊抵達【${MAP_ZONES.find(z => z.id === zoneId)?.name}】！`, 'info');
   }
 
   function toggleBgm() {
@@ -58,6 +45,39 @@
     bgmPlaying = true;
     audio.bgmEnabled = true;
     currentTrack = trackId;
+  }
+
+  function handleShrinePray() {
+    gameStore.player.townBuffUntil = Date.now() + 300000;
+    gameStore.syncPartyStats(true);
+    gameStore.save();
+    audio.playAchievementFanfare();
+    gameStore.showToast(`⛩️ 虔誠參拜大社！全隊 HP/SP 全滿回復，並獲得【出雲武運】全屬性 +15% 祝福與進度存檔！`, 'success');
+    gameStore.closeNpcDialogue();
+  }
+
+  function handleInnRest() {
+    gameStore.restAtTownInn();
+    gameStore.closeNpcDialogue();
+  }
+
+  function handleGoForge() {
+    gameStore.closeNpcDialogue();
+    gameStore.activeTab = 'gear';
+  }
+
+  function handleDojoSpar() {
+    gameStore.closeNpcDialogue();
+    gameStore.startJrpgEncounter({
+      name: '柳生新陰流・高徒',
+      avatar: 'samurai_general',
+      hp: 220 + gameStore.player.level * 50,
+      maxHp: 220 + gameStore.player.level * 50,
+      atk: 16 + gameStore.player.level * 5,
+      def: 10 + gameStore.player.level * 3,
+      stance: 'wind',
+      isBoss: false
+    });
   }
 
   // 同步玩家 3頭身像素外觀、姓名、稱號
@@ -101,7 +121,7 @@
   onMount(() => {
     if (!canvasEl || !containerEl) return;
     const w = containerEl.clientWidth || 860;
-    const h = 440;
+    const h = 410;
     canvasEl.width = w;
     canvasEl.height = h;
 
@@ -120,7 +140,7 @@
     const handleResize = () => {
       if (containerEl && engine) {
         const nw = containerEl.clientWidth || 860;
-        engine.resize(nw, 440);
+        engine.resize(nw, 410);
       }
     };
     window.addEventListener('resize', handleResize);
@@ -135,7 +155,7 @@
 <div class="world-map-wrapper" bind:this={containerEl}>
   <div class="map-top-bar">
     <div class="map-zones-bar">
-      <span class="zones-label">🗺️ 武士道全彩大地圖：</span>
+      <span class="zones-label">🗺️ 《新武士道列傳》全彩世界地圖：</span>
       <div class="zones-list">
         {#each MAP_ZONES as zone}
           <button
@@ -172,9 +192,39 @@
 
   <div class="canvas-container">
     <canvas bind:this={canvasEl}></canvas>
-    <div class="map-overlay-tips">
-      🏮 《武士道列傳》全彩像素世界：點擊地面或按 WASD 漫步櫻花城下町與朱紅太鼓橋 ｜ 點擊茶屋／道場／大社互動 ｜ 靠近妖怪拔刀斬擊
-    </div>
+
+    <!-- 傳統 JRPG 皇家藍底金框 NPC 對話視窗 -->
+    {#if npcModal && npcModal.open}
+      <div class="jrpg-dialogue-box">
+        <div class="jrpg-dialogue-portrait">
+          <PixelPortrait spriteId={npcModal.avatar} scale={3} label={npcModal.name} />
+        </div>
+        <div class="jrpg-dialogue-body">
+          <div class="jrpg-speaker-name">【{npcModal.name}】</div>
+          <p class="jrpg-dialogue-text">{npcModal.dialogue}</p>
+          <div class="jrpg-dialogue-actions">
+            {#if npcModal.poiType === 'shrine'}
+              <button class="btn btn-gold btn-sm" onclick={handleShrinePray}>⛩️ 虔誠參拜（全隊全回復＋出雲武運＋存檔）</button>
+            {:else if npcModal.poiId.includes('komachi') || npcModal.poiId.includes('guide')}
+              <button class="btn btn-gold btn-sm" onclick={handleInnRest}>🍵 宿屋休息吃糰子 (20兩：全隊 HP/SP 全滿)</button>
+              <button class="btn btn-outline btn-sm" onclick={() => gameStore.buyConsumable('dango')}>🍡 買花見糰子 (30兩)</button>
+              <button class="btn btn-outline btn-sm" onclick={() => gameStore.buyConsumable('matcha')}>🍵 買宇治抹茶 (40兩)</button>
+              <button class="btn btn-outline btn-sm" onclick={() => gameStore.buyConsumable('sake')}>🍶 買般若湯 (80兩)</button>
+            {:else if npcModal.poiType === 'town'}
+              <button class="btn btn-gold btn-sm" onclick={handleGoForge}>🔨 進入國友鍛冶屋（打造與強化名刀）</button>
+            {:else if npcModal.poiId.includes('yagyu')}
+              <button class="btn btn-gold btn-sm" onclick={handleDojoSpar}>⚔️ 與道場門生進行指令切磋</button>
+              <button class="btn btn-outline btn-sm" onclick={() => { gameStore.closeNpcDialogue(); gameStore.activeTab = 'talents'; }}>☯️ 研習五輪劍法</button>
+            {/if}
+            <button class="btn btn-outline btn-sm" onclick={() => gameStore.closeNpcDialogue()}>收刀告辭</button>
+          </div>
+        </div>
+      </div>
+    {:else}
+      <div class="map-overlay-tips">
+        🏮 三人小隊同行（主角・神無月楓・影縫疾風）：點擊地面或按 WASD 探索全彩地圖 ｜ 點擊茶屋宿屋／道場／大社對話 ｜ 接觸妖魔展開回合指令戰
+      </div>
+    {/if}
   </div>
 </div>
 
@@ -186,7 +236,6 @@
     overflow: hidden;
     position: relative;
     box-shadow: 0 6px 24px rgba(0, 0, 0, 0.55);
-    margin-bottom: 10px;
   }
 
   .map-top-bar {
@@ -260,7 +309,7 @@
   .canvas-container {
     position: relative;
     width: 100%;
-    height: 440px;
+    height: 410px;
     background: #1a2e1a;
   }
 
@@ -272,12 +321,68 @@
     image-rendering: pixelated;
   }
 
+  /* 傳統 90 年代 JRPG 皇家深藍金框對話視窗 */
+  .jrpg-dialogue-box {
+    position: absolute;
+    bottom: 10px;
+    left: 14px;
+    right: 14px;
+    background: linear-gradient(180deg, rgba(15, 32, 75, 0.96), rgba(8, 18, 46, 0.98));
+    border: 3px solid #fbbf24;
+    box-shadow: inset 0 0 0 2px #1e3a8a, 0 8px 28px rgba(0, 0, 0, 0.85);
+    border-radius: 10px;
+    padding: 12px 16px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    z-index: 20;
+  }
+
+  .jrpg-dialogue-portrait {
+    width: 68px;
+    height: 80px;
+    background: #090d16;
+    border: 2px solid #f59e0b;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+
+  .jrpg-dialogue-body {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .jrpg-speaker-name {
+    font-size: 0.98rem;
+    font-weight: 900;
+    color: #fde047;
+    text-shadow: 1px 1px 0 #000;
+  }
+
+  .jrpg-dialogue-text {
+    font-size: 0.9rem;
+    color: #f8fafc;
+    line-height: 1.5;
+  }
+
+  .jrpg-dialogue-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 4px;
+  }
+
   .map-overlay-tips {
     position: absolute;
     bottom: 8px;
     left: 12px;
     right: 12px;
-    background: rgba(15, 23, 42, 0.86);
+    background: rgba(15, 23, 42, 0.88);
     border: 1px solid rgba(245, 158, 11, 0.45);
     color: #fef3c7;
     font-size: 0.76rem;
