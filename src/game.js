@@ -84,6 +84,7 @@ class SamuraiGame {
 
       // 榮譽成就系統
       achievements: {
+        unlocked: [],
         claimed: [],
         highestCombo: 0
       },
@@ -1099,7 +1100,16 @@ class SamuraiGame {
           };
         }
         if (!this.player.achievements) {
-          this.player.achievements = { claimed: [], highestCombo: 0 };
+          this.player.achievements = { unlocked: [], claimed: [], highestCombo: 0 };
+        } else {
+          if (!Array.isArray(this.player.achievements.unlocked)) {
+            this.player.achievements.unlocked = Array.isArray(this.player.achievements.claimed)
+              ? [...this.player.achievements.claimed]
+              : [];
+          }
+          if (!Array.isArray(this.player.achievements.claimed)) {
+            this.player.achievements.claimed = [];
+          }
         }
         if (!this.player.stats.totalSharpens) {
           this.player.stats.totalSharpens = 0;
@@ -1605,6 +1615,8 @@ class SamuraiGame {
   start() {
     this.load();
     this.checkOfflineGains();
+    // 啟動時靜默檢測並記錄所有已達成之成就，防止每次進遊戲時全部彈出通知
+    this.checkAchievements(true);
     this.spawnEnemy();
     this.startCombatLoop();
     this.setupAccessibilityControls();
@@ -2202,9 +2214,10 @@ class SamuraiGame {
     }
 
     const isClaimed = !!(p.achievements && p.achievements.claimed && p.achievements.claimed.includes(ach.id));
-    const isCompleted = isClaimed || current >= ach.target;
+    const isUnlocked = !!(p.achievements && p.achievements.unlocked && p.achievements.unlocked.includes(ach.id));
+    const isCompleted = isClaimed || isUnlocked || current >= ach.target;
     return {
-      current: Math.min(ach.target, current),
+      current: Math.min(ach.target, Math.max(current, isCompleted ? ach.target : 0)),
       target: ach.target,
       isCompleted,
       isClaimed
@@ -2213,19 +2226,35 @@ class SamuraiGame {
 
   checkAchievements(suppressToast = false) {
     if (!window.ACHIEVEMENTS_DATA || !this.player || !this.player.achievements) return;
+    if (!Array.isArray(this.player.achievements.unlocked)) {
+      this.player.achievements.unlocked = [];
+    }
+    if (!Array.isArray(this.player.achievements.claimed)) {
+      this.player.achievements.claimed = [];
+    }
+
+    let newlyUnlocked = false;
+
     for (const ach of window.ACHIEVEMENTS_DATA) {
-      if (!this.player.achievements.claimed.includes(ach.id)) {
-        const prog = this.getAchievementProgress(ach);
-        if (prog.isCompleted) {
-          if (!this._notifiedAchs) this._notifiedAchs = new Set();
-          if (!this._notifiedAchs.has(ach.id)) {
-            this._notifiedAchs.add(ach.id);
-            if (!suppressToast && typeof window !== "undefined" && !window.__TESTING__) {
-              this.showAchievementToast(ach);
-            }
+      // 只要該成就已經解鎖或已領取，就絕不重複觸發彈窗
+      const isAlreadyUnlocked = this.player.achievements.unlocked.includes(ach.id) ||
+                                this.player.achievements.claimed.includes(ach.id);
+
+      const prog = this.getAchievementProgress(ach);
+      if (prog.isCompleted) {
+        if (!isAlreadyUnlocked) {
+          this.player.achievements.unlocked.push(ach.id);
+          newlyUnlocked = true;
+          if (!suppressToast && typeof window !== "undefined" && !window.__TESTING__) {
+            this.showAchievementToast(ach);
           }
         }
       }
+    }
+
+    if (newlyUnlocked) {
+      this.save();
+      this.updateAchievementsUI();
     }
   }
 
@@ -2239,6 +2268,9 @@ class SamuraiGame {
 
     if (!this.player.achievements.claimed.includes(achId)) {
       this.player.achievements.claimed.push(achId);
+    }
+    if (!this.player.achievements.unlocked.includes(achId)) {
+      this.player.achievements.unlocked.push(achId);
     }
 
     const goldReward = ach.reward.gold || 0;
@@ -2287,6 +2319,9 @@ class SamuraiGame {
     for (const ach of claimable) {
       if (!this.player.achievements.claimed.includes(ach.id)) {
         this.player.achievements.claimed.push(ach.id);
+      }
+      if (!this.player.achievements.unlocked.includes(ach.id)) {
+        this.player.achievements.unlocked.push(ach.id);
       }
       totalGold += (ach.reward.gold || 0);
       totalSteel += (ach.reward.steel || 0);
