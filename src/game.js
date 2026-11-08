@@ -23,6 +23,7 @@ class SamuraiGame {
 
     // 無障礙與自動斬擊模式（預設開啟，免除重複點擊負擔）
     this.autoSlashEnabled = true;
+    this.activeAchFilter = "all";
 
     this.initDefaultState();
   }
@@ -76,8 +77,15 @@ class SamuraiGame {
         totalKills: 0,
         bossKills: 0,
         swordsForged: 0,
+        totalSharpens: 0,
         highestZone: 1,
         currentZone: 1
+      },
+
+      // 榮譽成就系統
+      achievements: {
+        claimed: [],
+        highestCombo: 0
       },
 
       // 命運分歧故事線 (Branching Storyline)
@@ -365,6 +373,12 @@ class SamuraiGame {
       this.comboCount = 1;
     }
     this.lastHitTime = now;
+    if (this.player.achievements) {
+      if (this.comboCount > (this.player.achievements.highestCombo || 0)) {
+        this.player.achievements.highestCombo = this.comboCount;
+        this.checkAchievements();
+      }
+    }
 
     // 音效
     if (window.samuraiAudio) {
@@ -503,6 +517,9 @@ class SamuraiGame {
       }
     }
 
+    // 成就檢測
+    this.checkAchievements();
+
     // 自動生成下一位敵人
     setTimeout(() => {
       this.spawnEnemy();
@@ -536,6 +553,7 @@ class SamuraiGame {
       if (window.samuraiAudio) window.samuraiAudio.playLevelUp();
       req = this.getRequiredExp(this.player.level);
     }
+    this.checkAchievements();
     this.updateCharacterUI();
   }
 
@@ -545,6 +563,7 @@ class SamuraiGame {
     if (!instance) return;
 
     this.player.swordsInventory.push(instance);
+    this.checkAchievements();
 
     // 加入圖鑑
     if (!this.player.codex.includes(swordId)) {
@@ -609,7 +628,9 @@ class SamuraiGame {
 
     this.player.items[whetstoneId]--;
     weapon.refine = (weapon.refine || 0) + 1;
+    this.player.stats.totalSharpens = (this.player.stats.totalSharpens || 0) + 1;
     this.player.gold += 0; // 磨刀微量花費或免費
+    this.checkAchievements();
 
     if (window.samuraiAudio) window.samuraiAudio.playSharpen();
     this.addCombatLog(`✨ 使用砥石細心研磨！佩刀【${weapon.name}】磨礪至 +${weapon.refine}！鋒利度大幅提昇！`);
@@ -658,6 +679,7 @@ class SamuraiGame {
     const chosen = candidateSwords[Math.floor(Math.random() * candidateSwords.length)];
 
     const sword = this.acquireSword(chosen.id, (type === "master" ? "🔥【名匠淬火秘鍛】" : "⚒️【傳統踏鞴鍛打】"));
+    this.checkAchievements();
 
     // 彈出鍛造獲得提示動畫
     this.showForgeResultModal(sword);
@@ -711,6 +733,7 @@ class SamuraiGame {
     }
     this.player.skillPoints--;
     this.player.skills[skillName] = (this.player.skills[skillName] || 0) + 1;
+    this.checkAchievements();
     if (window.samuraiAudio) window.samuraiAudio.playLevelUp();
     this.updateDojoUI();
     this.updateCharacterUI();
@@ -988,6 +1011,12 @@ class SamuraiGame {
             history: []
           };
         }
+        if (!this.player.achievements) {
+          this.player.achievements = { claimed: [], highestCombo: 0 };
+        }
+        if (!this.player.stats.totalSharpens) {
+          this.player.stats.totalSharpens = 0;
+        }
         if (!this.player.prestige) {
           this.player.prestige = {
             reincarnationCount: 0,
@@ -1063,6 +1092,7 @@ class SamuraiGame {
 
     if (tabName === "story") this.updateStoryUI();
     if (tabName === "prestige") this.updatePrestigeUI();
+    if (tabName === "achievements") this.updateAchievementsUI();
     if (tabName === "forge") this.updateForgeUI();
     if (tabName === "dojo") this.updateDojoUI();
     if (tabName === "inventory") this.updateInventoryUI();
@@ -1486,6 +1516,7 @@ class SamuraiGame {
     this.updateCodexUI();
     this.updateStoryUI();
     this.updatePrestigeUI();
+    this.updateAchievementsUI();
   }
 
   // ==========================================================
@@ -1497,6 +1528,7 @@ class SamuraiGame {
     if (!window.STORY_DATA || !window.STORY_DATA.factions[factionId]) return;
     const f = window.STORY_DATA.factions[factionId];
     this.player.story.faction = factionId;
+    this.checkAchievements();
     this.player.story.history.push({
       timestamp: Date.now(),
       act: 3,
@@ -1529,6 +1561,7 @@ class SamuraiGame {
     if (!this.player.story) return;
     if (!this.player.story.completedActs.includes(actNum)) {
       this.player.story.completedActs.push(actNum);
+    this.checkAchievements();
       this.addCombatLog(`<span style="color:#fbbf24;font-weight:bold;">📜 【命運繪卷】突破第 ${actNum} 幕歷史篇章！</span>`);
     }
 
@@ -1753,6 +1786,7 @@ class SamuraiGame {
     this.player.prestige.karma += karmaEarned;
     this.player.prestige.totalKarmaEarned += karmaEarned;
     this.player.prestige.reincarnationCount++;
+    this.checkAchievements();
 
     // 計算初始起步等級（受 perk_wisdom 影響）
     const wisdomLevel = (this.player.prestige.perks && this.player.prestige.perks.perk_wisdom) || 0;
@@ -1814,6 +1848,7 @@ class SamuraiGame {
 
     this.player.prestige.karma -= cost;
     this.player.prestige.perks[perkId] = currentLevel + 1;
+    this.checkAchievements();
 
     if (window.samuraiAudio) window.samuraiAudio.playHammer();
     this.addCombatLog(`🔥 點亮輪迴神龕【${perk.name}】至 Lv.${this.player.prestige.perks[perkId]}！獲得永久神力加護！`);
@@ -1897,6 +1932,346 @@ class SamuraiGame {
       }).join("");
     }
   }
+
+
+  // ==========================================================
+  // 榮譽成就系統方法 (Achievements System API)
+  // ==========================================================
+
+  getAchievementProgress(ach) {
+    if (!ach) return { current: 0, target: 1, isCompleted: false, isClaimed: false };
+    const p = this.player;
+    let current = 0;
+
+    switch (ach.id) {
+      case "ach_kill_1":
+      case "ach_kill_50":
+      case "ach_kill_200":
+      case "ach_kill_1000":
+      case "ach_kill_5000":
+        current = (p.stats && p.stats.totalKills) || 0;
+        break;
+      case "ach_boss_1":
+      case "ach_boss_10":
+      case "ach_boss_50":
+        current = (p.stats && p.stats.bossKills) || 0;
+        break;
+      case "ach_combo_50":
+        current = Math.max((p.achievements && p.achievements.highestCombo) || 0, this.comboCount || 0);
+        break;
+      case "ach_forge_1":
+      case "ach_forge_10":
+      case "ach_forge_50":
+        current = (p.stats && p.stats.swordsForged) || 0;
+        break;
+      case "ach_sharpen_5":
+      case "ach_sharpen_20":
+        current = (p.stats && p.stats.totalSharpens) || 0;
+        break;
+      case "ach_tier_wazamono":
+        current = (p.codex && window.SWORDS_DATA) ? (p.codex.some(id => {
+          const s = window.SWORDS_DATA.find(x => x.id === id);
+          return s && s.tier >= 2;
+        }) ? 1 : 0) : 0;
+        break;
+      case "ach_tier_owazamono":
+        current = (p.codex && window.SWORDS_DATA) ? (p.codex.some(id => {
+          const s = window.SWORDS_DATA.find(x => x.id === id);
+          return s && s.tier >= 4;
+        }) ? 1 : 0) : 0;
+        break;
+      case "ach_tier_five_swords":
+        current = (p.codex && window.SWORDS_DATA) ? (p.codex.some(id => {
+          const s = window.SWORDS_DATA.find(x => x.id === id);
+          return s && (s.tierName === "天下五劍" || (s.tierName && s.tierName.includes("五劍")) || s.tier === 5);
+        }) ? 1 : 0) : 0;
+        break;
+      case "ach_tier_mythic":
+        current = (p.codex && window.SWORDS_DATA) ? (p.codex.some(id => {
+          const s = window.SWORDS_DATA.find(x => x.id === id);
+          return s && (s.tierName === "神話妖刀" || (s.tierName && s.tierName.includes("妖刀")) || s.tier >= 6);
+        }) ? 1 : 0) : 0;
+        break;
+      case "ach_level_10":
+      case "ach_level_30":
+      case "ach_level_60":
+      case "ach_level_100":
+        current = p.level || 1;
+        break;
+      case "ach_dojo_5":
+      case "ach_dojo_15":
+        current = Math.max((p.skills && p.skills.shinkage) || 0, (p.skills && p.skills.jigen) || 0, (p.skills && p.skills.rishin) || 0);
+        break;
+      case "ach_faction_vow":
+        current = (p.story && p.story.faction && p.story.faction !== "unaligned") ? 1 : 0;
+        break;
+      case "ach_clear_act7":
+        current = (p.story && p.story.completedActs && p.story.completedActs.includes(7)) ? 7 : ((p.stats && p.stats.highestZone >= 7 && p.stats.bossKills > 0) ? 7 : 0);
+        break;
+      case "ach_all_endings":
+        current = (p.story && p.story.unlockedEndings) ? p.story.unlockedEndings.length : 0;
+        break;
+      case "ach_prestige_1":
+      case "ach_prestige_3":
+        current = (p.prestige ? p.prestige.reincarnationCount : 0);
+        break;
+      case "ach_karma_500":
+        current = (p.prestige ? Math.max(p.prestige.totalKarmaEarned || 0, p.prestige.karma || 0) : 0);
+        break;
+      case "ach_perk_max":
+        current = (p.prestige && p.prestige.perks && window.PRESTIGE_DATA ? (Object.keys(p.prestige.perks).some(k => {
+          const perk = window.PRESTIGE_DATA.perks.find(x => x.id === k);
+          return perk && p.prestige.perks[k] >= perk.maxLevel;
+        }) ? 1 : 0) : 0);
+        break;
+      default:
+        current = 0;
+    }
+
+    const isClaimed = !!(p.achievements && p.achievements.claimed && p.achievements.claimed.includes(ach.id));
+    const isCompleted = isClaimed || current >= ach.target;
+    return {
+      current: Math.min(ach.target, current),
+      target: ach.target,
+      isCompleted,
+      isClaimed
+    };
+  }
+
+  checkAchievements(suppressToast = false) {
+    if (!window.ACHIEVEMENTS_DATA || !this.player || !this.player.achievements) return;
+    for (const ach of window.ACHIEVEMENTS_DATA) {
+      if (!this.player.achievements.claimed.includes(ach.id)) {
+        const prog = this.getAchievementProgress(ach);
+        if (prog.isCompleted) {
+          if (!this._notifiedAchs) this._notifiedAchs = new Set();
+          if (!this._notifiedAchs.has(ach.id)) {
+            this._notifiedAchs.add(ach.id);
+            if (!suppressToast && typeof window !== "undefined" && !window.__TESTING__) {
+              this.showAchievementToast(ach);
+            }
+          }
+        }
+      }
+    }
+  }
+
+  claimAchievement(achId) {
+    if (!window.ACHIEVEMENTS_DATA || !this.player || !this.player.achievements) return;
+    const ach = window.ACHIEVEMENTS_DATA.find(a => a.id === achId);
+    if (!ach) return;
+
+    const prog = this.getAchievementProgress(ach);
+    if (!prog.isCompleted || prog.isClaimed) return;
+
+    if (!this.player.achievements.claimed.includes(achId)) {
+      this.player.achievements.claimed.push(achId);
+    }
+
+    const goldReward = ach.reward.gold || 0;
+    const steelReward = ach.reward.steel || 0;
+    const karmaReward = ach.reward.karma || 0;
+
+    this.player.gold += goldReward;
+    this.player.steel += steelReward;
+    if (this.player.prestige && karmaReward > 0) {
+      this.player.prestige.karma += karmaReward;
+      this.player.prestige.totalKarmaEarned = (this.player.prestige.totalKarmaEarned || 0) + karmaReward;
+    }
+
+    if (window.samuraiAudio) window.samuraiAudio.playLevelUp();
+
+    const lang = window.getLang ? window.getLang() : "zh-TW";
+    const achText = window.getAchievementText ? window.getAchievementText(ach, lang) : ach;
+    const karmaStr = karmaReward > 0 ? `、🌀 +${karmaReward}` : "";
+    this.addCombatLog(`<span style="color:#fbbf24;font-weight:bold;">🏆 【成就達成】領取【${achText.name}】！獲得 🪙 +${goldReward}、💎 +${steelReward}${karmaStr}！</span>`);
+
+    this.updateCharacterUI();
+    this.updateAchievementsUI();
+    this.save();
+  }
+
+  claimAllAchievements() {
+    if (!window.ACHIEVEMENTS_DATA || !this.player || !this.player.achievements) return;
+
+    const claimable = window.ACHIEVEMENTS_DATA.filter(a => {
+      const prog = this.getAchievementProgress(a);
+      return prog.isCompleted && !prog.isClaimed;
+    });
+
+    if (claimable.length === 0) {
+      alert(window.t ? window.t("achNoClaimable") : "目前暫無可領取的成就獎勵！");
+      return;
+    }
+
+    let totalGold = 0;
+    let totalSteel = 0;
+    let totalKarma = 0;
+
+    for (const ach of claimable) {
+      if (!this.player.achievements.claimed.includes(ach.id)) {
+        this.player.achievements.claimed.push(ach.id);
+      }
+      totalGold += (ach.reward.gold || 0);
+      totalSteel += (ach.reward.steel || 0);
+      totalKarma += (ach.reward.karma || 0);
+    }
+
+    this.player.gold += totalGold;
+    this.player.steel += totalSteel;
+    if (this.player.prestige && totalKarma > 0) {
+      this.player.prestige.karma += totalKarma;
+      this.player.prestige.totalKarmaEarned = (this.player.prestige.totalKarmaEarned || 0) + totalKarma;
+    }
+
+    if (window.samuraiAudio) window.samuraiAudio.playLevelUp();
+
+    const lang = window.getLang ? window.getLang() : "zh-TW";
+    const msg = window.t ? window.t("achClaimAllSuccess", { count: claimable.length, gold: totalGold, steel: totalSteel, karma: totalKarma }) : `領取了 ${claimable.length} 項成就！`;
+    alert(msg);
+    this.addCombatLog(`<span style="color:#fbbf24;font-weight:bold;">🎁 【成就總領】一口氣領取 ${claimable.length} 項成就！獲得 🪙 +${totalGold}、💎 +${totalSteel}、🌀 +${totalKarma}！</span>`);
+
+    this.updateCharacterUI();
+    this.updateAchievementsUI();
+    this.save();
+  }
+
+  filterAchievements(category) {
+    this.activeAchFilter = category;
+    if (typeof document !== "undefined") {
+      document.querySelectorAll(".ach-filter-btn").forEach(btn => {
+        if (btn.getAttribute("data-filter") === category) {
+          btn.classList.add("active");
+        } else {
+          btn.classList.remove("active");
+        }
+      });
+    }
+    this.updateAchievementsUI();
+  }
+
+  updateAchievementsUI() {
+    if (!window.ACHIEVEMENTS_DATA || !this.player || !this.player.achievements) return;
+    if (typeof document === "undefined") return;
+
+    const lang = window.getLang ? window.getLang() : "zh-TW";
+    const allAchs = window.ACHIEVEMENTS_DATA;
+    let completedCount = 0;
+    let claimableCount = 0;
+
+    const catCounts = { all: allAchs.length, combat: 0, swords: 0, growth: 0, destiny: 0 };
+
+    allAchs.forEach(a => {
+      if (catCounts[a.category] !== undefined) catCounts[a.category]++;
+      const prog = this.getAchievementProgress(a);
+      if (prog.isCompleted) completedCount++;
+      if (prog.isCompleted && !prog.isClaimed) claimableCount++;
+    });
+
+    const ratioEl = document.getElementById("ach-progress-ratio");
+    if (ratioEl) ratioEl.textContent = `${completedCount} / ${allAchs.length}`;
+    const barEl = document.getElementById("ach-total-bar");
+    const percent = Math.floor((completedCount / allAchs.length) * 100);
+    if (barEl) barEl.style.width = `${percent}%`;
+    const percentText = document.getElementById("ach-percent-text");
+    if (percentText) percentText.textContent = `${percent}%`;
+
+    ["all", "combat", "swords", "growth", "destiny"].forEach(cat => {
+      const el = document.getElementById(`ach-cnt-${cat}`);
+      if (el) el.textContent = catCounts[cat];
+    });
+
+    const badgeEl = document.getElementById("ach-claimable-badge");
+    const claimAllBtn = document.getElementById("btn-claim-all-ach");
+    if (badgeEl && claimAllBtn) {
+      if (claimableCount > 0) {
+        badgeEl.textContent = claimableCount;
+        badgeEl.style.display = "inline-block";
+        claimAllBtn.disabled = false;
+      } else {
+        badgeEl.style.display = "none";
+        claimAllBtn.disabled = true;
+      }
+    }
+
+    const cardsGrid = document.getElementById("achievements-cards-grid");
+    if (!cardsGrid) return;
+
+    const filtered = (this.activeAchFilter === "all") ? allAchs : allAchs.filter(a => a.category === this.activeAchFilter);
+
+    cardsGrid.innerHTML = filtered.map(ach => {
+      const prog = this.getAchievementProgress(ach);
+      const achText = window.getAchievementText ? window.getAchievementText(ach, lang) : ach;
+      const percentVal = Math.min(100, Math.floor((prog.current / prog.target) * 100));
+
+      let cardClass = "";
+      let btnHtml = "";
+
+      if (prog.isClaimed) {
+        cardClass = "claimed";
+        btnHtml = `<button class="btn-claim-ach claimed" disabled>${window.t ? window.t("achClaimed") : "✅ 已領取"}</button>`;
+      } else if (prog.isCompleted) {
+        cardClass = "completed";
+        btnHtml = `<button class="btn-claim-ach claimable" onclick="window.game.claimAchievement('${ach.id}')">${window.t ? window.t("achClaimBtn") : "✨ 領取獎勵"}</button>`;
+      } else {
+        btnHtml = `<button class="btn-claim-ach locked" disabled>${window.t ? window.t("achInProgress") : "進行中"} (${prog.current}/${prog.target})</button>`;
+      }
+
+      const rewardParts = [];
+      if (ach.reward.gold) rewardParts.push(`🪙 ${ach.reward.gold}`);
+      if (ach.reward.steel) rewardParts.push(`💎 ${ach.reward.steel}`);
+      if (ach.reward.karma) rewardParts.push(`🌀 ${ach.reward.karma}`);
+
+      return `
+        <div class="achievement-card ${cardClass}">
+          <div class="ach-icon-box">${ach.icon}</div>
+          <div class="ach-info-box">
+            <div class="ach-header-row">
+              <span class="ach-name">${achText.name}</span>
+            </div>
+            <div class="ach-desc">${achText.desc}</div>
+            <div class="ach-progress-track">
+              <div class="ach-progress-fill" style="width: ${percentVal}%;"></div>
+            </div>
+            <div class="ach-bottom-row">
+              <div class="ach-reward-badge">${rewardParts.join(" ")}</div>
+              <span class="ach-progress-num">${prog.current} / ${prog.target} (${percentVal}%)</span>
+              ${btnHtml}
+            </div>
+          </div>
+        </div>
+      `;
+    }).join("");
+  }
+
+  showAchievementToast(ach) {
+    if (typeof document === "undefined") return;
+    const container = document.getElementById("achievement-toast-container");
+    if (!container) return;
+
+    const lang = window.getLang ? window.getLang() : "zh-TW";
+    const achText = window.getAchievementText ? window.getAchievementText(ach, lang) : ach;
+
+    const toast = document.createElement("div");
+    toast.className = "achievement-toast";
+    toast.innerHTML = `
+      <div class="toast-icon">${ach.icon}</div>
+      <div class="toast-content">
+        <span class="toast-title">${window.t ? window.t("achToastUnlocked") : "🏆 成就達成！"}</span>
+        <span class="toast-name">${achText.name}</span>
+      </div>
+    `;
+
+    container.appendChild(toast);
+
+    setTimeout(() => {
+      toast.classList.add("fade-out");
+      setTimeout(() => {
+        if (toast.parentNode) toast.parentNode.removeChild(toast);
+      }, 400);
+    }, 3500);
+  }
+
 
   // 清理計時器（用於重置或自動測試）
   destroy() {
