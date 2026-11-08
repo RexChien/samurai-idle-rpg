@@ -25,6 +25,7 @@ before(() => {
   eval(fs.readFileSync('data/enemies.js', 'utf8'));
   eval(fs.readFileSync('data/story.js', 'utf8'));
   eval(fs.readFileSync('data/prestige.js', 'utf8'));
+  eval(fs.readFileSync('data/achievements.js', 'utf8'));
 });
 
 describe('1. Swords Database (data/swords.js)', () => {
@@ -257,3 +258,55 @@ describe('6. Localization i18n (data/i18n.js)', () => {
     assert.ok(facJa.name.includes('佐幕'));
   });
 });
+
+describe('7. Achievements Database (data/achievements.js)', () => {
+  it('contains exactly 31 achievements across 4 categories', () => {
+    assert.equal(Array.isArray(window.ACHIEVEMENTS_DATA), true);
+    assert.equal(window.ACHIEVEMENTS_DATA.length, 31);
+
+    const validCats = ['combat', 'swords', 'growth', 'destiny'];
+    const counts = { combat: 0, swords: 0, growth: 0, destiny: 0 };
+    for (const a of window.ACHIEVEMENTS_DATA) {
+      assert.ok(validCats.includes(a.category), `Invalid category ${a.category} for ${a.id}`);
+      counts[a.category]++;
+    }
+    assert.equal(counts.combat, 9);
+    assert.equal(counts.swords, 9);
+    assert.equal(counts.growth, 6);
+    assert.equal(counts.destiny, 7);
+  });
+
+  it('each achievement has valid attributes, targets, and rewards', () => {
+    const ids = new Set();
+    for (const a of window.ACHIEVEMENTS_DATA) {
+      assert.ok(a.id, 'Achievement must have an ID');
+      assert.ok(!ids.has(a.id), `Duplicate achievement ID: ${a.id}`);
+      ids.add(a.id);
+
+      assert.ok(typeof a.target === 'number' && a.target > 0, `Target must be > 0 for ${a.id}`);
+      assert.ok(a.icon && typeof a.icon === 'string', `Missing icon for ${a.id}`);
+      assert.ok(a.reward && typeof a.reward === 'object', `Missing reward object for ${a.id}`);
+      assert.ok(typeof (a.reward.gold || 0) === 'number');
+      assert.ok(typeof (a.reward.steel || 0) === 'number');
+      assert.ok(typeof (a.reward.karma || 0) === 'number');
+      assert.ok((a.reward.gold > 0) || (a.reward.steel > 0) || (a.reward.karma > 0), `Reward should not be empty for ${a.id}`);
+    }
+  });
+
+  it('supports full localization (zh-TW, en, ja) for all 31 achievements', () => {
+    for (const a of window.ACHIEVEMENTS_DATA) {
+      assert.ok(a.translations, `Missing translations object for ${a.id}`);
+      for (const lang of ['zh-TW', 'en', 'ja']) {
+        const t = a.translations[lang];
+        assert.ok(t, `Missing translation for lang ${lang} in ${a.id}`);
+        assert.ok(t.name && t.name.length > 0, `Missing name in ${lang} for ${a.id}`);
+        assert.ok(t.desc && t.desc.length > 0, `Missing desc in ${lang} for ${a.id}`);
+
+        const helperResult = window.getAchievementText(a, lang);
+        assert.equal(helperResult.name, t.name);
+        assert.equal(helperResult.desc, t.desc);
+      }
+    }
+  });
+});
+
