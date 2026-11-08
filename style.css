@@ -2907,18 +2907,261 @@ nav.tab-nav::-webkit-scrollbar {
   cursor: default;
 }
 
-/* 成就浮動解鎖通知 (Achievement Toast) */
+/* ==========================================================
+   暗黑破壞神3風格：史詩榮譽成就中央橫幅彈窗 (Diablo 3 Epic Achievement Center Banner)
+   ========================================================== */
+
 #achievement-toast-container {
   position: fixed;
-  top: 20px;
-  right: 20px;
-  z-index: 10000;
+  top: 13%;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 99999;
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  align-items: center;
   pointer-events: none;
+  width: 92%;
+  max-width: 560px;
 }
 
+.d3-achievement-banner {
+  position: relative;
+  width: 100%;
+  pointer-events: auto;
+  border-radius: 8px;
+  overflow: visible;
+  animation: d3BannerEntrance 0.7s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+  box-shadow: 
+    0 15px 40px rgba(0, 0, 0, 0.95),
+    0 0 35px rgba(245, 158, 11, 0.4),
+    0 0 10px rgba(217, 56, 58, 0.3);
+}
+
+/* 背後神聖金色放射光暈 (Radial Sunburst Flare) */
+.d3-ach-flare {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 130%;
+  height: 280%;
+  transform: translate(-50%, -50%);
+  background: radial-gradient(ellipse at center, rgba(245, 158, 11, 0.45) 0%, rgba(217, 56, 58, 0.2) 35%, rgba(0, 0, 0, 0) 70%);
+  pointer-events: none;
+  z-index: -2;
+  animation: d3FlarePulse 2.8s ease-in-out infinite alternate;
+}
+
+@keyframes d3FlarePulse {
+  0% { transform: translate(-50%, -50%) scale(0.9); opacity: 0.7; }
+  100% { transform: translate(-50%, -50%) scale(1.15); opacity: 1; }
+}
+
+/* 橫向劃過耀眼劍氣強光 (Light Sheen Streak) */
+.d3-ach-sheen {
+  position: absolute;
+  top: 0;
+  left: -120%;
+  width: 80%;
+  height: 100%;
+  background: linear-gradient(105deg, transparent 20%, rgba(255, 255, 255, 0.5) 48%, rgba(251, 191, 36, 0.6) 52%, transparent 80%);
+  transform: skewX(-25deg);
+  pointer-events: none;
+  z-index: 10;
+  animation: d3SheenSweep 1.6s 0.2s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+}
+
+@keyframes d3SheenSweep {
+  0% { left: -120%; }
+  100% { left: 180%; }
+}
+
+/* 主框體：暗黑破壞神黑金浮雕外觀 (D3 Plaque Body) */
+.d3-ach-frame {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 16px 20px;
+  background: linear-gradient(180deg, #2a2218 0%, #17130f 45%, #0b0907 100%);
+  border: 2px solid #eab308;
+  border-radius: 8px;
+  box-shadow: 
+    inset 0 0 25px rgba(234, 179, 8, 0.25),
+    inset 0 1px 0 rgba(255, 255, 255, 0.25),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.8);
+}
+
+/* 仿暗黑徽章四角鍛造鉚釘裝飾 */
+.d3-ach-frame::before,
+.d3-ach-frame::after {
+  content: "";
+  position: absolute;
+  width: 14px;
+  height: 14px;
+  border-style: solid;
+  border-color: #f59e0b;
+  pointer-events: none;
+}
+.d3-ach-frame::before {
+  top: 3px;
+  left: 3px;
+  border-width: 2px 0 0 2px;
+}
+.d3-ach-frame::after {
+  bottom: 3px;
+  right: 3px;
+  border-width: 0 2px 2px 0;
+}
+
+/* 左側圓形功勳徽章 (Medallion Crest) */
+.d3-ach-crest-wrap {
+  position: relative;
+  flex-shrink: 0;
+  width: 68px;
+  height: 68px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: radial-gradient(circle, #3b2814 0%, #15110c 80%);
+  border: 2px solid #fbbf24;
+  box-shadow: 
+    0 0 18px rgba(245, 158, 11, 0.6),
+    inset 0 0 12px rgba(245, 158, 11, 0.5);
+}
+
+.d3-ach-crest-glow {
+  position: absolute;
+  top: -4px;
+  left: -4px;
+  right: -4px;
+  bottom: -4px;
+  border-radius: 50%;
+  border: 1px dashed rgba(251, 191, 36, 0.6);
+  animation: d3CrestRotate 12s linear infinite;
+}
+
+@keyframes d3CrestRotate {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.d3-ach-crest-icon {
+  font-size: 2.2rem;
+  line-height: 1;
+  filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.9));
+  transform: scale(1);
+  transition: transform 0.3s;
+}
+
+/* 右側成就文字內容 (Banner Body) */
+.d3-ach-body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+/* 頂部鍛金勳章緞帶 (Header Ribbon) */
+.d3-ach-header-ribbon {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 4px;
+}
+
+.d3-ach-ribbon-wing {
+  color: #f59e0b;
+  font-size: 0.75rem;
+  opacity: 0.8;
+}
+
+.d3-ach-ribbon-title {
+  font-size: 0.78rem;
+  font-weight: 900;
+  letter-spacing: 2.5px;
+  text-transform: uppercase;
+  background: linear-gradient(180deg, #fffbeb 0%, #f59e0b 55%, #b45309 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.8));
+}
+
+/* 成就主標題 (Diablo 3 Bold Gold Typography) */
+.d3-ach-title {
+  font-family: 'Noto Serif TC', serif;
+  font-size: 1.25rem;
+  font-weight: 900;
+  color: #fff9e6;
+  text-shadow: 
+    0 0 14px rgba(245, 158, 11, 0.85),
+    0 2px 4px #000,
+    0 0 2px #d97706;
+  letter-spacing: 0.5px;
+  line-height: 1.25;
+}
+
+/* 成就描述 (Achievement Description) */
+.d3-ach-desc {
+  font-size: 0.86rem;
+  color: #d8d4cb;
+  margin-top: 4px;
+  line-height: 1.35;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.9);
+}
+
+/* 獎勵膠囊徽章 (Reward Badges) */
+.d3-ach-rewards {
+  margin-top: 8px;
+}
+
+.d3-ach-reward-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 3px 10px;
+  background: rgba(15, 12, 9, 0.75);
+  border: 1px solid rgba(245, 158, 11, 0.5);
+  border-radius: 12px;
+  color: #fbbf24;
+  font-size: 0.82rem;
+  font-weight: bold;
+  letter-spacing: 0.5px;
+  box-shadow: inset 0 0 6px rgba(245, 158, 11, 0.2);
+}
+
+/* 暗黑破壞神風格重擊震盪進場動畫 (Slam & Bloom Entrance) */
+@keyframes d3BannerEntrance {
+  0% {
+    opacity: 0;
+    transform: translateY(-60px) scale(0.65);
+    filter: brightness(2.6) drop-shadow(0 0 40px #fbbf24);
+  }
+  50% {
+    opacity: 1;
+    transform: translateY(10px) scale(1.08);
+    filter: brightness(1.5) drop-shadow(0 0 25px #f59e0b);
+  }
+  75% {
+    transform: translateY(-4px) scale(0.97);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    filter: brightness(1);
+  }
+}
+
+/* 優雅淡出退場 (Elegant Dissolve Exit) */
+.d3-achievement-banner.fade-out {
+  opacity: 0;
+  transform: translateY(-30px) scale(0.92);
+  filter: blur(2px);
+  transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* 舊版 toast 相容性維持 */
 .achievement-toast {
   display: flex;
   align-items: center;
@@ -2931,48 +3174,11 @@ nav.tab-nav::-webkit-scrollbar {
   color: #fff;
   min-width: 280px;
   max-width: 380px;
-  animation: slide-toast-in 0.35s ease forwards;
-  pointer-events: auto;
 }
-
-@keyframes slide-toast-in {
-  from {
-    opacity: 0;
-    transform: translateX(60px);
-  }
-  to {
-    opacity: 1;
-    transform: translateX(0);
-  }
-}
-
-.achievement-toast.fade-out {
-  opacity: 0;
-  transform: translateY(-20px);
-  transition: all 0.4s ease;
-}
-
-.toast-icon {
-  font-size: 1.8rem;
-}
-
-.toast-content {
-  display: flex;
-  flex-direction: column;
-}
-
-.toast-title {
-  font-size: 0.75rem;
-  color: #fbbf24;
-  font-weight: bold;
-  letter-spacing: 1px;
-}
-
-.toast-name {
-  font-size: 0.9rem;
-  font-weight: bold;
-  color: #fff;
-}
+.toast-icon { font-size: 1.8rem; }
+.toast-content { display: flex; flex-direction: column; }
+.toast-title { font-size: 0.75rem; color: #fbbf24; font-weight: bold; }
+.toast-name { font-size: 0.9rem; font-weight: bold; color: #fff; }
 
 @media (max-width: 768px) {
   .achievements-grid {
@@ -2990,12 +3196,24 @@ nav.tab-nav::-webkit-scrollbar {
     justify-content: center;
   }
   #achievement-toast-container {
-    top: 10px;
-    right: 10px;
-    left: 10px;
+    top: 10%;
+    width: 95%;
   }
-  .achievement-toast {
-    min-width: 0;
-    width: 100%;
+  .d3-ach-frame {
+    padding: 12px 14px;
+    gap: 12px;
+  }
+  .d3-ach-crest-wrap {
+    width: 54px;
+    height: 54px;
+  }
+  .d3-ach-crest-icon {
+    font-size: 1.8rem;
+  }
+  .d3-ach-title {
+    font-size: 1.05rem;
+  }
+  .d3-ach-desc {
+    font-size: 0.8rem;
   }
 }
