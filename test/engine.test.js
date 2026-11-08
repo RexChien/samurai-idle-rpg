@@ -87,6 +87,20 @@ function setupMockEnvironment(clearStorage = true) {
   global.alert = () => {};
   global.confirm = () => true;
 
+  global.window.samuraiAudio = {
+    playSlash: () => {},
+    playCrit: () => {},
+    playClash: () => {},
+    playSharpen: () => {},
+    playHammer: () => {},
+    playLevelUp: () => {},
+    playBossBoom: () => {},
+    playAchievementFanfare: () => {},
+    ensureContext: () => {},
+    toggle: () => {},
+    enabled: true
+  };
+
   // Load all game data and scripts
   eval(fs.readFileSync('data/i18n.js', 'utf8'));
   eval(fs.readFileSync('data/swords.js', 'utf8'));
@@ -95,6 +109,7 @@ function setupMockEnvironment(clearStorage = true) {
   eval(fs.readFileSync('data/story.js', 'utf8'));
   eval(fs.readFileSync('data/prestige.js', 'utf8'));
   eval(fs.readFileSync('data/achievements.js', 'utf8'));
+  eval(fs.readFileSync('data/dimensions.js', 'utf8'));
   eval(fs.readFileSync('src/game.js', 'utf8'));
 }
 
@@ -345,9 +360,7 @@ describe('Game Engine & Mechanics (src/game.js)', () => {
 
   it('triggers Diablo 3 style center achievement banner and sound fanfare when unlocking achievements', () => {
     let fanfarePlayed = false;
-    global.window.samuraiAudio = {
-      playAchievementFanfare: () => { fanfarePlayed = true; }
-    };
+    global.window.samuraiAudio.playAchievementFanfare = () => { fanfarePlayed = true; };
 
     const ach = window.ACHIEVEMENTS_DATA[0];
     game.showAchievementToast(ach);
@@ -360,6 +373,94 @@ describe('Game Engine & Mechanics (src/game.js)', () => {
     assert.ok(banner.innerHTML.includes('d3-ach-flare'), 'Banner should include radial flare');
     assert.ok(banner.innerHTML.includes('d3-ach-sheen'), 'Banner should include light sheen streak');
     assert.ok(banner.innerHTML.includes('d3-ach-crest-wrap'), 'Banner should include crest medallion');
+  });
+
+  it('starts in tactile manual mode (autoSlashEnabled = false) and manual strike grants extra gold & Sword Qi', () => {
+    assert.equal(game.autoSlashEnabled, false, 'Should start in manual slash mode');
+    game.spawnEnemy();
+    const initialGold = game.player.gold;
+    const initialQi = game.player.dimensions.swordQi;
+
+    // Execute manual strike
+    game.attack(true);
+
+    assert.ok(game.player.gold > initialGold, 'Manual strike should award gold');
+    assert.ok(game.player.dimensions.swordQi > initialQi, 'Manual strike should produce Sword Qi');
+    assert.equal(game.comboCount, 1, 'Combo count should increment');
+
+    // Toggle auto slash
+    game.toggleAutoSlash();
+    assert.equal(game.autoSlashEnabled, true);
+    game.toggleAutoSlash();
+    assert.equal(game.autoSlashEnabled, false);
+  });
+
+  it('cascading sword dimensions produce lower tiers and sword qi (Antimatter Dimensions style)', () => {
+    game.player.gold = 50000;
+    // Buy Tier 1
+    const bought1 = game.buyDimensionTier(1);
+    assert.equal(bought1, true);
+    assert.equal(game.player.dimensions.tiers[1].amount, 1);
+    assert.equal(game.player.dimensions.tiers[1].bought, 1);
+
+    // Buy Tier 2
+    const bought2 = game.buyDimensionTier(2);
+    assert.equal(bought2, true);
+    assert.equal(game.player.dimensions.tiers[2].amount, 1);
+
+    const initialTier1 = game.player.dimensions.tiers[1].amount;
+    const initialQi = game.player.dimensions.swordQi;
+
+    // Simulate tick (1 second)
+    game.tickDimensions(1.0);
+
+    // Tier 2 should have produced Tier 1
+    assert.ok(game.player.dimensions.tiers[1].amount > initialTier1, 'Tier 2 should produce Tier 1');
+    // Tier 1 should have produced Sword Qi
+    assert.ok(game.player.dimensions.swordQi > initialQi, 'Tier 1 should produce Sword Qi');
+  });
+
+  it('every 10 dimension purchases doubles the tier multiplier (x2 multiplier)', () => {
+    game.player.gold = 100000000;
+    assert.equal(game.getDimensionTierMultiplier(1), 1);
+
+    for (let i = 0; i < 10; i++) {
+      game.buyDimensionTier(1);
+    }
+    assert.equal(game.player.dimensions.tiers[1].bought, 10);
+    assert.equal(game.getDimensionTierMultiplier(1), 2);
+
+    for (let i = 0; i < 10; i++) {
+      game.buyDimensionTier(1);
+    }
+    assert.equal(game.player.dimensions.tiers[1].bought, 20);
+    assert.equal(game.getDimensionTierMultiplier(1), 4);
+  });
+
+  it('tickspeed upgrade accelerates dimension production and Max All buys available tiers', () => {
+    game.player.gold = 1000000;
+    const initialEffective = game.getEffectiveTickspeed();
+    game.buyTickspeed();
+    assert.equal(game.player.dimensions.tickspeedBought, 1);
+    assert.ok(game.getEffectiveTickspeed() > initialEffective);
+
+    // Max All
+    game.maxAllDimensions();
+    assert.ok(game.player.dimensions.tickspeedBought > 1);
+    assert.ok(game.player.dimensions.tiers[1].bought > 0);
+  });
+
+  it('dimension shift unlocks next tier and resets lower dimensions', () => {
+    game.player.dimensions.tiers[4].amount = 25;
+    assert.equal(game.canDimensionShift(), true);
+
+    const initialShifts = game.player.dimensions.shifts;
+    const initialMaxTier = game.getDimensionMaxUnlocked();
+    game.dimensionShift();
+
+    assert.equal(game.player.dimensions.shifts, initialShifts + 1);
+    assert.equal(game.getDimensionMaxUnlocked(), initialMaxTier + 1);
+    assert.equal(game.player.dimensions.tiers[1].amount, 0, 'Lower dimensions should reset after shift');
   });
 });
 
