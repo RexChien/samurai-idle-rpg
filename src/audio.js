@@ -6,6 +6,7 @@ class SamuraiAudio {
     this.ctx = null;
     this.enabled = true;
     this.initAudioContext();
+    this.setupMobileUnlock();
   }
 
   initAudioContext() {
@@ -17,6 +18,22 @@ class SamuraiAudio {
     } catch (e) {
       console.warn("Web Audio not supported or disabled:", e);
     }
+  }
+
+  setupMobileUnlock() {
+    const unlock = () => {
+      this.ensureContext();
+      if (this.ctx && this.ctx.state === 'running') {
+        window.removeEventListener('touchstart', unlock);
+        window.removeEventListener('touchend', unlock);
+        window.removeEventListener('pointerdown', unlock);
+        window.removeEventListener('click', unlock);
+      }
+    };
+    window.addEventListener('touchstart', unlock, { passive: true });
+    window.addEventListener('touchend', unlock, { passive: true });
+    window.addEventListener('pointerdown', unlock, { passive: true });
+    window.addEventListener('click', unlock, { passive: true });
   }
 
   ensureContext() {
