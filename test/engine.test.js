@@ -727,7 +727,35 @@ describe('Game Engine & Mechanics (src/game.js)', () => {
     assert.ok(tabNav.scrollLeft > 100, 'Wheel deltaY should increase horizontal scrollLeft');
     assert.equal(prevented, true, 'Wheel event default action should be prevented for horizontal scroll');
 
-    // 6. Test switchTab updates active tab
+    // 6. Test normal click does not prevent default and allows tab switching
+    let clickPrevented = false;
+    tabNav.dispatch('mousedown', { button: 0, pageX: 200 });
+    // no move, just mouseup
+    if (global.window._listeners && global.window._listeners['mouseup']) {
+      global.window._listeners['mouseup'].forEach(fn => fn({}));
+    }
+    tabNav.dispatch('click', {
+      preventDefault: () => { clickPrevented = true; },
+      stopPropagation: () => {}
+    });
+    assert.equal(clickPrevented, false, 'Normal click must not be prevented');
+
+    // 7. Test drag > 8px cancels accidental click on mouseup
+    let dragClickPrevented = false;
+    tabNav.dispatch('mousedown', { button: 0, pageX: 200 });
+    if (global.window._listeners && global.window._listeners['mousemove']) {
+      global.window._listeners['mousemove'].forEach(fn => fn({ pageX: 250, preventDefault: () => {} }));
+    }
+    if (global.window._listeners && global.window._listeners['mouseup']) {
+      global.window._listeners['mouseup'].forEach(fn => fn({}));
+    }
+    tabNav.dispatch('click', {
+      preventDefault: () => { dragClickPrevented = true; },
+      stopPropagation: () => {}
+    });
+    assert.equal(dragClickPrevented, true, 'Dragging must prevent accidental button click');
+
+    // 8. Test switchTab updates active tab
     game.switchTab('story');
     assert.equal(game.activeTab, 'story');
   });
