@@ -1,413 +1,148 @@
-const { describe, it, before } = require('node:test');
+const test = require('node:test');
 const assert = require('node:assert/strict');
-const fs = require('fs');
+const fs = require('node:fs');
+const path = require('node:path');
 
-// Setup mock global browser environment
-before(() => {
-  global.window = global;
-  global.window.addEventListener = () => {};
-  global.window.removeEventListener = () => {};
-  global.localStorage = {
-    _data: {},
-    getItem(k) { return this._data[k] || null; },
-    setItem(k, v) { this._data[k] = String(v); },
-    removeItem(k) { delete this._data[k]; }
-  };
-  global.document = {
-    documentElement: { lang: 'zh-TW' },
-    title: '',
-    querySelectorAll: () => [],
-    getElementById: () => null,
-    addEventListener: () => {}
-  };
+// Setup mock browser window environment
+global.window = global;
 
-  eval(fs.readFileSync('data/i18n.js', 'utf8'));
-  eval(fs.readFileSync('data/swords.js', 'utf8'));
-  eval(fs.readFileSync('data/items.js', 'utf8'));
-  eval(fs.readFileSync('data/enemies.js', 'utf8'));
-  eval(fs.readFileSync('data/story.js', 'utf8'));
-  eval(fs.readFileSync('data/prestige.js', 'utf8'));
-  eval(fs.readFileSync('data/achievements.js', 'utf8'));
-  eval(fs.readFileSync('src/audio.js', 'utf8'));
-});
+function loadScript(relPath) {
+  const filePath = path.join(__dirname, '..', relPath);
+  const code = fs.readFileSync(filePath, 'utf8');
+  eval(code);
+}
 
-describe('1. Swords Database (data/swords.js)', () => {
-  it('should contain exactly 22 authentic Japanese swords', () => {
-    assert.equal(Array.isArray(window.SWORDS_DATA), true);
-    assert.equal(window.SWORDS_DATA.length, 22);
+// Load new data scripts
+loadScript('data/gear.js');
+loadScript('data/classes.js');
+loadScript('data/campaign.js');
+loadScript('data/rewards.js');
+
+test('1. Diablo-Style Gear Database (data/gear.js)', async (t) => {
+  await t.test('defines 6 core equipment slots', () => {
+    assert.ok(window.GEAR_SLOTS);
+    const slots = Object.keys(window.GEAR_SLOTS);
+    assert.deepEqual(slots, ['weapon', 'offhand', 'helm', 'armor', 'accessory', 'boots']);
+    assert.equal(window.GEAR_SLOTS.weapon.name, '主手刀');
   });
 
-  it('each sword must have all required attributes with valid values', () => {
-    const ids = new Set();
-    const validTiers = [1, 2, 3, 4, 5, 6];
-
-    for (const s of window.SWORDS_DATA) {
-      assert.ok(s.id, 'Sword must have an id');
-      assert.ok(!ids.has(s.id), `Duplicate sword ID: ${s.id}`);
-      ids.add(s.id);
-
-      assert.ok(typeof s.name === 'string' && s.name.length > 0, `Invalid name for ${s.id}`);
-      assert.ok(typeof s.romaji === 'string' && s.romaji.length > 0, `Invalid romaji for ${s.id}`);
-      assert.ok(validTiers.includes(s.tier), `Invalid tier ${s.tier} for ${s.id}`);
-      assert.ok(typeof s.tierName === 'string', `Invalid tierName for ${s.id}`);
-      assert.ok(s.color && s.color.startsWith('#'), `Invalid color for ${s.id}`);
-      assert.ok(typeof s.type === 'string', `Invalid type for ${s.id}`);
-
-      assert.ok(typeof s.atk === 'number' && s.atk > 0, `ATK must be positive for ${s.id}`);
-      assert.ok(typeof s.crit === 'number' && s.crit >= 0, `CRIT must be non-negative for ${s.id}`);
-      assert.ok(typeof s.critDmg === 'number' && s.critDmg >= 100, `CRIT DMG must be >= 100 for ${s.id}`);
-      assert.ok(typeof s.speed === 'number' && s.speed > 0, `Speed must be positive for ${s.id}`);
-
-      assert.ok(typeof s.passive === 'string', `Missing passive for ${s.id}`);
-      assert.ok(typeof s.passiveDesc === 'string', `Missing passiveDesc for ${s.id}`);
-      assert.ok(typeof s.lore === 'string' && s.lore.length > 10, `Missing lore for ${s.id}`);
-      assert.ok(typeof s.svg === 'string' && s.svg.includes('<svg'), `Missing SVG for ${s.id}`);
-    }
+  await t.test('defines 6 distinct quality tiers with multipliers', () => {
+    assert.ok(window.GEAR_QUALITIES);
+    const qualities = ['common', 'magic', 'rare', 'epic', 'legendary', 'ancient'];
+    qualities.forEach(q => {
+      assert.ok(window.GEAR_QUALITIES[q], `Quality ${q} must exist`);
+      assert.ok(window.GEAR_QUALITIES[q].statMultiplier >= 1.0);
+    });
+    assert.equal(window.GEAR_QUALITIES.legendary.hasBeam, true);
+    assert.equal(window.GEAR_QUALITIES.ancient.hasBeam, true);
   });
 
-  it('contains the Tenka-Goken (Five Heavenly Swords)', () => {
-    const fiveSwordsIds = ['sword_15', 'sword_16', 'sword_17', 'sword_18', 'sword_19'];
-    for (const fid of fiveSwordsIds) {
-      const found = window.SWORDS_DATA.find(s => s.id === fid);
-      assert.ok(found, `Missing Five Swords blade: ${fid}`);
-      assert.equal(found.tierName, '天下五劍');
-    }
+  await t.test('generates valid gear with attributes, random affixes, and lore', () => {
+    const gear = window.generateGear('weapon', 'legendary', 10);
+    assert.ok(gear);
+    assert.equal(gear.slot, 'weapon');
+    assert.equal(gear.quality, 'legendary');
+    assert.ok(gear.baseAtk > 0);
+    assert.ok(gear.affixes.length >= 3);
+    assert.ok(gear.legendaryPower);
+    assert.ok(gear.lore.length > 5);
+    assert.ok(gear.gearScore > 0);
+  });
+
+  await t.test('calculates gear score accurately and scales with upgrade level', () => {
+    const gear = window.generateGear('armor', 'rare', 5);
+    const initialScore = gear.gearScore;
+    gear.upgradeLevel = 5;
+    const upgradedScore = window.calculateGearScore(gear);
+    assert.ok(upgradedScore > initialScore);
+  });
+
+  await t.test('decomposes gear into iron, souls, and gold based on quality', () => {
+    const commonGear = window.generateGear('weapon', 'common', 1);
+    const ancientGear = window.generateGear('weapon', 'ancient', 50);
+
+    const commonMats = window.decomposeGear(commonGear);
+    const ancientMats = window.decomposeGear(ancientGear);
+
+    assert.ok(commonMats.iron >= 1);
+    assert.equal(commonMats.souls, 0);
+
+    assert.ok(ancientMats.iron > 100);
+    assert.ok(ancientMats.souls > 50);
   });
 });
 
-describe('2. Items Database (data/items.js)', () => {
-  it('should contain all required categories', () => {
-    assert.ok(window.ITEMS_DATA.materials, 'Missing materials');
-    assert.ok(window.ITEMS_DATA.armors, 'Missing armors');
-    assert.ok(window.ITEMS_DATA.helmets, 'Missing helmets');
-    assert.ok(window.ITEMS_DATA.accessories, 'Missing accessories');
-    assert.ok(window.ITEMS_DATA.consumables, 'Missing consumables');
+test('2. Samurai Classes & Talents (data/classes.js)', async (t) => {
+  await t.test('defines 4 authentic samurai classes', () => {
+    assert.ok(window.SAMURAI_CLASSES);
+    const classKeys = Object.keys(window.SAMURAI_CLASSES);
+    assert.deepEqual(classKeys, ['kensei', 'onimusha', 'onmyoji', 'daimyo']);
   });
 
-  it('materials should include Tamahagane and whetstones', () => {
-    const matIds = window.ITEMS_DATA.materials.map(m => m.id);
-    assert.ok(matIds.includes('mat_tamahagane'), 'Missing Tamahagane');
-    assert.ok(matIds.includes('mat_whetstone_rough'), 'Missing rough whetstone');
-    assert.ok(matIds.includes('mat_whetstone_mid'), 'Missing mid whetstone');
-    assert.ok(matIds.includes('mat_whetstone_fine'), 'Missing fine whetstone');
+  await t.test('each class has 3 linear talent trees with up to rank 10', () => {
+    Object.values(window.SAMURAI_CLASSES).forEach(cls => {
+      assert.equal(cls.talents.length, 3);
+      cls.talents.forEach(tal => {
+        assert.equal(tal.maxRank, 10);
+        assert.equal(typeof tal.getBonus, 'function');
+      });
+    });
   });
 
-  it('all items should have unique IDs across all categories', () => {
-    const allIds = new Set();
-    for (const cat in window.ITEMS_DATA) {
-      for (const item of window.ITEMS_DATA[cat]) {
-        assert.ok(!allIds.has(item.id), `Duplicate item ID: ${item.id}`);
-        allIds.add(item.id);
-        assert.ok(item.name && item.name.length > 0);
-        assert.ok(typeof item.desc === 'string');
-      }
-    }
-  });
-});
-
-describe('3. Campaign Zones & Enemies (data/enemies.js)', () => {
-  it('should have 7 full acts / zones', () => {
-    assert.equal(Array.isArray(window.ZONES_DATA), true);
-    assert.equal(window.ZONES_DATA.length, 7);
-  });
-
-  it('zones should have ascending required levels and valid enemies', () => {
-    let lastLevel = 0;
-    for (const z of window.ZONES_DATA) {
-      assert.ok(z.requiredLevel >= lastLevel, `Required level must ascend for zone ${z.id}`);
-      lastLevel = z.requiredLevel;
-
-      assert.ok(z.name && z.name.length > 0);
-      assert.ok(Array.isArray(z.enemies) && z.enemies.length >= 3, `Zone ${z.id} must have at least 3 regular enemies`);
-      for (const e of z.enemies) {
-        assert.ok(e.hp > 0, `Enemy HP must be positive in zone ${z.id}`);
-        assert.ok(e.atk > 0, `Enemy ATK must be positive in zone ${z.id}`);
-        assert.ok(e.exp > 0, `Enemy EXP must be positive in zone ${z.id}`);
-      }
-
-      assert.ok(z.boss, `Zone ${z.id} must have a boss`);
-      assert.ok(z.boss.hp > z.enemies[0].hp, `Boss HP must be higher than common enemy in zone ${z.id}`);
-      assert.ok(z.boss.atk > z.enemies[0].atk, `Boss ATK must be higher than common enemy in zone ${z.id}`);
-    }
+  await t.test('calculates class and talent bonuses accurately', () => {
+    const bonuses = window.calculateClassBonuses('kensei', {
+      kensei_crit: 5,
+      kensei_dual: 3
+    });
+    // Kensei passive: critRate 10, atkSpd 15
+    // kensei_crit rank 5: +10% critRate, +25% critDmg
+    // kensei_dual rank 3: +9% atkSpd
+    assert.equal(bonuses.critRate, 20); // 10 + 10
+    assert.equal(bonuses.critDmg, 25);
+    assert.equal(bonuses.atkSpd, 24); // 15 + 9
   });
 });
 
-describe('4. Story & Factions (data/story.js)', () => {
-  it('should define all 4 destiny factions', () => {
-    const factions = window.STORY_DATA.factions;
-    assert.ok(factions.unaligned, 'Missing unaligned');
-    assert.ok(factions.shogunate, 'Missing shogunate');
-    assert.ok(factions.ishin, 'Missing ishin');
-    assert.ok(factions.shura, 'Missing shura');
+test('3. Campaign Acts & Yokai (data/campaign.js)', async (t) => {
+  await t.test('defines 7 campaign acts with diverse yokai and bosses', () => {
+    assert.ok(window.CAMPAIGN_ACTS);
+    assert.equal(window.CAMPAIGN_ACTS.length, 7);
 
-    assert.ok(factions.shogunate.bonus.maxHpMul > 0);
-    assert.ok(factions.ishin.bonus.atkMul > 0);
-    assert.ok(factions.shura.bonus.critDmgMul > 0);
+    window.CAMPAIGN_ACTS.forEach((act, idx) => {
+      assert.equal(act.act, idx + 1);
+      assert.ok(act.name.length > 0);
+      assert.ok(act.enemies.length >= 3);
+      assert.ok(act.boss);
+      assert.equal(act.boss.isBoss, true);
+      assert.ok(act.boss.dialogue.length > 0);
+    });
   });
 
-  it('should define 7 storyline chapters matching the 7 zones', () => {
-    assert.equal(window.STORY_DATA.chapters.length, 7);
-    for (let i = 0; i < 7; i++) {
-      const ch = window.STORY_DATA.chapters[i];
-      assert.equal(ch.act, i + 1);
-      assert.equal(ch.zoneId, i + 1);
-      assert.ok(ch.title && ch.title.length > 0);
-      assert.ok(ch.introDialogue && ch.introDialogue.length > 0);
-    }
-  });
-
-  it('Act 3 must be a branching decision point', () => {
-    const act3 = window.STORY_DATA.chapters[2];
-    assert.equal(act3.isBranchPoint, true);
-    assert.ok(Array.isArray(act3.choices) && act3.choices.length === 3);
-  });
-
-  it('should define 4 grand endings', () => {
-    const endings = window.STORY_DATA.endings;
-    assert.ok(endings.ending_shogunate, 'Missing shogunate ending');
-    assert.ok(endings.ending_ishin, 'Missing ishin ending');
-    assert.ok(endings.ending_shura, 'Missing shura ending');
-    assert.ok(endings.ending_hermit || endings.ending_wanderer, 'Missing hermit/wanderer ending');
+  await t.test('enemy and boss stats scale properly across acts', () => {
+    const act1Boss = window.CAMPAIGN_ACTS[0].boss;
+    const act7Boss = window.CAMPAIGN_ACTS[6].boss;
+    assert.ok(act7Boss.hp > act1Boss.hp * 100);
+    assert.ok(act7Boss.atk > act1Boss.atk * 50);
   });
 });
 
-describe('5. Prestige Reincarnation (data/prestige.js)', () => {
-  it('should define unlock thresholds and 8 perks', () => {
-    assert.ok(window.PRESTIGE_DATA.unlockLevel >= 10);
-    assert.ok(window.PRESTIGE_DATA.unlockZone >= 3);
-    assert.equal(window.PRESTIGE_DATA.perks.length, 8);
+test('4. Rewards, Achievements & Daily Sign-in (data/rewards.js)', async (t) => {
+  await t.test('defines 35+ Diablo 3 style achievements', () => {
+    assert.ok(window.ACHIEVEMENTS_DB);
+    assert.ok(window.ACHIEVEMENTS_DB.length >= 35);
+    window.ACHIEVEMENTS_DB.forEach(ach => {
+      assert.ok(ach.id);
+      assert.ok(ach.name);
+      assert.ok(ach.desc);
+      assert.ok(ach.points > 0);
+    });
   });
 
-  it('calculates karma earned correctly based on player progress', () => {
-    const mockPlayer = {
-      level: 30,
-      stats: { highestZone: 5, bossKills: 10 },
-      story: { faction: 'unaligned' }
-    };
-    const karma = window.PRESTIGE_DATA.calculateKarmaEarned(mockPlayer);
-    assert.ok(karma > 50, `Expected karma > 50, got ${karma}`);
-
-    // Ishin faction bonus test
-    mockPlayer.story.faction = 'ishin';
-    const ishinKarma = window.PRESTIGE_DATA.calculateKarmaEarned(mockPlayer);
-    assert.ok(ishinKarma > karma, 'Ishin faction should earn bonus karma');
-  });
-
-  it('calculates escalating perk costs correctly', () => {
-    const costLvl0 = window.PRESTIGE_DATA.getPerkCost('perk_atk', 0);
-    const costLvl1 = window.PRESTIGE_DATA.getPerkCost('perk_atk', 1);
-    const costLvl5 = window.PRESTIGE_DATA.getPerkCost('perk_atk', 5);
-
-    assert.ok(costLvl0 > 0);
-    assert.ok(costLvl1 > costLvl0);
-    assert.ok(costLvl5 > costLvl1);
+  await t.test('defines 7-day daily sign-in rewards with legendary and ancient gifts', () => {
+    assert.ok(window.DAILY_SIGNIN_REWARDS);
+    assert.equal(window.DAILY_SIGNIN_REWARDS.length, 7);
+    assert.equal(window.DAILY_SIGNIN_REWARDS[5].gearQuality, 'legendary'); // Day 6
+    assert.equal(window.DAILY_SIGNIN_REWARDS[6].gearQuality, 'ancient');   // Day 7
+    assert.equal(window.DAILY_SIGNIN_REWARDS[6].title, '天下無雙');
   });
 });
-
-describe('6. Localization i18n (data/i18n.js)', () => {
-  it('supports zh-TW, en, and ja with consistent key sets', () => {
-    assert.ok(window.I18N.translations['zh-TW']);
-    assert.ok(window.I18N.translations['en']);
-    assert.ok(window.I18N.translations['ja']);
-
-    const zhKeys = Object.keys(window.I18N.translations['zh-TW']);
-    const enKeys = Object.keys(window.I18N.translations['en']);
-    const jaKeys = Object.keys(window.I18N.translations['ja']);
-
-    assert.ok(zhKeys.length > 40);
-    assert.ok(enKeys.length > 40);
-    assert.ok(jaKeys.length > 40);
-
-    // Common critical keys
-    const criticalKeys = ['gameTitle', 'resGold', 'tabBattle', 'tabStory', 'tabForge', 'tabPrestige'];
-    for (const k of criticalKeys) {
-      assert.ok(window.I18N.translations['zh-TW'][k], `Missing zh-TW key: ${k}`);
-      assert.ok(window.I18N.translations['en'][k], `Missing en key: ${k}`);
-      assert.ok(window.I18N.translations['ja'][k], `Missing ja key: ${k}`);
-    }
-  });
-
-  it('translation helper window.t() formats parameters correctly', () => {
-    window.setLanguage('zh-TW');
-    const zhMsg = window.t('msgForgeLackRes', { steel: 5, gold: 100 });
-    assert.ok(zhMsg.includes('5') && zhMsg.includes('100'));
-
-    window.setLanguage('en');
-    const enMsg = window.t('msgForgeLackRes', { steel: 5, gold: 100 });
-    assert.ok(enMsg.includes('5') && enMsg.includes('100'));
-    assert.ok(enMsg.includes('Tamahagane') || enMsg.includes('resources'));
-
-    window.setLanguage('ja');
-    const jaMsg = window.t('msgForgeLackRes', { steel: 5, gold: 100 });
-    assert.ok(jaMsg.includes('5') && jaMsg.includes('100'));
-  });
-
-  it('localizes swords, items, zones, factions, and perks across all 3 languages', () => {
-    const sword = window.SWORDS_DATA[0];
-    const swordZh = window.getSwordText(sword, 'zh-TW');
-    const swordEn = window.getSwordText(sword, 'en');
-    const swordJa = window.getSwordText(sword, 'ja');
-
-    assert.equal(swordZh.name, '無銘竹光');
-    assert.equal(swordJa.name, '無銘竹光');
-    assert.ok(swordEn.name.includes('Takemitsu'));
-
-    const facZh = window.getFactionText('shogunate', 'zh-TW');
-    const facEn = window.getFactionText('shogunate', 'en');
-    const facJa = window.getFactionText('shogunate', 'ja');
-
-    assert.ok(facZh.name.includes('佐幕'));
-    assert.ok(facEn.name.includes('Shogunate'));
-    assert.ok(facJa.name.includes('佐幕'));
-  });
-});
-
-describe('7. Achievements Database (data/achievements.js)', () => {
-  it('contains exactly 31 achievements across 4 categories', () => {
-    assert.equal(Array.isArray(window.ACHIEVEMENTS_DATA), true);
-    assert.equal(window.ACHIEVEMENTS_DATA.length, 31);
-
-    const validCats = ['combat', 'swords', 'growth', 'destiny'];
-    const counts = { combat: 0, swords: 0, growth: 0, destiny: 0 };
-    for (const a of window.ACHIEVEMENTS_DATA) {
-      assert.ok(validCats.includes(a.category), `Invalid category ${a.category} for ${a.id}`);
-      counts[a.category]++;
-    }
-    assert.equal(counts.combat, 9);
-    assert.equal(counts.swords, 9);
-    assert.equal(counts.growth, 6);
-    assert.equal(counts.destiny, 7);
-  });
-
-  it('each achievement has valid attributes, targets, and rewards', () => {
-    const ids = new Set();
-    for (const a of window.ACHIEVEMENTS_DATA) {
-      assert.ok(a.id, 'Achievement must have an ID');
-      assert.ok(!ids.has(a.id), `Duplicate achievement ID: ${a.id}`);
-      ids.add(a.id);
-
-      assert.ok(typeof a.target === 'number' && a.target > 0, `Target must be > 0 for ${a.id}`);
-      assert.ok(a.icon && typeof a.icon === 'string', `Missing icon for ${a.id}`);
-      assert.ok(a.reward && typeof a.reward === 'object', `Missing reward object for ${a.id}`);
-      assert.ok(typeof (a.reward.gold || 0) === 'number');
-      assert.ok(typeof (a.reward.steel || 0) === 'number');
-      assert.ok(typeof (a.reward.karma || 0) === 'number');
-      assert.ok((a.reward.gold > 0) || (a.reward.steel > 0) || (a.reward.karma > 0), `Reward should not be empty for ${a.id}`);
-    }
-  });
-
-  it('supports full localization (zh-TW, en, ja) for all 31 achievements', () => {
-    for (const a of window.ACHIEVEMENTS_DATA) {
-      assert.ok(a.translations, `Missing translations object for ${a.id}`);
-      for (const lang of ['zh-TW', 'en', 'ja']) {
-        const t = a.translations[lang];
-        assert.ok(t, `Missing translation for lang ${lang} in ${a.id}`);
-        assert.ok(t.name && t.name.length > 0, `Missing name in ${lang} for ${a.id}`);
-        assert.ok(t.desc && t.desc.length > 0, `Missing desc in ${lang} for ${a.id}`);
-
-        const helperResult = window.getAchievementText(a, lang);
-        assert.equal(helperResult.name, t.name);
-        assert.equal(helperResult.desc, t.desc);
-      }
-    }
-  });
-
-  it('procedural audio engine defines playAchievementFanfare method', () => {
-    assert.ok(global.SamuraiAudio, 'SamuraiAudio class should be defined');
-    assert.equal(typeof global.SamuraiAudio.prototype.playAchievementFanfare, 'function');
-  });
-});
-
-describe('8. Multilingual Storylines & Audio Mute Control', () => {
-  it('provides complete translations for all 7 Acts across zh-TW, en, and ja', () => {
-    assert.ok(typeof window.getStoryChapterText === 'function', 'getStoryChapterText must be defined');
-
-    for (let act = 1; act <= 7; act++) {
-      for (const lang of ['zh-TW', 'en', 'ja']) {
-        const ch = window.getStoryChapterText(act, lang);
-        assert.ok(ch, `Act ${act} text missing for ${lang}`);
-        assert.ok(ch.title && ch.title.length > 0, `Act ${act} title missing in ${lang}`);
-        assert.ok(ch.summary && ch.summary.length > 0, `Act ${act} summary missing in ${lang}`);
-        assert.ok(Array.isArray(ch.introDialogue) && ch.introDialogue.length > 0, `Act ${act} introDialogue missing in ${lang}`);
-
-        for (const dlg of ch.introDialogue) {
-          assert.ok(dlg.speaker && dlg.speaker.length > 0, `Dialogue speaker missing in Act ${act} (${lang})`);
-          assert.ok(dlg.text && dlg.text.length > 0, `Dialogue text missing in Act ${act} (${lang})`);
-        }
-      }
-    }
-  });
-
-  it('Act 3 destiny choices are translated in all 3 languages', () => {
-    for (const lang of ['zh-TW', 'en', 'ja']) {
-      const ch3 = window.getStoryChapterText(3, lang);
-      assert.ok(ch3.choices, `Act 3 choices missing in ${lang}`);
-      assert.equal(ch3.choices.length, 3, `Act 3 should have 3 choices in ${lang}`);
-      for (const c of ch3.choices) {
-        assert.ok(c.translations && c.translations[lang], `Choice translations missing for ${lang}`);
-        assert.ok(c.translations[lang].name && c.translations[lang].name.length > 0, `Choice name missing in ${lang}`);
-        assert.ok(c.translations[lang].desc && c.translations[lang].desc.length > 0, `Choice desc missing in ${lang}`);
-        assert.ok(c.faction, `Choice faction missing in ${lang}`);
-      }
-    }
-  });
-
-  it('provides complete translations for all 4 grand endings across zh-TW, en, and ja', () => {
-    assert.ok(typeof window.getStoryEndingText === 'function', 'getStoryEndingText must be defined');
-    const endingIds = ['ending_shogunate', 'ending_ishin', 'ending_shura', 'ending_hermit'];
-
-    for (const eid of endingIds) {
-      for (const lang of ['zh-TW', 'en', 'ja']) {
-        const ending = window.getStoryEndingText(eid, lang);
-        assert.ok(ending, `Ending ${eid} missing in ${lang}`);
-        assert.ok(ending.title && ending.title.length > 0, `Ending ${eid} title missing in ${lang}`);
-        assert.ok(ending.tagline && ending.tagline.length > 0, `Ending ${eid} tagline missing in ${lang}`);
-        assert.ok(ending.epilogue && ending.epilogue.length > 0, `Ending ${eid} epilogue missing in ${lang}`);
-        assert.ok(ending.rewardTitle && ending.rewardTitle.length > 0, `Ending ${eid} rewardTitle missing in ${lang}`);
-      }
-    }
-  });
-
-  it('speaker names are translated cleanly using getSpeakerText', () => {
-    assert.ok(typeof window.getSpeakerText === 'function');
-    assert.equal(window.getSpeakerText('你', 'zh-TW'), '你');
-    assert.equal(window.getSpeakerText('你', 'en'), 'You');
-    assert.equal(window.getSpeakerText('你', 'ja'), '貴方');
-
-    assert.equal(window.getSpeakerText('土方歲三', 'zh-TW'), '土方歲三');
-    assert.equal(window.getSpeakerText('土方歲三', 'en'), 'Toshizo Hijikata');
-    assert.equal(window.getSpeakerText('土方歲三', 'ja'), '土方歳三');
-
-    assert.equal(window.getSpeakerText('坂本龍馬', 'en'), 'Ryoma Sakamoto');
-    assert.equal(window.getSpeakerText('坂本龍馬', 'ja'), '坂本龍馬');
-  });
-
-  it('audio engine supports muting, toggling, and localStorage persistence', () => {
-    const audio = new global.SamuraiAudio();
-    assert.equal(audio.enabled, true, 'Default audio should be enabled');
-
-    // Toggle mute
-    const mutedState = audio.toggle(false);
-    assert.equal(mutedState, false);
-    assert.equal(audio.enabled, false);
-    assert.equal(global.localStorage.getItem('SAMURAI_AUDIO_ENABLED'), 'false');
-
-    // New instance should restore muted state from localStorage
-    const audio2 = new global.SamuraiAudio();
-    assert.equal(audio2.enabled, false);
-
-    // Toggle back on
-    const enabledState = audio2.toggle(true);
-    assert.equal(enabledState, true);
-    assert.equal(audio2.enabled, true);
-    assert.equal(global.localStorage.getItem('SAMURAI_AUDIO_ENABLED'), 'true');
-
-    // Toggle without argument flips state
-    const flippedState = audio2.toggle();
-    assert.equal(flippedState, false);
-    assert.equal(audio2.enabled, false);
-    assert.equal(global.localStorage.getItem('SAMURAI_AUDIO_ENABLED'), 'false');
-  });
-});
-
-
