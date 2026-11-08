@@ -503,6 +503,45 @@ describe('Game Engine & Mechanics (src/game.js)', () => {
     // Reset back to zh-TW
     window.setLanguage("zh-TW");
   });
+
+  it('persists unlocked achievements in save data and does not duplicate toasts on reload', () => {
+    const prevTesting = window.__TESTING__;
+    window.__TESTING__ = false;
+
+    let toastCount = 0;
+    game.showAchievementToast = () => { toastCount++; };
+
+    // Player achieves 1 kill
+    game.player.stats.totalKills = 1;
+    game.checkAchievements(false);
+
+    assert.equal(toastCount, 1, 'Should trigger toast on first achievement completion');
+    assert.ok(game.player.achievements.unlocked.includes('ach_kill_1'), 'Should record achievement ID in unlocked array');
+
+    // Verify it was immediately saved to localStorage
+    const savedData = JSON.parse(localStorage.getItem(game.SAVE_KEY));
+    assert.ok(savedData.achievements.unlocked.includes('ach_kill_1'), 'Unlocked achievements must be saved to localStorage');
+
+    // Calling checkAchievements again during the same or subsequent actions should NOT re-toast
+    game.checkAchievements(false);
+    assert.equal(toastCount, 1, 'Should not re-toast already unlocked achievement');
+
+    // Simulate reloading the game from saved localStorage
+    const newGame = new SamuraiGame();
+    newGame.showAchievementToast = () => { toastCount++; };
+    newGame.load();
+    assert.ok(newGame.player.achievements.unlocked.includes('ach_kill_1'), 'New game instance should load unlocked array');
+
+    // On start (silent check), no toasts should be displayed
+    newGame.checkAchievements(true);
+    assert.equal(toastCount, 1, 'Startup silent check should not trigger any toast');
+
+    // During subsequent gameplay checks in the new session, existing achievements must not re-toast
+    newGame.checkAchievements(false);
+    assert.equal(toastCount, 1, 'Subsequent checks should still not re-toast previously unlocked achievement');
+
+    window.__TESTING__ = prevTesting;
+  });
 });
 
 
