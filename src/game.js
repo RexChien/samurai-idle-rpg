@@ -308,6 +308,8 @@ class SamuraiGame {
       this.currentEnemy = {
         name: b.name,
         title: b.title,
+        rawName: b.name,
+        rawTitle: b.title,
         maxHp: b.hp,
         hp: b.hp,
         atk: b.atk,
@@ -320,7 +322,10 @@ class SamuraiGame {
         dropItem: b.dropItem
       };
       if (window.samuraiAudio) window.samuraiAudio.playBossBoom();
-      this.addCombatLog(`<span style="color:#ef4444;font-weight:bold;">【強敵來襲】${b.title} ${b.name} 現身！限時 ${this.bossMaxTime} 秒！</span>`);
+      const lang = window.getLang ? window.getLang() : "zh-TW";
+      const bText = window.getEnemyText ? window.getEnemyText(this.currentEnemy, lang) : { name: b.name, title: b.title };
+      const bossMsg = window.t ? window.t("logBossIncoming", { title: bText.title, name: bText.name, time: this.bossMaxTime }) : `【強敵來襲】${b.title} ${b.name} 現身！限時 ${this.bossMaxTime} 秒！`;
+      this.addCombatLog(`<span style="color:#ef4444;font-weight:bold;">${bossMsg}</span>`);
     } else {
       this.inBossFight = false;
       const tpl = zone.enemies[Math.floor(Math.random() * zone.enemies.length)];
@@ -330,6 +335,8 @@ class SamuraiGame {
       this.currentEnemy = {
         name: tpl.name,
         title: tpl.title,
+        rawName: tpl.name,
+        rawTitle: tpl.title,
         maxHp: hp,
         hp: hp,
         atk: Math.floor(tpl.atk * variance),
@@ -421,11 +428,18 @@ class SamuraiGame {
     this.showDamagePopup(damage, isCrit);
 
     // 戰鬥記錄
-    const weaponName = this.player.equipped.weapon ? this.player.equipped.weapon.name : "拳腳";
+    const lang = window.getLang ? window.getLang() : "zh-TW";
+    const weapon = this.player.equipped.weapon;
+    const weaponName = weapon ? (window.getSwordText ? window.getSwordText(weapon, lang).name : weapon.name) : (lang === "en" ? "Fists" : (lang === "ja" ? "拳脚" : "拳腳"));
+    const enemyText = window.getEnemyText ? window.getEnemyText(this.currentEnemy, lang) : this.currentEnemy;
+    const enemyName = enemyText.name || this.currentEnemy.name;
+
     if (isCrit) {
-      this.addCombatLog(`💥 刀芒如電！出刀【${weaponName}】會心一閃，重創「${this.currentEnemy.name}」造成 <b style="color:#ef4444">${damage}</b> 點巨額破甲傷害！`);
+      const critMsg = window.t ? window.t("logCritStrike", { weapon: weaponName, enemy: enemyName, damage: damage }) : `💥 刀芒如電！出刀【${weaponName}】會心一閃，重創「${enemyName}」造成 <b style="color:#ef4444">${damage}</b> 點巨額破甲傷害！`;
+      this.addCombatLog(critMsg);
     } else if (isManual) {
-      this.addCombatLog(`⚡ 玩家疾風拔刀！【${weaponName}】斬中「${this.currentEnemy.name}」造成 ${damage} 點傷害！`);
+      const manualMsg = window.t ? window.t("logManualStrike", { weapon: weaponName, enemy: enemyName, damage: damage }) : `⚡ 玩家疾風拔刀！【${weaponName}】斬中「${enemyName}」造成 ${damage} 點傷害！`;
+      this.addCombatLog(manualMsg);
     }
 
     // 檢查敵人是否被擊破
@@ -491,7 +505,12 @@ class SamuraiGame {
     this.player.steel += steelGain;
     this.gainExp(expGain);
 
-    this.addCombatLog(`⚔️ 成功斬殺「${e.title} ${e.name}」！獲得 <b>${goldGain} 金小判</b>、<b>${steelGain} 玉鋼</b>、<b>${expGain} 經驗</b>！`);
+    const lang = window.getLang ? window.getLang() : "zh-TW";
+    const eText = window.getEnemyText ? window.getEnemyText(e, lang) : e;
+    const defeatMsg = window.t 
+      ? window.t("logDefeatEnemy", { title: eText.title, name: eText.name, gold: goldGain, steel: steelGain, exp: expGain })
+      : `⚔️ 成功斬殺「${e.title} ${e.name}」！獲得 <b>${goldGain} 金小判</b>、<b>${steelGain} 玉鋼</b>、<b>${expGain} 經驗</b>！`;
+    this.addCombatLog(defeatMsg);
 
     // 首領擊破
     if (e.isBoss) {
@@ -501,8 +520,9 @@ class SamuraiGame {
       this.zoneKillProgress = 0;
 
       // 首領掉落專屬名刀
+      const sourceBoss = window.t ? window.t("sourceBossLoot") : "首領戰利品";
       if (e.dropSword) {
-        this.acquireSword(e.dropSword, "首領戰利品");
+        this.acquireSword(e.dropSword, sourceBoss);
       }
       if (e.dropItem) {
         this.acquireItem(e.dropItem, 1);
@@ -512,7 +532,8 @@ class SamuraiGame {
       if (this.player.stats.currentZone === this.player.stats.highestZone && this.player.stats.highestZone < 7) {
         this.player.stats.highestZone++;
         this.player.stats.currentZone++;
-        this.addCombatLog(`<span style="color:#f59e0b;font-weight:bold;">🏆 突破當前疆界！已解鎖新戰役關卡：第 ${this.player.stats.currentZone} 幕！</span>`);
+        const unlockMsg = window.t ? window.t("logZoneUnlock", { zone: this.player.stats.currentZone }) : `🏆 突破當前疆界！已解鎖新戰役關卡：第 ${this.player.stats.currentZone} 幕！`;
+        this.addCombatLog(`<span style="color:#f59e0b;font-weight:bold;">${unlockMsg}</span>`);
       }
 
       if (window.samuraiAudio) window.samuraiAudio.playLevelUp();
@@ -532,13 +553,19 @@ class SamuraiGame {
       const dropRoll = Math.random();
       if (dropRoll < 0.08) {
         this.acquireItem("mat_whetstone_rough", 1);
-        this.addCombatLog(`🎁 搜獲戰利品：獲得【荒砥石】x1`);
+        const itemName = window.getItemText ? window.getItemText("mat_whetstone_rough", lang).name : "荒砥石";
+        const msg = window.t ? window.t("logLootItem", { item: itemName, count: 1 }) : `🎁 搜獲戰利品：獲得【荒砥石】x1`;
+        this.addCombatLog(msg);
       } else if (dropRoll < 0.16) {
         this.acquireItem("item_onigiri", 1);
-        this.addCombatLog(`🍙 拾得乾糧：獲得【梅干飯糰】x1`);
+        const itemName = window.getItemText ? window.getItemText("item_onigiri", lang).name : "梅干飯糰";
+        const msg = window.t ? window.t("logLootFood", { item: itemName, count: 1 }) : `🍙 拾得乾糧：獲得【梅干飯糰】x1`;
+        this.addCombatLog(msg);
       } else if (dropRoll < 0.19) {
         this.acquireItem("mat_whetstone_mid", 1);
-        this.addCombatLog(`🎁 搜獲戰利品：獲得【中砥石】x1`);
+        const itemName = window.getItemText ? window.getItemText("mat_whetstone_mid", lang).name : "中砥石";
+        const msg = window.t ? window.t("logLootItem", { item: itemName, count: 1 }) : `🎁 搜獲戰利品：獲得【中砥石】x1`;
+        this.addCombatLog(msg);
       }
     }
 
@@ -553,7 +580,8 @@ class SamuraiGame {
 
   // 玩家戰敗處理
   handlePlayerDefeated() {
-    this.addCombatLog(`<span style="color:#ef4444;font-weight:bold;">⚠️ 氣力耗盡！你暫時退回道場調養生息，體力已完全恢復。</span>`);
+    const msg = window.t ? window.t("logPlayerDefeated") : "⚠️ 氣力耗盡！你暫時退回道場調養生息，體力已完全恢復。";
+    this.addCombatLog(`<span style="color:#ef4444;font-weight:bold;">${msg}</span>`);
     const stats = this.getCalculatedStats();
     this.playerCurrentHp = stats.maxHp;
     this.inBossFight = false;
@@ -574,7 +602,11 @@ class SamuraiGame {
       const stats = this.getCalculatedStats();
       this.playerCurrentHp = stats.maxHp; // 升級回滿血
 
-      this.addCombatLog(`<span style="color:#eab308;font-size:1.1em;font-weight:bold;">⛩️ 頓悟突破！境界提升至等級 ${this.player.level}（${this.getRankTitle(this.player.level)}）！獲得 2 點天賦點！</span>`);
+      const rank = this.getRankTitle(this.player.level);
+      const lvlMsg = window.t 
+        ? window.t("logLevelUp", { level: this.player.level, rank: rank })
+        : `⛩️ 頓悟突破！境界提升至等級 ${this.player.level}（${rank}）！獲得 2 點天賦點！`;
+      this.addCombatLog(`<span style="color:#eab308;font-size:1.1em;font-weight:bold;">${lvlMsg}</span>`);
       if (window.samuraiAudio) window.samuraiAudio.playLevelUp();
       req = this.getRequiredExp(this.player.level);
     }
@@ -590,13 +622,22 @@ class SamuraiGame {
     this.player.swordsInventory.push(instance);
     this.checkAchievements();
 
+    const lang = window.getLang ? window.getLang() : "zh-TW";
+    const swText = window.getSwordText ? window.getSwordText(instance, lang) : instance;
+
     // 加入圖鑑
     if (!this.player.codex.includes(swordId)) {
       this.player.codex.push(swordId);
-      this.addCombatLog(`<span style="color:#38bdf8;font-weight:bold;">📖 【名刀鑑賞錄】收錄新名刀：【${instance.tierName}】${instance.name}！全屬性永久提昇！</span>`);
+      const codexMsg = window.t 
+        ? window.t("logCodexAdd", { tier: swText.tierName, name: swText.name })
+        : `📖 【名刀鑑賞錄】收錄新名刀：【${instance.tierName}】${instance.name}！全屬性永久提昇！`;
+      this.addCombatLog(`<span style="color:#38bdf8;font-weight:bold;">${codexMsg}</span>`);
     }
 
-    this.addCombatLog(`<span style="color:${instance.color};font-weight:bold;">🗡️ ${source}：獲得名刀【${instance.tierName}】${instance.name}（${instance.type}・${instance.smith}）！</span>`);
+    const acqMsg = window.t
+      ? window.t("logAcquireSword", { source: source, tier: swText.tierName, name: swText.name, type: swText.type, smith: swText.smith })
+      : `🗡️ ${source}：獲得名刀【${instance.tierName}】${instance.name}（${instance.type}・${instance.smith}）！`;
+    this.addCombatLog(`<span style="color:${instance.color};font-weight:bold;">${acqMsg}</span>`);
     return instance;
   }
 
@@ -619,19 +660,27 @@ class SamuraiGame {
     this.player.items[itemId]--;
     const stats = this.getCalculatedStats();
 
+    const lang = window.getLang ? window.getLang() : "zh-TW";
+    const cText = window.getItemText ? window.getItemText(consumable, lang) : consumable;
+    const cName = cText.name || consumable.name;
+
     if (consumable.type === "heal") {
       const healAmount = Math.floor(stats.maxHp * (consumable.healPercent / 100));
       this.playerCurrentHp = Math.min(stats.maxHp, this.playerCurrentHp + healAmount);
-      this.addCombatLog(`🍙 食用了【${consumable.name}】，瞬間回復了 ${healAmount} 點體力！`);
+      const msg = window.t ? window.t("logConsumeItem", { item: cName, amount: healAmount }) : `🍙 食用了【${consumable.name}】，瞬間回復了 ${healAmount} 點體力！`;
+      this.addCombatLog(msg);
     } else if (consumable.type === "buff_speed") {
       this.activeBuffs.speed = consumable.duration;
-      this.addCombatLog(`💊 服下了【${consumable.name}】，出刀神速提升 35%（持續 ${consumable.duration} 秒）！`);
+      const msg = window.t ? window.t("logBuffSpeed", { item: cName, duration: consumable.duration }) : `💊 服下了【${consumable.name}】，出刀神速提升 35%（持續 ${consumable.duration} 秒）！`;
+      this.addCombatLog(msg);
     } else if (consumable.type === "buff_berserk") {
       this.activeBuffs.atk = consumable.duration;
-      this.addCombatLog(`🍶 豪飲【${consumable.name}】，狂暴殺氣提升 50% 攻擊力（持續 ${consumable.duration} 秒）！`);
+      const msg = window.t ? window.t("logBuffAtk", { item: cName, duration: consumable.duration }) : `🍶 豪飲【${consumable.name}】，狂暴殺氣提升 50% 攻擊力（持續 ${consumable.duration} 秒）！`;
+      this.addCombatLog(msg);
     } else if (consumable.type === "buff_gold") {
       this.activeBuffs.gold = consumable.duration;
-      this.addCombatLog(`🍵 品味【${consumable.name}】，擊敵收穫金小判翻倍（持續 ${consumable.duration} 秒）！`);
+      const msg = window.t ? window.t("logBuffGold", { item: cName, duration: consumable.duration }) : `🍵 品味【${consumable.name}】，擊敵收穫金小判翻倍（持續 ${consumable.duration} 秒）！`;
+      this.addCombatLog(msg);
     }
 
     if (window.samuraiAudio) window.samuraiAudio.playSharpen();
@@ -658,7 +707,10 @@ class SamuraiGame {
     this.checkAchievements();
 
     if (window.samuraiAudio) window.samuraiAudio.playSharpen();
-    this.addCombatLog(`✨ 使用砥石細心研磨！佩刀【${weapon.name}】磨礪至 +${weapon.refine}！鋒利度大幅提昇！`);
+    const lang = window.getLang ? window.getLang() : "zh-TW";
+    const swText = window.getSwordText ? window.getSwordText(weapon, lang) : weapon;
+    const sharpenMsg = window.t ? window.t("logSharpenSword", { sword: swText.name, refine: weapon.refine }) : `✨ 使用砥石細心研磨！佩刀【${weapon.name}】磨礪至 +${weapon.refine}！鋒利度大幅提昇！`;
+    this.addCombatLog(sharpenMsg);
 
     this.updateForgeUI();
     this.updateCharacterUI();
@@ -732,7 +784,10 @@ class SamuraiGame {
     this.player.gold += goldRefund;
 
     if (window.samuraiAudio) window.samuraiAudio.playHammer();
-    this.addCombatLog(`🔥 投入熔爐！將【${sword.tierName}】${sword.name} 分解回融，獲得 ${steelRefund} 玉鋼、${goldRefund} 金小判！`);
+    const lang = window.getLang ? window.getLang() : "zh-TW";
+    const swText = window.getSwordText ? window.getSwordText(sword, lang) : sword;
+    const smeltMsg = window.t ? window.t("logDismantleSword", { tier: swText.tierName, sword: swText.name, steel: steelRefund, gold: goldRefund }) : `🔥 投入熔爐！將【${sword.tierName}】${sword.name} 分解回融，獲得 ${steelRefund} 玉鋼、${goldRefund} 金小判！`;
+    this.addCombatLog(smeltMsg);
 
     this.updateForgeUI();
     this.updateInventoryUI();
@@ -744,7 +799,10 @@ class SamuraiGame {
     if (!sword) return;
     this.player.equipped.weapon = sword;
     if (window.samuraiAudio) window.samuraiAudio.playSharpen();
-    this.addCombatLog(`🗡️ 帶刀一新！拔出日本名刃【${sword.name}】，殺氣大盛！`);
+    const lang = window.getLang ? window.getLang() : "zh-TW";
+    const swText = window.getSwordText ? window.getSwordText(sword, lang) : sword;
+    const equipMsg = window.t ? window.t("logEquipSword", { sword: swText.name }) : `🗡️ 帶刀一新！拔出日本名刃【${sword.name}】，殺氣大盛！`;
+    this.addCombatLog(equipMsg);
     this.updateCharacterUI();
     this.updateInventoryUI();
     this.updateBattleUI();
@@ -840,7 +898,8 @@ class SamuraiGame {
       if (this.inBossFight) {
         this.bossTimeRemaining = Math.max(0, this.bossTimeRemaining - 0.2);
         if (this.bossTimeRemaining <= 0) {
-          this.addCombatLog(`<span style="color:#ef4444;font-weight:bold;">⏳ 首領狂暴！時限已過，挑戰失敗！</span>`);
+          const timeoutMsg = window.t ? window.t("logBossTimeout") : "⏳ 首領狂暴！時限已過，挑戰失敗！";
+          this.addCombatLog(`<span style="color:#ef4444;font-weight:bold;">${timeoutMsg}</span>`);
           this.inBossFight = false;
           this.spawnEnemy();
         }
@@ -1217,7 +1276,13 @@ class SamuraiGame {
     // 敵人體力條與資訊
     if (this.currentEnemy) {
       const e = this.currentEnemy;
-      document.getElementById("enemy-name").textContent = e.name;
+      const lang = window.getLang ? window.getLang() : "zh-TW";
+      const eText = window.getEnemyText ? window.getEnemyText(e, lang) : e;
+      const enemyNameEl = document.getElementById("enemy-name");
+      if (enemyNameEl) enemyNameEl.textContent = eText.name || e.name;
+      const enemyTitleEl = document.getElementById("enemy-title");
+      if (enemyTitleEl) enemyTitleEl.textContent = `【${eText.title || e.title}】`;
+
       const enemyHpPercent = Math.max(0, Math.min(100, Math.floor((e.hp / e.maxHp) * 100)));
       const enemyBar = document.getElementById("enemy-hp-fill") || document.getElementById("enemy-hp-bar");
       if (enemyBar) {
@@ -1243,12 +1308,12 @@ class SamuraiGame {
       if (challengeBtn) {
         challengeBtn.disabled = this.inBossFight;
         if (this.inBossFight) {
-          challengeBtn.textContent = "⚔️ 首領決戰激鬥中...";
+          challengeBtn.textContent = window.t ? window.t("bossBattleFighting") : "⚔️ 首領決戰激鬥中...";
         } else if (this.zoneKillProgress >= 10) {
-          challengeBtn.textContent = "⚡ 首領挑戰已解鎖！點擊拔刀！";
+          challengeBtn.textContent = window.t ? window.t("bossBattleReady") : "⚡ 首領挑戰已解鎖！點擊拔刀！";
           challengeBtn.classList.add("pulse-glow");
         } else {
-          challengeBtn.textContent = `討伐小怪召喚首領 (${this.zoneKillProgress}/10)`;
+          challengeBtn.textContent = window.t ? window.t("bossBattleProgress", { current: this.zoneKillProgress, total: 10 }) : `討伐小怪召喚首領 (${this.zoneKillProgress}/10)`;
           challengeBtn.classList.remove("pulse-glow");
         }
       }
@@ -1278,7 +1343,7 @@ class SamuraiGame {
     if (comboEl) {
       if (this.comboCount > 1) {
         comboEl.style.display = "block";
-        comboEl.textContent = `${this.comboCount} 連斬！`;
+        comboEl.textContent = window.t ? window.t("comboText", { combo: this.comboCount }) : `${this.comboCount} 連斬！`;
       } else {
         comboEl.style.display = "none";
       }
@@ -1593,7 +1658,12 @@ class SamuraiGame {
     });
 
     if (window.samuraiAudio) window.samuraiAudio.playLevelUp();
-    this.addCombatLog(`<span style="color:${f.color};font-weight:bold;">⚔️ 【天命抉擇】你立下誓言，正式投身【${f.name}】！獲得專屬陣營庇佑：${f.passiveDesc}！</span>`);
+    const lang = window.getLang ? window.getLang() : "zh-TW";
+    const fText = window.getFactionText ? window.getFactionText(factionId, lang) : f;
+    const vowMsg = window.t
+      ? window.t("logVowFaction", { faction: fText.name, desc: fText.passiveDesc })
+      : `⚔️ 【天命抉擇】你立下誓言，正式投身【${f.name}】！獲得專屬陣營庇佑：${f.passiveDesc}！`;
+    this.addCombatLog(`<span style="color:${f.color};font-weight:bold;">${vowMsg}</span>`);
 
     alert(`📜 【天命立誓】\n你已投身【${f.name}】！\n\n信念：${f.sub}\n專屬庇佑：${f.passiveDesc}`);
     this.updateCharacterUI();
@@ -1605,10 +1675,15 @@ class SamuraiGame {
   // 推進故事對白里程碑
   advanceStoryMilestone(zoneId) {
     if (!window.STORY_DATA) return;
-    const chapter = window.STORY_DATA.chapters.find(c => c.act === zoneId);
-    if (chapter && chapter.milestoneDialogue && chapter.milestoneDialogue.length > 0) {
-      const line = chapter.milestoneDialogue[0];
-      this.addCombatLog(`<span style="color:#38bdf8;">📜 【劇情推進】${line.speaker}：「${line.text}」</span>`);
+    const lang = window.getLang ? window.getLang() : "zh-TW";
+    const chText = window.getStoryChapterText ? window.getStoryChapterText(zoneId, lang) : (window.STORY_DATA.chapters.find(c => c.act === zoneId) || window.STORY_DATA.chapters[0]);
+    if (chText && chText.milestoneDialogue && chText.milestoneDialogue.length > 0) {
+      const line = chText.milestoneDialogue[0];
+      const speaker = window.getSpeakerText ? window.getSpeakerText(line.speaker, lang) : line.speaker;
+      const milestoneMsg = window.t
+        ? window.t("logStoryMilestone", { speaker: speaker, text: line.text })
+        : `📜 【劇情推進】${speaker}：「${line.text}」`;
+      this.addCombatLog(`<span style="color:#38bdf8;">${milestoneMsg}</span>`);
       this.updateStoryUI();
     }
   }
@@ -1618,8 +1693,11 @@ class SamuraiGame {
     if (!this.player.story) return;
     if (!this.player.story.completedActs.includes(actNum)) {
       this.player.story.completedActs.push(actNum);
-    this.checkAchievements();
-      this.addCombatLog(`<span style="color:#fbbf24;font-weight:bold;">📜 【命運繪卷】突破第 ${actNum} 幕歷史篇章！</span>`);
+      this.checkAchievements();
+      const actCompleteMsg = window.t
+        ? window.t("logStoryActComplete", { act: actNum })
+        : `📜 【命運繪卷】突破第 ${actNum} 幕歷史篇章！`;
+      this.addCombatLog(`<span style="color:#fbbf24;font-weight:bold;">${actCompleteMsg}</span>`);
     }
 
     if (actNum === 7) {
@@ -1651,7 +1729,12 @@ class SamuraiGame {
     }
 
     if (window.samuraiAudio) window.samuraiAudio.playLevelUp();
-    this.addCombatLog(`<span style="color:${ending.color};font-size:1.15em;font-weight:bold;">🏆 【歷史大結局達成】${ending.title}！獲得 ${ending.karmaReward} 輪迴魂火獎勵！</span>`);
+    const lang = window.getLang ? window.getLang() : "zh-TW";
+    const endText = window.getEndingText ? window.getEndingText(endingId, lang) : ending;
+    const endMsg = window.t
+      ? window.t("logGrandEnding", { title: endText.title, karma: ending.karmaReward })
+      : `🏆 【歷史大結局達成】${ending.title}！獲得 ${ending.karmaReward} 輪迴魂火獎勵！`;
+    this.addCombatLog(`<span style="color:${ending.color};font-size:1.15em;font-weight:bold;">${endMsg}</span>`);
 
     this.showEndingModal(ending);
     this.updateCharacterUI();
@@ -1895,7 +1978,11 @@ class SamuraiGame {
     this.playerCurrentHp = stats.maxHp;
 
     if (window.samuraiAudio) window.samuraiAudio.playLevelUp();
-    this.addCombatLog(`<span style="color:#f59e0b;font-size:1.15em;font-weight:bold;">🌀 【劍心輪迴完成】轉生重生！獲得 ${karmaEarned} 輪迴魂火！天賦點數與屬性已大幅強化！</span>`);
+    const lang = window.getLang ? window.getLang() : "zh-TW";
+    const reinMsg = window.t
+      ? window.t("logReincarnate", { karma: karmaEarned })
+      : `🌀 【劍心輪迴完成】轉生重生！獲得 ${karmaEarned} 輪迴魂火！天賦點數與屬性已大幅強化！`;
+    this.addCombatLog(`<span style="color:#f59e0b;font-size:1.15em;font-weight:bold;">${reinMsg}</span>`);
 
     this.spawnEnemy();
     this.updateCharacterUI();
@@ -1932,7 +2019,12 @@ class SamuraiGame {
     this.checkAchievements();
 
     if (window.samuraiAudio) window.samuraiAudio.playHammer();
-    this.addCombatLog(`🔥 點亮輪迴神龕【${perk.name}】至 Lv.${this.player.prestige.perks[perkId]}！獲得永久神力加護！`);
+    const lang = window.getLang ? window.getLang() : "zh-TW";
+    const pText = window.getPerkText ? window.getPerkText(perkId, lang) : perk;
+    const perkMsg = window.t
+      ? window.t("logUpgradePerk", { perk: pText.name, level: this.player.prestige.perks[perkId] })
+      : `🔥 點亮輪迴神龕【${perk.name}】至 Lv.${this.player.prestige.perks[perkId]}！獲得永久神力加護！`;
+    this.addCombatLog(perkMsg);
 
     this.updateCharacterUI();
     this.updateBattleUI();
@@ -2164,8 +2256,11 @@ class SamuraiGame {
 
     const lang = window.getLang ? window.getLang() : "zh-TW";
     const achText = window.getAchievementText ? window.getAchievementText(ach, lang) : ach;
-    const karmaStr = karmaReward > 0 ? `、🌀 +${karmaReward}` : "";
-    this.addCombatLog(`<span style="color:#fbbf24;font-weight:bold;">🏆 【成就達成】領取【${achText.name}】！獲得 🪙 +${goldReward}、💎 +${steelReward}${karmaStr}！</span>`);
+    const karmaStr = karmaReward > 0 ? (lang === "en" ? `, 🌀 +${karmaReward}` : `、🌀 +${karmaReward}`) : "";
+    const claimMsg = window.t
+      ? window.t("logClaimAchievement", { name: achText.name, gold: goldReward, steel: steelReward, karma: karmaStr })
+      : `🏆 【成就達成】領取【${achText.name}】！獲得 🪙 +${goldReward}、💎 +${steelReward}${karmaStr}！`;
+    this.addCombatLog(`<span style="color:#fbbf24;font-weight:bold;">${claimMsg}</span>`);
 
     this.updateCharacterUI();
     this.updateAchievementsUI();
@@ -2210,7 +2305,10 @@ class SamuraiGame {
     const lang = window.getLang ? window.getLang() : "zh-TW";
     const msg = window.t ? window.t("achClaimAllSuccess", { count: claimable.length, gold: totalGold, steel: totalSteel, karma: totalKarma }) : `領取了 ${claimable.length} 項成就！`;
     alert(msg);
-    this.addCombatLog(`<span style="color:#fbbf24;font-weight:bold;">🎁 【成就總領】一口氣領取 ${claimable.length} 項成就！獲得 🪙 +${totalGold}、💎 +${totalSteel}、🌀 +${totalKarma}！</span>`);
+    const allMsg = window.t
+      ? window.t("logClaimAllAchievements", { count: claimable.length, gold: totalGold, steel: totalSteel, karma: totalKarma })
+      : `🎁 【成就總領】一口氣領取 ${claimable.length} 項成就！獲得 🪙 +${totalGold}、💎 +${totalSteel}、🌀 +${totalKarma}！`;
+    this.addCombatLog(`<span style="color:#fbbf24;font-weight:bold;">${allMsg}</span>`);
 
     this.updateCharacterUI();
     this.updateAchievementsUI();
