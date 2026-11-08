@@ -183,9 +183,12 @@ body {
   border-radius: 6px;
   cursor: pointer;
   font-size: 0.9rem;
-  display: flex;
+  display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 4px;
+  white-space: nowrap;
+  flex-shrink: 0;
   transition: all 0.2s;
 }
 
@@ -308,6 +311,8 @@ body {
   align-items: center;
   justify-content: center;
   gap: 6px;
+  white-space: nowrap;
+  flex-shrink: 0;
   transition: all 0.2s;
   min-height: 40px;
 }
@@ -367,6 +372,7 @@ body {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  gap: 12px;
   margin-bottom: 12px;
 }
 
@@ -382,6 +388,8 @@ body {
   border-radius: 4px;
   color: #fde047;
   font-weight: 700;
+  display: inline-block;
+  width: fit-content;
 }
 
 .battle-arena {
@@ -389,6 +397,7 @@ body {
   border: 2px solid var(--border-gold);
   border-radius: 12px;
   min-height: 320px;
+  padding: 16px;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -405,6 +414,7 @@ body {
   align-items: center;
   gap: 16px;
   z-index: 2;
+  width: 100%;
 }
 
 .enemy-avatar-wrap {
@@ -435,6 +445,7 @@ body {
   align-items: center;
   gap: 8px;
   width: 320px;
+  max-width: 92%;
 }
 
 .enemy-title {
@@ -1281,13 +1292,15 @@ body {
   background: radial-gradient(circle at center, #1e1518 0%, #090a0c 90%);
   z-index: 3500;
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: center;
   padding: 20px;
   overflow-y: auto;
+  overflow-x: hidden;
 }
 
 .title-hero-box {
+  margin: auto;
   background: rgba(18, 20, 25, 0.96);
   border: 2px solid var(--border-gold);
   border-radius: 16px;
@@ -1373,6 +1386,7 @@ body {
 
 /* 創角儀式卡片 */
 .creation-modal-card {
+  margin: auto;
   background: var(--bg-card);
   border: 2px solid var(--border-gold);
   border-radius: 14px;
@@ -1412,10 +1426,13 @@ body {
 .creation-name-row {
   display: flex;
   gap: 10px;
+  width: 100%;
 }
 
 .creation-name-row input {
   flex: 1;
+  min-width: 0;
+  width: 100%;
   background: #14161b;
   border: 2px solid var(--border-gold);
   color: #fff;
@@ -1497,6 +1514,7 @@ body {
   align-items: center;
   border-top: 1px solid var(--border-muted);
   padding-top: 16px;
+  gap: 12px;
 }
 
 /* ==========================================
@@ -1537,6 +1555,7 @@ body {
 
 .town-campfire-icon {
   font-size: 3.2rem;
+  flex-shrink: 0;
   animation: pulse-enemy 2s infinite ease-in-out;
 }
 
@@ -1566,10 +1585,12 @@ body {
 
 .npc-avatar {
   font-size: 2.6rem;
+  flex-shrink: 0;
 }
 
 .npc-info {
   flex: 1;
+  min-width: 0;
 }
 
 .npc-name {
@@ -1582,7 +1603,7 @@ body {
 .npc-role {
   font-size: 0.85rem;
   color: var(--text-muted);
-  line-height: 1.3;
+  line-height: 1.35;
 }
 
 .town-footer-actions {
@@ -1605,6 +1626,7 @@ body {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  gap: 10px;
   border-bottom: 1px solid var(--border-muted);
   padding-bottom: 12px;
 }
@@ -1649,10 +1671,12 @@ body {
 
 .wp-icon {
   font-size: 2.2rem;
+  flex-shrink: 0;
 }
 
 .wp-info {
   flex: 1;
+  min-width: 0;
 }
 
 .wp-title {
@@ -1680,11 +1704,15 @@ body {
   border-radius: 6px;
   font-size: 0.85rem;
   font-weight: 700;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .wp-badge-locked {
   color: #94a3b8;
   font-size: 0.85rem;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 /* Toast 提示 */
@@ -1697,6 +1725,7 @@ body {
   gap: 8px;
   z-index: 4000;
   pointer-events: none;
+  max-width: 380px;
 }
 
 .game-toast {
@@ -1709,6 +1738,7 @@ body {
   font-size: 0.95rem;
   animation: slide-toast 0.3s ease;
   pointer-events: auto;
+  word-break: break-word;
 }
 
 .toast-success { border-color: #22c55e; }
@@ -1721,33 +1751,401 @@ body {
   to { transform: translateX(0); opacity: 1; }
 }
 
-/* 響應式優化 */
+/* ==========================================
+   13. 手機版響應式全面適配 (Pixel 10 Pro XL / Mobile 412px~768px)
+   ========================================== */
 @media (max-width: 768px) {
+  #game-app {
+    padding: 8px 8px 95px 8px;
+    gap: 10px;
+  }
+
+  /* 頂部資訊列：手機三層自適應網格 */
+  #game-header {
+    padding: 10px;
+    gap: 8px;
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .header-left {
+    width: 100%;
+    gap: 10px;
+  }
+
+  .player-avatar-badge {
+    width: 46px;
+    height: 46px;
+    font-size: 1.7rem;
+    flex-shrink: 0;
+  }
+
+  .player-identity {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .name-row {
+    font-size: 1rem;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .player-title {
+    font-size: 0.85rem;
+  }
+
+  .exp-bar-wrap {
+    width: 100%;
+    max-width: 240px;
+  }
+
+  .header-center {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 6px;
+    width: 100%;
+  }
+
+  .stat-pill {
+    padding: 5px 8px;
+    font-size: 0.85rem;
+    justify-content: center;
+    white-space: nowrap;
+  }
+
+  .header-right {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 4px;
+    width: 100%;
+  }
+
+  .btn-header {
+    padding: 6px 2px;
+    font-size: 0.78rem;
+    justify-content: center;
+    min-height: 36px;
+  }
+
+  /* 五大主選單：保留圖示與4字標籤，隱藏鍵盤快捷鍵角標 */
   #main-nav-tabs {
     grid-template-columns: repeat(5, 1fr);
     gap: 4px;
   }
+
   .tab-btn {
-    padding: 10px 2px;
-    font-size: 0.85rem;
-    min-height: 56px;
+    padding: 8px 2px;
+    min-height: 54px;
+    gap: 3px;
   }
+
+  .tab-icon {
+    font-size: 1.25rem;
+  }
+
   .tab-label {
+    display: block;
+    font-size: 0.72rem;
+    line-height: 1.1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
+  }
+
+  .tab-key {
     display: none;
   }
-  .market-layout, .town-npc-grid {
+
+  /* 戰場與章節橫幅 */
+  .act-banner-box {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+    padding: 12px;
+  }
+
+  .act-name {
+    font-size: 1.08rem;
+  }
+
+  .act-banner-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    width: 100%;
+  }
+
+  .act-banner-actions .btn {
+    width: 100%;
+    padding: 8px 6px;
+    font-size: 0.85rem;
+  }
+
+  .battle-arena {
+    min-height: 270px;
+    padding: 14px 10px;
+  }
+
+  .enemy-avatar-wrap {
+    width: 105px;
+    height: 105px;
+  }
+
+  .enemy-avatar-large {
+    font-size: 3.8rem;
+  }
+
+  .enemy-title {
+    font-size: 1.12rem;
+    text-align: center;
+  }
+
+  .battle-hint-bar {
+    font-size: 0.8rem;
+    text-align: center;
+    margin-top: 16px;
+  }
+
+  /* 主城營地 (Town Hub) */
+  .town-arena {
+    padding: 14px 12px;
+    gap: 14px;
+  }
+
+  .town-header-hero {
+    padding: 12px;
+    gap: 12px;
+  }
+
+  .town-campfire-icon {
+    font-size: 2.4rem;
+  }
+
+  .town-header-hero h2 {
+    font-size: 1.12rem;
+  }
+
+  .town-npc-grid {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+
+  .town-npc-card {
+    flex-wrap: wrap;
+    padding: 12px;
+    gap: 10px;
+  }
+
+  .town-npc-card .btn {
+    width: 100%;
+    margin-top: 2px;
+  }
+
+  .town-footer-actions {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+  }
+
+  .town-footer-actions .btn {
+    width: 100%;
+    font-size: 0.92rem;
+    padding: 10px 12px;
+    white-space: normal;
+    text-align: center;
+  }
+
+  /* 世界地圖小站彈窗 */
+  .modal-overlay {
+    padding: 10px;
+  }
+
+  .modal-card, .world-map-card {
+    padding: 16px 12px;
+    max-width: 96vw;
+    max-height: 92vh;
+  }
+
+  .world-map-header h2 {
+    font-size: 1.12rem;
+  }
+
+  .waypoint-card {
+    flex-wrap: wrap;
+    padding: 12px;
+    gap: 10px;
+  }
+
+  .wp-title {
+    font-size: 1rem;
+  }
+
+  .waypoint-card .btn,
+  .waypoint-card .wp-badge-here,
+  .waypoint-card .wp-badge-locked {
+    width: 100%;
+    text-align: center;
+    justify-content: center;
+    margin-top: 2px;
+  }
+
+  /* 通用卡片與裝備欄 */
+  .section-card {
+    padding: 12px;
+    gap: 12px;
+  }
+
+  .section-card-title {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+    font-size: 1.05rem;
+  }
+
+  .equipped-grid {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+
+  .inventory-grid {
     grid-template-columns: 1fr;
   }
-  .equipped-grid, .creation-class-grid {
-    grid-template-columns: repeat(2, 1fr);
-  }
-  .class-selector {
-    grid-template-columns: repeat(2, 1fr);
-  }
-  .talents-grid {
+
+  .cosmetics-grid {
     grid-template-columns: 1fr;
   }
+
+  /* 職業與天賦 */
+  .talents-header-bar {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+  }
+
+  .talent-points-wrap {
+    justify-content: space-between;
+    width: 100%;
+  }
+
+  .class-selector, .creation-class-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+  }
+
+  .talents-grid, .market-layout {
+    grid-template-columns: 1fr;
+  }
+
+  /* 每日簽到與成就 */
   .daily-signin-grid {
-    grid-template-columns: repeat(4, 1fr);
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+  }
+
+  .achievement-card {
+    flex-wrap: wrap;
+    padding: 10px;
+    gap: 8px;
+  }
+
+  /* 首頁與創角儀式 */
+  .fullscreen-overlay {
+    padding: 12px;
+  }
+
+  .title-hero-box {
+    padding: 24px 16px;
+    gap: 14px;
+  }
+
+  .title-emblem {
+    font-size: 3.4rem;
+  }
+
+  .title-main {
+    font-size: 1.75rem;
+  }
+
+  .creation-modal-card {
+    padding: 18px 14px;
+    gap: 14px;
+  }
+
+  .creation-header h2 {
+    font-size: 1.3rem;
+  }
+
+  .creation-name-row {
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .creation-name-row .btn {
+    width: 100%;
+  }
+
+  .create-avatar-btn {
+    flex: 1 1 calc(50% - 8px);
+    justify-content: center;
+    padding: 8px 10px;
+    font-size: 0.9rem;
+  }
+
+  .creation-footer {
+    flex-direction: column-reverse;
+    align-items: stretch;
+    gap: 10px;
+  }
+
+  .creation-footer .btn {
+    width: 100%;
+  }
+
+  /* 懸浮智慧換裝與暗黑3成就橫幅 */
+  .smart-equip-banner {
+    width: 94vw;
+    padding: 10px 12px;
+    bottom: 12px;
+  }
+
+  .smart-equip-content {
+    flex-wrap: wrap;
+    gap: 8px;
+    justify-content: space-between;
+  }
+
+  .btn-smart-equip {
+    width: 100%;
+    padding: 8px 12px;
+    font-size: 0.95rem;
+  }
+
+  .diablo-banner {
+    width: 94vw;
+    padding: 10px 14px;
+    gap: 10px;
+  }
+
+  .diablo-banner-title {
+    font-size: 1.05rem;
+  }
+
+  /* Toast 提示在手機置於下方不遮擋頂部資訊與按鈕 */
+  .toast-container {
+    top: auto;
+    bottom: 85px;
+    left: 12px;
+    right: 12px;
+    max-width: calc(100vw - 24px);
+    align-items: stretch;
+  }
+
+  .game-toast {
+    font-size: 0.85rem;
+    padding: 8px 12px;
+    background: rgba(24, 26, 32, 0.94);
   }
 }
+
