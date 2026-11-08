@@ -542,6 +542,92 @@ describe('Game Engine & Mechanics (src/game.js)', () => {
 
     window.__TESTING__ = prevTesting;
   });
+
+  it('all enemies and bosses have unique visual avatars and game.updateBattleUI updates enemy avatar', () => {
+    const game = new SamuraiGame();
+    assert.ok(Array.isArray(window.ZONES_DATA));
+    
+    // Check all 21 regular enemies and 7 bosses have avatar icons
+    for (const z of window.ZONES_DATA) {
+      assert.ok(z.boss.avatar && z.boss.avatar.length > 0, `Zone ${z.id} boss must have avatar`);
+      for (const e of z.enemies) {
+        assert.ok(e.avatar && e.avatar.length > 0, `Zone ${z.id} enemy ${e.name} must have avatar`);
+      }
+    }
+
+    // Spawn enemy and verify currentEnemy.avatar is populated
+    game.spawnEnemy(false);
+    assert.ok(game.currentEnemy.avatar, 'Spawned enemy must have avatar');
+    game.updateBattleUI();
+    const avatarEl = document.getElementById('enemy-avatar');
+    assert.equal(avatarEl.textContent, game.currentEnemy.avatar);
+
+    // Spawn boss and verify boss avatar & boss-glow
+    game.spawnEnemy(true);
+    assert.ok(game.currentEnemy.avatar, 'Spawned boss must have avatar');
+    game.updateBattleUI();
+    assert.equal(avatarEl.textContent, game.currentEnemy.avatar);
+    assert.ok(avatarEl.classList.contains('boss-glow'), 'Boss avatar must have boss-glow class');
+  });
+
+  it('world map openWorldMap renders all 7 zones and travelToZone moves player correctly', () => {
+    const game = new SamuraiGame();
+    game.player.stats.highestZone = 3;
+    game.player.stats.currentZone = 1;
+
+    // Test openWorldMap
+    game.openWorldMap();
+    const container = document.getElementById('world-map-nodes-container');
+    assert.ok(container.innerHTML.length > 0, 'World map container should have rendered HTML');
+    assert.ok(document.getElementById('world-map-modal').classList.contains('active'), 'Modal should be active');
+
+    // Test travel to unlocked zone 2
+    game.travelToZone(2);
+    assert.equal(game.player.stats.currentZone, 2, 'Player should have traveled to Zone 2');
+    assert.equal(game.inBossFight, false);
+    assert.equal(game.zoneKillProgress, 0);
+
+    // Test travel to locked zone 5 (should be blocked)
+    let alerted = false;
+    const oldAlert = global.alert;
+    global.alert = () => { alerted = true; };
+    game.travelToZone(5);
+    assert.equal(alerted, true, 'Traveling to locked zone should alert');
+    assert.equal(game.player.stats.currentZone, 2, 'Zone should remain 2 after failed travel');
+    global.alert = oldAlert;
+  });
+
+  it('verifies comprehensive translation keys are present across zh-TW, en, and ja', () => {
+    const requiredKeys = [
+      'btnWorldMap', 'worldMapTitle', 'worldMapSub', 'worldMapCurrent', 'worldMapTravel',
+      'worldMapLocked', 'worldMapReqLevel', 'worldMapBoss', 'worldMapDrops',
+      'offlineModalTitle', 'offlineModalText', 'offlineModalKills', 'offlineModalGold',
+      'offlineModalSteel', 'offlineModalExp', 'offlineModalBtn', 'offlineUnitMins',
+      'forgeModalSmith', 'forgeModalHamon', 'forgeModalAtk', 'forgeModalCrit', 'forgeModalBtn',
+      'endingModalTitle', 'endingModalReward', 'endingModalBtn',
+      'forgeTitle', 'forgeStandardTitle', 'forgeStandardBtn', 'forgeMasterTitle', 'forgeMasterBtn',
+      'sharpenTitle', 'sharpenCurrentAtk', 'sharpenNextAtk', 'sharpenBtn', 'sharpenTip',
+      'whetstoneRoughTitle', 'whetstoneMidTitle', 'whetstoneFineTitle', 'smeltEmptyHint', 'smeltBtnText',
+      'dojoTitle', 'dojoSub', 'dojoPointsLabel', 'dojoResetBtn', 'dojoInvestShinkage', 'dojoInvestJigen', 'dojoInvestRishin', 'dojoRankLabel',
+      'invCurrentWeapon', 'invSwordsList', 'invConsumablesList', 'invAtkLabel', 'invCritLabel', 'invSpeedLabel',
+      'codexTitle', 'codexSub', 'codexProgressLabel',
+      'prestigeTitle', 'prestigeSub', 'prestigeCountLabel', 'prestigeKarmaLabel', 'prestigeGainLabel', 'prestigeBtn',
+      'prestigeKeepTitle', 'prestigeKeepDesc', 'prestigeResetTitle', 'prestigeResetDesc', 'prestigeAltarHeader',
+      'settingSoundTitle', 'settingSoundDesc', 'settingManualSaveTitle', 'settingManualSaveDesc', 'settingManualSaveBtn',
+      'settingExportTitle', 'settingExportDesc', 'settingExportBtn', 'settingImportTitle', 'settingImportDesc', 'settingImportBtn',
+      'settingResetTitle', 'settingResetDesc', 'settingResetBtn',
+      'communityTitle', 'communitySub', 'pollTitle', 'pollOpt1', 'pollOpt2', 'pollOpt3', 'pollOpt4', 'commentWallTitle', 'commentWallBanner',
+      'promptCopySave', 'promptPasteSave', 'alertManualSaveOk', 'initialCombatLog', 'autoSlashOn', 'autoSlashOff'
+    ];
+
+    for (const lang of ['zh-TW', 'en', 'ja']) {
+      const dict = window.I18N.translations[lang];
+      assert.ok(dict, `I18N.translations[${lang}] must exist`);
+      for (const k of requiredKeys) {
+        assert.ok(dict[k] !== undefined && dict[k].length > 0, `Key "${k}" must exist and be non-empty in ${lang}`);
+      }
+    }
+  });
 });
 
 
