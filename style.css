@@ -1,4058 +1,1338 @@
 /* ==========================================================
-   《無雙劍心：武士之刃》日式戰國水墨浮世繪風格樣式表
-   Samurai Blade: Idle RPG - Japanese Theme CSS
+   《武士之刃：無雙斬》（Samurai Blade: Resurrected）樣式表
+   風格：戰國和風水墨 x 暗黑破壞神打寶美學 (Diablo Dark Aesthetic)
+   特色：極致無障礙 (Accessibility-First)、超大點擊區域、高對比清晰字體
    ========================================================== */
 
-@import url('https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@400;600;900&family=Yuji+Boku&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@500;700;900&display=swap');
 
 :root {
-  --bg-dark: #0f1012;
-  --bg-card: rgba(23, 24, 28, 0.94);
-  --bg-card-header: rgba(33, 35, 42, 0.95);
+  --bg-main: #0c0d0f;
+  --bg-card: rgba(22, 24, 29, 0.96);
+  --bg-card-header: rgba(30, 33, 40, 0.98);
   --border-gold: #c5a059;
-  --border-muted: #2f333d;
-  --crimson: #d9383a;
-  --crimson-glow: rgba(217, 56, 58, 0.4);
+  --border-muted: #2e333d;
+  --text-main: #f3f2ee;
+  --text-muted: #a39e93;
   --gold-accent: #f59e0b;
-  --parchment: #f2eee3;
-  --text-main: #e6e4df;
-  --text-muted: #9c9991;
-  --steel-color: #60a5fa;
-
-  /* iPhone 16 / Pixel 10 Pro XL / Samsung Note 10 Lite Safe Areas */
-  --sat: env(safe-area-inset-top, 0px);
-  --sab: env(safe-area-inset-bottom, 0px);
-  --sal: env(safe-area-inset-left, 0px);
-  --sar: env(safe-area-inset-right, 0px);
+  --crimson: #d9383a;
+  --magic-blue: #3b82f6;
+  --rare-yellow: #eab308;
+  --epic-purple: #a855f7;
+  --legendary-orange: #f97316;
+  --ancient-red: #e11d48;
 }
 
 * {
   box-sizing: border-box;
   margin: 0;
   padding: 0;
-  user-select: none;
-  -webkit-user-select: none;
-}
-
-input, textarea, select {
-  user-select: text !important;
-  -webkit-user-select: text !important;
-  touch-action: auto !important;
-}
-
-button, a, select, .tab-btn, .btn-action, .poll-btn, .btn-sharpen, .btn-forge, .btn-invest-skill, .btn-equip, .btn-use {
-  touch-action: manipulation;
+  font-family: 'Noto Serif TC', serif, -apple-system, sans-serif;
   -webkit-tap-highlight-color: transparent;
 }
 
 body {
-  font-family: 'Noto Serif TC', 'Songti TC', serif;
-  background-color: var(--bg-dark);
+  background-color: var(--bg-main);
+  background-image: radial-gradient(circle at 50% 20%, #1a1c23 0%, #0c0d0f 80%);
   color: var(--text-main);
   min-height: 100vh;
-  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
   overflow-x: hidden;
-  position: relative;
-  padding-top: var(--sat);
-  padding-bottom: var(--sab);
-  padding-left: var(--sal);
-  padding-right: var(--sar);
-  -webkit-tap-highlight-color: transparent;
-  background-image: 
-    radial-gradient(circle at 50% 10%, rgba(217, 56, 58, 0.08) 0%, transparent 60%),
-    radial-gradient(circle at 80% 80%, rgba(197, 160, 89, 0.05) 0%, transparent 50%);
+  user-select: none;
 }
 
-/* 櫻花飄落背景 Canvas */
-#sakura-canvas {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100vw;
-  height: 100vh;
-  pointer-events: none;
-  z-index: 1;
-}
-
-/* 主遊戲容器 */
-#app-container {
-  position: relative;
-  z-index: 2;
+#game-app {
   max-width: 1200px;
+  width: 100%;
   margin: 0 auto;
-  padding: 12px 16px 80px 16px;
+  padding: 10px 14px 80px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
 }
 
-/* 頂部和風標題欄 */
-header.game-header {
+/* ==========================================
+   1. 頂部資訊列 (Header Bar)
+   ========================================== */
+#game-header {
+  background: var(--bg-card);
+  border: 1px solid var(--border-gold);
+  border-radius: 10px;
+  padding: 10px 16px;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  border-bottom: 2px solid var(--border-gold);
-  padding: 10px 16px;
-  background: linear-gradient(90deg, rgba(20,20,24,0.95) 0%, rgba(45,20,22,0.95) 50%, rgba(20,20,24,0.95) 100%);
-  border-radius: 6px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.6);
-  margin-bottom: 12px;
+  flex-wrap: wrap;
+  gap: 12px;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.6);
 }
 
-.brand-title {
+.header-left {
   display: flex;
   align-items: center;
   gap: 12px;
 }
 
-.brand-title h1 {
-  font-size: 1.5rem;
-  font-weight: 900;
-  color: #fff;
-  letter-spacing: 2px;
-  text-shadow: 0 0 10px var(--crimson-glow);
+.player-avatar-badge {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  border: 2px solid var(--border-gold);
+  background: radial-gradient(circle, #382e1e 0%, #15161a 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2rem;
+  box-shadow: 0 0 10px rgba(197, 160, 89, 0.4);
 }
 
-.brand-title .badge {
-  font-size: 0.75rem;
-  padding: 2px 8px;
+.player-identity {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.name-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 1.15rem;
+  font-weight: 700;
+}
+
+.player-title {
+  color: var(--gold-accent);
+  font-size: 0.95rem;
+}
+
+.level-badge {
   background: var(--crimson);
   color: #fff;
+  font-size: 0.8rem;
+  padding: 2px 7px;
   border-radius: 4px;
-  border: 1px solid #ff7b72;
+  font-weight: 900;
 }
 
-.resource-bar {
+.exp-bar-wrap {
+  width: 180px;
+  height: 14px;
+  background: #1e2026;
+  border: 1px solid var(--border-muted);
+  border-radius: 7px;
+  position: relative;
+  overflow: hidden;
+}
+
+.exp-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #3b82f6, #60a5fa);
+  transition: width 0.3s ease;
+}
+
+.exp-text {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  font-size: 0.7rem;
+  text-align: center;
+  line-height: 14px;
+  color: #fff;
+  text-shadow: 0 0 3px #000;
+}
+
+.header-center {
   display: flex;
-  gap: 18px;
   align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
 }
 
-.res-item {
+.stat-pill {
+  background: rgba(30, 33, 42, 0.8);
+  border: 1px solid var(--border-muted);
+  padding: 6px 12px;
+  border-radius: 6px;
   display: flex;
   align-items: center;
   gap: 6px;
   font-size: 0.95rem;
-  background: rgba(0,0,0,0.5);
-  padding: 4px 12px;
-  border-radius: 20px;
+}
+
+.power-pill {
+  border-color: var(--gold-accent);
+  background: rgba(245, 158, 11, 0.12);
+  color: #fef08a;
+  font-weight: 700;
+}
+
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.btn-header {
+  background: #232730;
   border: 1px solid var(--border-muted);
-}
-
-.res-item.gold span { color: #fbbf24; font-weight: bold; }
-.res-item.steel span { color: var(--steel-color); font-weight: bold; }
-
-/* 角色簡報面板 */
-.character-banner {
-  display: grid;
-  grid-template-columns: auto 1fr auto;
-  gap: 16px;
-  background: var(--bg-card);
-  border: 1px solid var(--border-gold);
-  border-radius: 8px;
-  padding: 14px 18px;
-  margin-bottom: 14px;
-  box-shadow: inset 0 0 15px rgba(0,0,0,0.5);
-}
-
-.avatar-badge {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  width: 70px;
-  height: 70px;
-  background: radial-gradient(circle, #3d1b1d 0%, #16161a 100%);
-  border: 2px solid var(--crimson);
-  border-radius: 50%;
-  box-shadow: 0 0 12px var(--crimson-glow);
-}
-
-.avatar-icon { 
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 2rem; 
-}
-.samurai-avatar-wrap {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-.samurai-avatar-wrap svg {
-  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.6));
-  transition: transform 0.2s ease;
-}
-.avatar-badge:hover .samurai-avatar-wrap svg {
-  transform: scale(1.08);
-}
-
-.char-info-block {
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  gap: 6px;
-}
-
-.char-title-row {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.char-name {
-  font-size: 1.25rem;
-  font-weight: 900;
-  color: #fff;
-}
-
-.char-rank {
-  font-size: 0.85rem;
-  color: var(--border-gold);
-  background: rgba(197, 160, 89, 0.15);
-  border: 1px solid var(--border-gold);
-  padding: 1px 8px;
-  border-radius: 4px;
-}
-
-.exp-bar-wrapper {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  font-size: 0.8rem;
-  color: var(--text-muted);
-}
-
-.progress-track {
-  flex: 1;
-  height: 10px;
-  background: #1e2026;
-  border-radius: 5px;
-  overflow: hidden;
-  border: 1px solid #363a45;
-}
-
-.progress-fill {
-  height: 100%;
-  background: linear-gradient(90deg, #d97706, #fbbf24);
-  transition: width 0.3s ease;
-}
-
-.stats-grid-mini {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 8px 16px;
-  font-size: 0.85rem;
-  align-items: center;
-}
-
-.stat-cell {
-  display: flex;
-  justify-content: space-between;
-  border-bottom: 1px dashed var(--border-muted);
-  padding-bottom: 2px;
-}
-
-.stat-cell span:last-child {
-  font-weight: bold;
-  color: #fff;
-}
-
-/* 主要操作分頁容器與水平滾動導航 */
-.tab-nav-wrapper {
-  position: sticky;
-  top: var(--sat);
-  z-index: 50;
+  color: var(--text-main);
+  padding: 6px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.9rem;
   display: flex;
   align-items: center;
   gap: 4px;
-  margin-bottom: 14px;
-  background: rgba(15, 16, 18, 0.96);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-  border-bottom: 2px solid var(--border-muted);
-  padding: 0 4px;
+  transition: all 0.2s;
 }
 
-.tab-nav-arrow {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 32px;
-  height: 40px;
-  background: rgba(25, 27, 34, 0.95);
-  color: var(--accent-gold);
-  border: 1px solid var(--border-gold);
-  border-radius: 6px;
-  cursor: pointer;
-  font-size: 1.4rem;
-  line-height: 1;
-  font-weight: bold;
-  user-select: none;
-  transition: all 0.2s ease;
-  flex-shrink: 0;
-  z-index: 5;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
+.btn-header:hover {
+  border-color: var(--border-gold);
+  background: #2c3240;
 }
 
-.tab-nav-arrow:hover {
-  background: rgba(212, 175, 55, 0.25);
-  color: #fff;
-  border-color: #ffd700;
-  transform: scale(1.05);
+.btn-google {
+  background: #fff;
+  color: #222;
+  font-weight: 700;
+  border: 1px solid #ddd;
 }
 
-.tab-nav-arrow:active {
-  transform: scale(0.95);
+.btn-google:hover {
+  background: #f1f5f9;
 }
 
-/* 主要操作分頁按鈕 (和風木簡標籤，支援滑鼠抓取拖曳與滾輪水平滾動) */
-nav.tab-nav {
-  display: flex;
+.g-icon {
+  font-weight: 900;
+  color: #4285f4;
+}
+
+/* ==========================================
+   2. 主選單：五大超大字體核心直覺分頁 (Nav Tabs)
+   ========================================== */
+#main-nav-tabs {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
   gap: 8px;
-  flex: 1;
-  padding: 6px 4px 8px 4px;
-  overflow-x: auto;
-  overflow-y: hidden;
-  -webkit-overflow-scrolling: touch;
-  scroll-behavior: smooth;
-  cursor: grab;
-  user-select: none;
-  scrollbar-width: thin;
-  scrollbar-color: rgba(212, 175, 55, 0.45) rgba(0, 0, 0, 0.3);
-}
-
-nav.tab-nav.is-dragging {
-  cursor: grabbing !important;
-  scroll-behavior: auto !important;
-}
-
-/* 典雅和風金質水平滾動條 (電腦版可見並可直接拖曳) */
-nav.tab-nav::-webkit-scrollbar {
-  height: 5px;
-  display: block;
-}
-
-nav.tab-nav::-webkit-scrollbar-track {
-  background: rgba(15, 16, 18, 0.7);
-  border-radius: 3px;
-}
-
-nav.tab-nav::-webkit-scrollbar-thumb {
-  background: rgba(212, 175, 55, 0.45);
-  border-radius: 3px;
-}
-
-nav.tab-nav::-webkit-scrollbar-thumb:hover {
-  background: var(--accent-gold);
-}
-
-@media (max-width: 600px) {
-  .tab-nav-arrow {
-    display: none; /* 手機版原生觸控滑動更順手，隱藏箭頭以保留最大視野 */
-  }
 }
 
 .tab-btn {
-  background: #191b22;
+  background: var(--bg-card);
   border: 1px solid var(--border-muted);
   color: var(--text-muted);
-  padding: 10px 18px;
-  font-size: 0.92rem;
-  font-weight: 600;
+  padding: 14px 6px;
+  border-radius: 8px;
   cursor: pointer;
-  border-radius: 6px;
   display: flex;
+  flex-direction: column;
   align-items: center;
-  gap: 8px;
-  transition: all 0.2s ease;
-  white-space: nowrap;
-  flex-shrink: 0;
-  min-height: 44px;
+  justify-content: center;
+  gap: 6px;
+  font-size: 1.05rem;
+  font-weight: 700;
+  position: relative;
+  transition: all 0.2s;
+  min-height: 64px;
 }
 
 .tab-btn:hover {
-  background: #252834;
-  color: #fff;
+  color: var(--text-main);
   border-color: var(--border-gold);
+  background: rgba(197, 160, 89, 0.08);
 }
 
 .tab-btn.active {
-  background: linear-gradient(180deg, #3d1b1d 0%, #1c1d24 100%);
   color: #fff;
-  border-color: var(--crimson);
-  border-bottom: 2px solid var(--crimson);
-  box-shadow: 0 -2px 10px var(--crimson-glow);
+  border: 2px solid var(--border-gold);
+  background: radial-gradient(circle at center, rgba(197, 160, 89, 0.25) 0%, rgba(22, 24, 29, 0.95) 100%);
+  box-shadow: 0 0 12px rgba(197, 160, 89, 0.4);
 }
 
-/* 分頁內容面板 */
-.tab-content {
-  min-height: 480px;
+.tab-icon {
+  font-size: 1.4rem;
 }
 
-.tab-pane {
-  display: none;
+.tab-key {
+  position: absolute;
+  top: 4px;
+  right: 6px;
+  font-size: 0.7rem;
+  color: #64748b;
+  background: #181a20;
+  padding: 1px 4px;
+  border-radius: 3px;
 }
 
-.tab-pane.active {
-  display: block;
-  animation: fadeIn 0.25s ease-out;
-}
-
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(6px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
-/* ==========================================================
-   1. 戰鬥修煉面板 (Battle Tab)
-   ========================================================== */
-.battle-layout {
-  display: grid;
-  grid-template-columns: 1fr 340px;
-  gap: 16px;
-}
-
-.battle-stage-card {
+/* ==========================================
+   3. 通用按鈕與卡片樣式
+   ========================================== */
+.section-card {
   background: var(--bg-card);
-  border: 1px solid var(--border-gold);
-  border-radius: 8px;
-  overflow: hidden;
-  box-shadow: 0 8px 30px rgba(0,0,0,0.7);
+  border: 1px solid var(--border-muted);
+  border-radius: 10px;
+  padding: 16px;
   display: flex;
   flex-direction: column;
+  gap: 14px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.4);
 }
 
-.stage-header {
-  padding: 12px 18px;
-  background: var(--bg-card-header);
-  border-bottom: 1px solid var(--border-muted);
+.section-card-title {
   display: flex;
   justify-content: space-between;
   align-items: center;
-}
-
-.zone-selector {
-  display: flex;
-  gap: 8px;
-  align-items: center;
-}
-
-.zone-select-dropdown {
-  background: #111217;
-  color: #fff;
-  border: 1px solid var(--border-gold);
-  padding: 4px 8px;
-  border-radius: 4px;
-  font-family: inherit;
-}
-
-/* 戰鬥競技場 (點擊斬擊主畫布) */
-.stage-arena {
-  position: relative;
-  height: 360px;
-  background: radial-gradient(circle at center, #261619 0%, #0c0d12 100%);
   border-bottom: 1px solid var(--border-muted);
+  padding-bottom: 10px;
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--gold-accent);
+}
+
+.title-sub {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  font-weight: normal;
+}
+
+.btn {
+  padding: 8px 16px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.95rem;
+  font-weight: 700;
+  border: 1px solid transparent;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  transition: all 0.2s;
+  min-height: 40px;
+}
+
+.btn-gold {
+  background: linear-gradient(180deg, #f59e0b 0%, #d97706 100%);
+  color: #1a0f02;
+  border-color: #b45309;
+}
+
+.btn-gold:hover {
+  background: linear-gradient(180deg, #fbbf24 0%, #f59e0b 100%);
+  box-shadow: 0 0 10px rgba(245, 158, 11, 0.5);
+}
+
+.btn-danger {
+  background: #7f1d1d;
+  color: #fecaca;
+  border-color: #991b1b;
+}
+
+.btn-danger:hover {
+  background: #991b1b;
+}
+
+.btn-outline {
+  background: transparent;
+  color: var(--text-main);
+  border-color: var(--border-gold);
+}
+
+.btn-outline:hover {
+  background: rgba(197, 160, 89, 0.15);
+}
+
+.btn-disabled {
+  background: #262930;
+  color: #64748b;
+  border-color: #334155;
+  cursor: not-allowed;
+}
+
+.btn-sm {
+  padding: 4px 10px;
+  font-size: 0.85rem;
+  min-height: 32px;
+}
+
+/* ==========================================
+   4. 戰鬥討伐區 (Battle Arena)
+   ========================================== */
+.act-banner-box {
+  background: linear-gradient(90deg, #1e1b4b, #312e81, #1e1b4b);
+  border: 1px solid #6366f1;
+  padding: 12px 20px;
+  border-radius: 8px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.act-name {
+  font-size: 1.25rem;
+  font-weight: 900;
+  color: #e0e7ff;
+}
+
+.act-progress-badge {
+  background: rgba(0,0,0,0.4);
+  padding: 4px 10px;
+  border-radius: 4px;
+  color: #fde047;
+  font-weight: 700;
+}
+
+.battle-arena {
+  background: radial-gradient(circle at center, #242833 0%, #111317 100%);
+  border: 2px solid var(--border-gold);
+  border-radius: 12px;
+  min-height: 320px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  cursor: pointer;
   overflow: hidden;
-  cursor: crosshair;
+  box-shadow: inset 0 0 30px rgba(0,0,0,0.8);
 }
 
-#slash-canvas {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  pointer-events: none;
-  z-index: 5;
+.enemy-battle-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  z-index: 2;
 }
 
-.enemy-wrapper {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  text-align: center;
-  z-index: 3;
-}
-
-.enemy-avatar-box {
-  width: 120px;
-  height: 120px;
-  margin: 0 auto 8px auto;
+.enemy-avatar-wrap {
+  width: 130px;
+  height: 130px;
   border-radius: 50%;
   border: 3px solid var(--crimson);
-  background: radial-gradient(circle, #4a1518 0%, #160709 100%);
+  background: radial-gradient(circle, #3d1214 0%, #17181c 100%);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 3.4rem;
-  box-shadow: 0 0 25px var(--crimson-glow);
-  animation: floatEnemy 3s ease-in-out infinite alternate;
+  box-shadow: 0 0 25px rgba(217, 56, 58, 0.4);
+  animation: pulse-enemy 2s infinite ease-in-out;
 }
 
-@keyframes floatEnemy {
-  from { transform: translateY(-4px); }
-  to { transform: translateY(4px); }
+@keyframes pulse-enemy {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.05); }
 }
 
-.enemy-avatar-box.boss-glow {
-  border-color: #fbbf24;
-  background: radial-gradient(circle, #78350f 0%, #1c0d02 100%);
-  box-shadow: 0 0 35px rgba(251, 191, 36, 0.6), inset 0 0 20px rgba(239, 68, 68, 0.5);
-  animation: floatBoss 2s ease-in-out infinite alternate;
-}
-
-@keyframes floatBoss {
-  0% { transform: translateY(-5px) scale(1.02); filter: drop-shadow(0 0 8px #f59e0b); }
-  100% { transform: translateY(5px) scale(1.08); filter: drop-shadow(0 0 16px #ef4444); }
+.enemy-avatar-large {
+  font-size: 5rem;
 }
 
 .enemy-info-bar {
-  background: rgba(0,0,0,0.7);
-  padding: 8px 16px;
-  border-radius: 6px;
-  border: 1px solid #3d1b1d;
-  min-width: 240px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  width: 320px;
 }
 
-.enemy-title-tag {
-  font-size: 0.8rem;
-  color: #ff7b72;
-  margin-bottom: 2px;
+.enemy-title {
+  font-size: 1.3rem;
+  font-weight: 900;
+  color: #fecaca;
+  text-shadow: 0 2px 4px #000;
 }
 
-.enemy-name-text {
-  font-size: 1.25rem;
-  font-weight: bold;
-  color: #fff;
-  margin-bottom: 6px;
-}
-
-.enemy-hp-track {
-  height: 12px;
-  background: #252833;
-  border-radius: 6px;
+.enemy-hp-wrap {
+  width: 100%;
+  height: 22px;
+  background: #1e2026;
+  border: 2px solid #7f1d1d;
+  border-radius: 11px;
+  position: relative;
   overflow: hidden;
-  border: 1px solid #444;
-  margin-bottom: 4px;
 }
 
 .enemy-hp-fill {
   height: 100%;
-  background: linear-gradient(90deg, #ef4444, #f87171);
-  transition: width 0.15s ease;
-}
-
-/* 首領限時倒數條 */
-.boss-timer-box {
-  position: absolute;
-  top: 14px;
-  left: 50%;
-  transform: translateX(-50%);
-  background: rgba(0,0,0,0.85);
-  border: 1px solid var(--crimson);
-  padding: 6px 16px;
-  border-radius: 20px;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  z-index: 6;
-}
-
-.boss-timer-track {
-  width: 140px;
-  height: 8px;
-  background: #333;
-  border-radius: 4px;
-  overflow: hidden;
-}
-
-.boss-timer-fill {
-  height: 100%;
-  background: #ef4444;
+  background: linear-gradient(90deg, #dc2626, #ef4444);
   transition: width 0.2s linear;
 }
 
-/* 連擊計數器 */
-.combo-banner {
+.enemy-hp-text {
   position: absolute;
-  top: 20px;
-  left: 20px;
-  font-size: 1.4rem;
-  font-weight: 900;
-  color: #fbbf24;
-  text-shadow: 0 0 10px rgba(251, 191, 36, 0.6);
-  z-index: 6;
-  letter-spacing: 2px;
+  top: 0; left: 0; right: 0; bottom: 0;
+  line-height: 18px;
+  text-align: center;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #fff;
+  text-shadow: 0 0 3px #000;
 }
 
-/* 舊版點擊提示（已被底部手動斬擊控制列取代） */
-.click-hint-tag {
-  display: none !important;
+.battle-hint-bar {
+  margin-top: 25px;
+  color: var(--text-muted);
+  font-size: 0.9rem;
+  z-index: 2;
 }
 
-/* 傷害飄字 */
-.dmg-popup {
+/* 戰鬥傷害跳字 */
+#battle-damage-layer {
   position: absolute;
-  font-weight: 900;
+  top: 0; left: 0; right: 0; bottom: 0;
   pointer-events: none;
-  animation: dmgFloat 0.9s cubic-bezier(0.18, 0.89, 0.32, 1.28) forwards;
-  z-index: 10;
+  z-index: 5;
 }
 
-.dmg-popup.normal-hit {
+.floating-dmg {
+  position: absolute;
   color: #fff;
   font-size: 1.3rem;
-  text-shadow: 0 0 4px #000;
+  font-weight: 900;
+  text-shadow: 0 0 6px #000;
+  animation: float-up 0.8s forwards ease-out;
 }
 
-.dmg-popup.crit-hit {
-  color: #ef4444;
+.dmg-crit {
+  color: #facc15;
   font-size: 1.8rem;
-  text-shadow: 0 0 12px rgba(239, 68, 68, 0.8), 0 0 4px #000;
+  text-shadow: 0 0 10px #eab308;
 }
 
-@keyframes dmgFloat {
-  0% { opacity: 0; transform: translate(-50%, 0) scale(0.6); }
-  25% { opacity: 1; transform: translate(-50%, -20px) scale(1.2); }
-  75% { opacity: 1; transform: translate(-50%, -45px) scale(1.0); }
-  100% { opacity: 0; transform: translate(-50%, -60px) scale(0.8); }
+.dmg-heal {
+  color: #4ade80;
+  font-size: 1.1rem;
 }
 
-/* 戰鬥底部按鈕欄 */
-.stage-footer {
-  padding: 12px 18px;
-  background: var(--bg-card-header);
+@keyframes float-up {
+  0% { transform: translateY(0) scale(0.8); opacity: 1; }
+  50% { transform: translateY(-30px) scale(1.2); opacity: 1; }
+  100% { transform: translateY(-60px) scale(1); opacity: 0; }
+}
+
+/* ==========================================
+   5. 裝備分頁與紙娃娃 (Gear & Inventory)
+   ========================================== */
+.equipped-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+}
+
+.gear-slot {
+  background: rgba(30, 33, 40, 0.6);
+  border: 1px dashed var(--border-muted);
+  border-radius: 8px;
+  padding: 12px;
+  min-height: 85px;
   display: flex;
+  flex-direction: column;
   justify-content: space-between;
-  align-items: center;
 }
 
-.player-battle-hp {
+.gear-slot.equipped {
+  border-style: solid;
+}
+
+.gear-slot-header {
   display: flex;
   align-items: center;
   gap: 10px;
+}
+
+.gear-icon {
+  font-size: 2rem;
+}
+
+.gear-name {
+  font-weight: 700;
+  font-size: 1.05rem;
+}
+
+.gear-sub {
   font-size: 0.85rem;
-  width: 50%;
+  color: var(--text-muted);
 }
 
-.hp-track-player {
-  flex: 1;
-  height: 12px;
-  background: #1e2026;
-  border-radius: 6px;
-  overflow: hidden;
-  border: 1px solid #363a45;
-}
-
-.hp-fill-player {
-  height: 100%;
-  background: linear-gradient(90deg, #10b981, #34d399);
-  transition: width 0.2s ease;
-}
-
-.btn-boss-challenge {
-  background: linear-gradient(180deg, #b91c1c 0%, #7f1d1d 100%);
-  color: #fff;
-  border: 1px solid #ef4444;
-  padding: 8px 18px;
-  border-radius: 6px;
-  font-weight: bold;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.btn-boss-challenge:hover:not(:disabled) {
-  background: #dc2626;
-  box-shadow: 0 0 15px rgba(220, 38, 38, 0.6);
-}
-
-.btn-boss-challenge:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-.pulse-glow {
-  animation: pulseButton 1.5s infinite;
-}
-
-@keyframes pulseButton {
-  0%, 100% { box-shadow: 0 0 5px rgba(239, 68, 68, 0.4); }
-  50% { box-shadow: 0 0 20px rgba(239, 68, 68, 0.9); }
-}
-
-/* 戰鬥文字卷軸 Log */
-.combat-log-card {
-  background: var(--bg-card);
-  border: 1px solid var(--border-muted);
-  border-radius: 8px;
+.gear-slot-actions {
   display: flex;
-  flex-direction: column;
-  height: 100%;
-  box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+  gap: 6px;
+  margin-top: 8px;
 }
 
-.card-title-bar {
-  padding: 10px 14px;
-  background: var(--bg-card-header);
-  border-bottom: 1px solid var(--border-muted);
-  font-size: 0.95rem;
-  font-weight: bold;
-  color: var(--border-gold);
+.inventory-toolbar {
   display: flex;
   justify-content: space-between;
   align-items: center;
-}
-
-.log-scroll-area {
-  flex: 1;
-  padding: 12px;
-  overflow-y: auto;
-  font-size: 0.85rem;
-  line-height: 1.6;
-  color: var(--text-muted);
-  max-height: 420px;
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
-.log-line {
-  border-bottom: 1px solid rgba(255,255,255,0.03);
-  padding-bottom: 4px;
-}
-
-.log-time {
-  color: #555;
-  font-size: 0.75rem;
-}
-
-/* ==========================================================
-   2. 名刀鍛造面板 (Forge Tab)
-   ========================================================== */
-.forge-container {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 16px;
-}
-
-.forge-card {
-  background: var(--bg-card);
-  border: 1px solid var(--border-gold);
-  border-radius: 8px;
-  padding: 16px;
-  box-shadow: 0 4px 20px rgba(0,0,0,0.5);
-}
-
-.forge-card h3 {
-  font-size: 1.15rem;
-  color: #fff;
-  border-bottom: 1px solid var(--border-muted);
+  flex-wrap: wrap;
+  gap: 10px;
   padding-bottom: 8px;
-  margin-bottom: 14px;
+  border-bottom: 1px solid var(--border-muted);
+}
+
+.inv-filter-group {
   display: flex;
   align-items: center;
-  gap: 8px;
-}
-
-.sharpen-target-box {
-  background: #15161b;
-  border: 1px solid var(--border-muted);
-  padding: 12px;
-  border-radius: 6px;
-  margin-bottom: 14px;
-}
-
-.whetstone-options {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.whetstone-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  background: #1a1c24;
-  padding: 8px 12px;
-  border-radius: 6px;
-  border: 1px solid var(--border-muted);
-}
-
-.btn-sharpen {
-  background: #2563eb;
-  color: #fff;
-  border: none;
-  padding: 6px 14px;
-  border-radius: 4px;
-  cursor: pointer;
-  font-weight: bold;
-}
-
-.btn-sharpen:hover {
-  background: #3b82f6;
-}
-
-.forge-actions-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
   gap: 12px;
-  margin-bottom: 16px;
+  flex-wrap: wrap;
 }
 
-.gacha-box {
-  background: #171821;
-  border: 1px solid var(--border-muted);
-  border-radius: 6px;
-  padding: 14px;
-  text-align: center;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-}
-
-.gacha-box h4 {
-  color: var(--border-gold);
-  margin-bottom: 6px;
-}
-
-.gacha-desc {
-  font-size: 0.8rem;
-  color: var(--text-muted);
-  margin-bottom: 12px;
-}
-
-.btn-forge {
-  background: linear-gradient(180deg, #d97706 0%, #b45309 100%);
-  color: #fff;
-  border: 1px solid #f59e0b;
-  padding: 8px 12px;
-  border-radius: 4px;
-  font-weight: bold;
-  cursor: pointer;
-}
-
-.btn-forge.master {
-  background: linear-gradient(180deg, #b91c1c 0%, #7f1d1d 100%);
-  border-color: #ef4444;
-}
-
-.btn-forge:hover {
-  filter: brightness(1.15);
-}
-
-.smelt-list-box {
-  max-height: 220px;
-  overflow-y: auto;
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
-.smelt-card {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  background: #16171f;
-  padding: 8px 12px;
-  border-radius: 4px;
-  border: 1px solid #282a35;
-}
-
-.btn-smelt {
-  background: #374151;
-  color: #e5e7eb;
-  border: none;
-  padding: 4px 10px;
-  border-radius: 4px;
-  font-size: 0.8rem;
-  cursor: pointer;
-}
-
-.btn-smelt:hover {
-  background: #b91c1c;
-  color: #fff;
-}
-
-.empty-hint {
-  text-align: center;
-  color: #666;
-  font-size: 0.85rem;
-  padding: 20px 0;
-}
-
-/* ==========================================================
-   3. 流派道場面板 (Dojo Tab)
-   ========================================================== */
-.dojo-header-banner {
-  background: var(--bg-card);
-  border: 1px solid var(--border-gold);
-  border-radius: 8px;
-  padding: 14px 18px;
-  margin-bottom: 14px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.dojo-skills-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 16px;
-}
-
-.skill-school-card {
-  background: var(--bg-card);
-  border: 1px solid var(--border-muted);
-  border-radius: 8px;
-  padding: 16px;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  box-shadow: 0 4px 15px rgba(0,0,0,0.5);
-  position: relative;
-  overflow: hidden;
-}
-
-.skill-school-card::before {
-  content: "";
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 4px;
-}
-
-.skill-school-card.shinkage::before { background: #38bdf8; }
-.skill-school-card.jigen::before { background: #ef4444; }
-.skill-school-card.rishin::before { background: #10b981; }
-
-.school-name {
-  font-size: 1.2rem;
-  font-weight: 900;
-  color: #fff;
-  margin-bottom: 6px;
-}
-
-.school-sub {
-  font-size: 0.8rem;
-  color: var(--border-gold);
-  margin-bottom: 12px;
-}
-
-.school-desc {
+.filter-check {
   font-size: 0.85rem;
   color: var(--text-muted);
-  line-height: 1.6;
-  margin-bottom: 16px;
-}
-
-.school-bonus-list {
-  background: #14151a;
-  border-radius: 4px;
-  padding: 10px;
-  font-size: 0.85rem;
-  color: #d1d5db;
-  margin-bottom: 16px;
-}
-
-.school-bonus-list li {
-  margin-left: 18px;
-  margin-bottom: 4px;
-}
-
-.btn-invest-skill {
-  background: #2563eb;
-  color: #fff;
-  border: none;
-  padding: 8px 16px;
-  border-radius: 4px;
-  font-weight: bold;
+  display: flex;
+  align-items: center;
+  gap: 4px;
   cursor: pointer;
-  width: 100%;
-}
-
-.btn-invest-skill:hover {
-  background: #3b82f6;
-}
-
-/* ==========================================================
-   4. 行囊道具面板 (Inventory Tab)
-   ========================================================== */
-.inv-section-title {
-  font-size: 1.1rem;
-  color: var(--border-gold);
-  margin-bottom: 10px;
-  border-left: 3px solid var(--crimson);
-  padding-left: 8px;
 }
 
 .inventory-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-  gap: 12px;
-  margin-bottom: 24px;
-}
-
-.inv-item-card {
-  background: var(--bg-card);
-  border: 1px solid var(--border-muted);
-  border-radius: 6px;
-  padding: 12px;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  transition: transform 0.15s ease;
-}
-
-.inv-item-card:hover {
-  transform: translateY(-2px);
-  border-color: var(--border-gold);
-}
-
-.inv-item-card.equipped {
-  box-shadow: 0 0 10px rgba(74, 222, 128, 0.2);
-}
-
-.inv-item-name {
-  font-weight: bold;
-  font-size: 1.05rem;
-}
-
-.inv-item-tier {
-  font-size: 0.75rem;
-  padding: 1px 6px;
-  border-radius: 3px;
-  color: #000;
-  font-weight: bold;
-}
-
-.inv-item-details {
-  display: flex;
-  gap: 12px;
-  font-size: 0.85rem;
-  color: #cbd5e1;
-}
-
-.inv-item-passive {
-  font-size: 0.8rem;
-  color: var(--text-muted);
-  background: #14151b;
-  padding: 6px;
-  border-radius: 4px;
-}
-
-.btn-equip {
-  background: #166534;
-  color: #fff;
-  border: none;
-  padding: 6px 14px;
-  border-radius: 4px;
-  font-size: 0.85rem;
-  cursor: pointer;
-  font-weight: bold;
-}
-
-.btn-equip.active {
-  background: #374151;
-  color: #9ca3af;
-  cursor: default;
-}
-
-/* 消耗品卡片 */
-.consumables-grid {
-  display: grid;
   grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-  gap: 12px;
-}
-
-.consumable-card {
-  background: var(--bg-card);
-  border: 1px solid var(--border-muted);
-  border-radius: 6px;
-  padding: 12px;
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.con-icon {
-  font-size: 2.2rem;
-}
-
-.con-info {
-  flex: 1;
-}
-
-.con-name {
-  font-weight: bold;
-  color: #fff;
-  margin-bottom: 2px;
-}
-
-.con-qty {
-  color: #fbbf24;
-  font-size: 0.85rem;
-}
-
-.con-desc {
-  font-size: 0.75rem;
-  color: var(--text-muted);
-  line-height: 1.4;
-}
-
-.btn-use {
-  background: #d97706;
-  color: #fff;
-  border: none;
-  padding: 6px 12px;
-  border-radius: 4px;
-  font-size: 0.85rem;
-  cursor: pointer;
-  font-weight: bold;
-}
-
-.btn-use:disabled {
-  background: #4b5563;
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-/* ==========================================================
-   5. 名刀圖鑑面板 (Codex Tab)
-   ========================================================== */
-.codex-banner {
-  background: var(--bg-card);
-  border: 1px solid var(--border-gold);
-  border-radius: 8px;
-  padding: 14px 18px;
-  margin-bottom: 14px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.codex-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-  gap: 14px;
-}
-
-.codex-item-card {
-  background: var(--bg-card);
-  border: 1px solid var(--border-muted);
-  border-radius: 8px;
-  padding: 14px;
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
-.codex-item-card.locked {
-  opacity: 0.5;
-  filter: grayscale(0.8);
-}
-
-.codex-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.codex-name {
-  font-weight: 900;
-  font-size: 1.1rem;
-}
-
-.codex-tier {
-  font-size: 0.75rem;
-  border: 1px solid;
-  padding: 1px 6px;
-  border-radius: 3px;
-}
-
-.codex-meta {
-  display: flex;
-  justify-content: space-between;
-  font-size: 0.8rem;
-  color: #888;
-}
-
-.codex-lore {
-  font-size: 0.85rem;
-  color: var(--text-muted);
-  line-height: 1.6;
-  background: rgba(0,0,0,0.3);
-  padding: 8px;
-  border-radius: 4px;
-  margin-top: 4px;
-}
-
-.codex-bonus {
-  font-size: 0.75rem;
-  color: #38bdf8;
-  margin-top: 2px;
-}
-
-/* ==========================================================
-   6. 設定與存檔面板 (Settings Tab)
-   ========================================================== */
-.settings-box {
-  background: var(--bg-card);
-  border: 1px solid var(--border-gold);
-  border-radius: 8px;
-  padding: 20px;
-  max-width: 650px;
-  margin: 0 auto;
-}
-
-.settings-box h3 {
-  font-size: 1.25rem;
-  color: #fff;
-  border-bottom: 1px solid var(--border-muted);
-  padding-bottom: 10px;
-  margin-bottom: 16px;
-}
-
-.settings-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 12px 0;
-  border-bottom: 1px dashed var(--border-muted);
-}
-
-.btn-setting {
-  background: #374151;
-  color: #fff;
-  border: 1px solid #4b5563;
-  padding: 6px 14px;
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 0.9rem;
-}
-
-.btn-setting.danger {
-  background: #991b1b;
-  border-color: #ef4444;
-}
-
-.btn-setting:hover {
-  filter: brightness(1.2);
-}
-
-/* ==========================================================
-   浮動彈窗 Modals (Offline & Forge Showcase)
-   ========================================================== */
-.modal-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100vw;
-  height: 100vh;
-  background: rgba(0, 0, 0, 0.8);
-  backdrop-filter: blur(4px);
-  display: none;
-  align-items: center;
-  justify-content: center;
-  z-index: 100;
-}
-
-.modal-overlay.active {
-  display: flex;
-}
-
-.modal-scroll-card {
-  background: #191a22;
-  border: 2px solid var(--border-gold);
-  border-radius: 8px;
-  padding: 24px;
-  max-width: 440px;
-  width: 92%;
-  max-height: 86dvh;
-  max-height: 86vh;
+  gap: 10px;
+  max-height: 480px;
   overflow-y: auto;
-  -webkit-overflow-scrolling: touch;
-  text-align: center;
-  box-shadow: 0 0 35px rgba(217, 56, 58, 0.4);
-  animation: modalScale 0.25s cubic-bezier(0.18, 0.89, 0.32, 1.28);
+  padding-right: 4px;
 }
 
-@keyframes modalScale {
-  from { transform: scale(0.85); opacity: 0; }
-  to { transform: scale(1.0); opacity: 1; }
-}
-
-.modal-title {
-  font-size: 1.4rem;
-  color: var(--border-gold);
-  margin-bottom: 12px;
-}
-
-.modal-body {
-  font-size: 0.95rem;
-  line-height: 1.8;
-  color: var(--text-main);
-  margin-bottom: 20px;
-}
-
-.btn-modal-close {
-  background: linear-gradient(180deg, #b91c1c 0%, #7f1d1d 100%);
-  color: #fff;
-  border: 1px solid #ef4444;
-  padding: 10px 24px;
-  border-radius: 6px;
-  font-weight: bold;
-  cursor: pointer;
-  font-size: 1rem;
-}
-
-/* ==========================================================
-   響應式佈局 (Mobile Responsive: iPhone 16 / Pixel 10 / Note 10 Lite)
-   ========================================================== */
-@media (max-width: 768px) {
-  #app-container {
-    padding: 8px 10px calc(70px + var(--sab)) 10px;
-    max-width: 100%;
-  }
-
-  /* 頂部導航與標題緊湊化 */
-  header.game-header {
-    flex-direction: column;
-    align-items: stretch;
-    gap: 8px;
-    padding: 8px 12px;
-  }
-
-  .brand-title {
-    justify-content: space-between;
-  }
-
-  .brand-title h1 {
-    font-size: 1.25rem;
-    letter-spacing: 1px;
-  }
-
-  .header-controls {
-    justify-content: space-between;
-    width: 100%;
-  }
-
-  .resource-bar {
-    justify-content: space-between;
-    width: 100%;
-    gap: 6px;
-  }
-
-  .res-item {
-    flex: 1;
-    justify-content: center;
-    font-size: 0.82rem;
-    padding: 4px 8px;
-  }
-
-  /* 角色簡報區塊 */
-  .character-banner {
-    grid-template-columns: 1fr;
-    gap: 10px;
-    padding: 10px 12px;
-    text-align: center;
-  }
-
-  .avatar-badge {
-    margin: 0 auto;
-  }
-
-  .stats-grid-mini {
-    grid-template-columns: repeat(3, 1fr);
-    gap: 6px 10px;
-    font-size: 0.8rem;
-  }
-
-  /* 戰鬥主面板 */
-  .battle-layout {
-    grid-template-columns: 1fr;
-    gap: 12px;
-  }
-
-  .stage-header {
-    flex-direction: column;
-    align-items: stretch;
-    gap: 8px;
-    padding: 10px 12px;
-  }
-
-  .zone-selector {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: space-between;
-    align-items: center;
-    width: 100%;
-    gap: 6px;
-  }
-
-  .zone-select-dropdown {
-    flex: 1;
-    min-width: 130px;
-    height: 38px;
-    font-size: 0.85rem;
-  }
-
-  .btn-autoslash {
-    font-size: 0.8rem;
-    padding: 6px 10px;
-    min-height: 38px;
-    display: flex;
-    align-items: center;
-  }
-
-  .stage-arena {
-    height: 280px;
-    touch-action: none; /* 徹底杜絕手機觸控狂按時的螢幕下拉刷新與雙擊縮放阻礙 */
-  }
-
-  .enemy-avatar-box {
-    width: 72px;
-    height: 72px;
-    font-size: 2.4rem;
-  }
-
-  .stage-footer {
-    flex-direction: column;
-    align-items: stretch;
-    gap: 10px;
-    padding: 10px 12px;
-  }
-
-  .player-battle-hp {
-    width: 100%;
-    justify-content: space-between;
-  }
-
-  .hp-track-player {
-    flex: 1;
-    margin: 0 8px;
-  }
-
-  .btn-boss-challenge {
-    width: 100%;
-    min-height: 44px;
-    font-size: 0.95rem;
-  }
-
-  .combat-log-card {
-    max-height: 220px;
-  }
-
-  .log-scroll-area {
-    max-height: 160px;
-    font-size: 0.8rem;
-  }
-
-  /* 鍛造與修煉 */
-  .forge-container,
-  .dojo-skills-grid {
-    grid-template-columns: 1fr;
-    gap: 12px;
-  }
-
-  .forge-actions-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .btn-forge, .btn-invest-skill, .btn-sharpen {
-    min-height: 44px;
-    font-size: 0.95rem;
-  }
-
-  .whetstone-row {
-    padding: 10px 12px;
-  }
-
-  /* 行囊與名刀圖鑑網格 */
-  .inventory-grid {
-    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-    gap: 10px;
-  }
-
-  .codex-grid {
-    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-    gap: 10px;
-  }
-
-  .consumables-grid {
-    grid-template-columns: 1fr;
-  }
-
-  /* 茶屋留言板手機優化 */
-  .community-hero {
-    flex-direction: column;
-    align-items: stretch;
-    padding: 14px;
-  }
-
-  .feedback-quick-actions {
-    flex-direction: column;
-    width: 100%;
-  }
-
-  .btn-community-action {
-    width: 100%;
-    justify-content: center;
-    min-height: 44px;
-  }
-
-  .poll-options-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .poll-btn {
-    min-height: 44px;
-  }
-
-  #HCB_comment_box input[type="text"],
-  #HCB_comment_box #hcb_form_name {
-    max-width: 100% !important;
-  }
-}
-
-/* 針對超窄屏手機 (<= 420px，如部分 iPhone 與緊湊模式) 特殊調優 */
-@media (max-width: 420px) {
-  .brand-title h1 {
-    font-size: 1.15rem;
-  }
-
-  .stats-grid-mini {
-    grid-template-columns: repeat(2, 1fr);
-    font-size: 0.75rem;
-    gap: 5px 8px;
-  }
-
-  .inventory-grid,
-  .codex-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .modal-scroll-card {
-    padding: 16px 12px;
-  }
-
-  .modal-title {
-    font-size: 1.2rem;
-  }
-}
-
-/* ==========================================================
-   Sony Xperia 1 II / 21:9 超寬劇院比例 (CinemaWide) 適配
-   ========================================================== */
-@media (min-aspect-ratio: 2/1) and (max-width: 768px) {
-  .stage-arena {
-    height: 330px; /* 充分利用 21:9 充裕的垂直視野 */
-  }
-
-  .enemy-avatar-box {
-    width: 82px;
-    height: 82px;
-    font-size: 2.7rem;
-  }
-
-  .battle-layout {
-    gap: 16px;
-  }
-
-  .log-scroll-area {
-    max-height: 200px;
-  }
-
-  /* 避開 Sony Side Sense 側邊觸控感應條誤觸 */
-  #app-container {
-    padding-left: max(14px, var(--sal));
-    padding-right: max(14px, var(--sar));
-  }
-}
-
-/* ==========================================================
-   夏普中階 AQUOS sense / wish (70mm 緊湊寬度 & IGZO) 特殊調優
-   ========================================================== */
-@media (max-width: 375px) {
-  #app-container {
-    padding: 6px 8px calc(75px + var(--sab)) 8px;
-  }
-
-  .brand-title h1 {
-    font-size: 1.1rem;
-    letter-spacing: 0.5px;
-  }
-
-  .brand-title .badge {
-    font-size: 0.68rem;
-    padding: 1px 5px;
-  }
-
-  .res-item {
-    font-size: 0.74rem;
-    padding: 2px 6px;
-  }
-
-  .tab-btn {
-    padding: 8px 10px;
-    font-size: 0.8rem;
-    gap: 4px;
-    min-height: 42px;
-  }
-
-  .stage-arena {
-    height: 255px;
-  }
-
-  .stats-grid-mini {
-    grid-template-columns: repeat(2, 1fr);
-    font-size: 0.72rem;
-    gap: 4px 6px;
-  }
-
-  .btn-boss-challenge {
-    font-size: 0.88rem;
-    padding: 8px 10px;
-  }
-}
-
-/* ==========================================================
-   硬體加速與 GPU 渲染合成 (vivo Mali / Adreno 60Hz/120Hz 高刷流暢)
-   ========================================================== */
-.stage-arena,
-.enemy-avatar-box,
-.combo-banner,
-#slash-canvas,
-.modal-scroll-card,
-.btn-autoslash {
-  transform: translateZ(0);
-  -webkit-transform: translateZ(0);
-  backface-visibility: hidden;
-  -webkit-backface-visibility: hidden;
-}
-
-/* Samsung S25 / A71 One UI 系統大字型與無障礙防破版保護 */
-.stat-cell,
-.whetstone-row,
-.school-bonus-list li,
-.codex-meta,
-.res-item {
-  flex-wrap: wrap;
-  word-break: break-word;
-  min-height: auto;
-}
-
-
-/* ==========================================================
-   7. 浪人茶屋・社群交流與意見回饋 (Community & Feedback Tab)
-   ========================================================== */
-.community-container {
-  display: flex;
-  flex-direction: column;
-  gap: 18px;
-}
-
-.community-hero {
-  background: linear-gradient(135deg, rgba(45, 20, 22, 0.9) 0%, rgba(20, 20, 24, 0.95) 100%);
-  border: 1px solid var(--border-gold);
-  border-radius: 8px;
-  padding: 18px 24px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 16px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.6);
-}
-
-.hero-text h3 {
-  font-size: 1.4rem;
-  color: #fff;
-  margin-bottom: 6px;
-}
-
-.hero-text p {
-  color: var(--text-muted);
-  font-size: 0.9rem;
-}
-
-.feedback-quick-actions {
-  display: flex;
-  gap: 12px;
-  flex-wrap: wrap;
-}
-
-.btn-community-action {
-  background: rgba(30, 32, 40, 0.9);
-  color: #fff;
-  border: 1px solid var(--border-gold);
-  padding: 10px 18px;
-  border-radius: 6px;
-  font-weight: bold;
-  font-size: 0.9rem;
-  text-decoration: none;
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  transition: all 0.2s ease;
-  cursor: pointer;
-}
-
-.btn-community-action:hover {
-  background: var(--crimson);
-  border-color: #ff7b72;
-  box-shadow: 0 0 12px var(--crimson-glow);
-  transform: translateY(-2px);
-}
-
-.btn-community-action.issue {
-  border-color: #38bdf8;
-}
-
-.btn-community-action.issue:hover {
-  background: #0284c7;
-  box-shadow: 0 0 12px rgba(56, 189, 248, 0.4);
-}
-
-/* 意見調查投票卡片 */
-.poll-card {
-  background: var(--bg-card);
-  border: 1px solid var(--border-muted);
-  border-radius: 8px;
-  padding: 18px;
-}
-
-.poll-card h4 {
-  color: var(--border-gold);
-  margin-bottom: 12px;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 1.1rem;
-}
-
-.poll-options-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-  gap: 10px;
-}
-
-.poll-btn {
-  background: #171822;
-  border: 1px solid #333644;
-  color: #d1d5db;
-  padding: 12px 16px;
-  border-radius: 6px;
-  cursor: pointer;
-  text-align: left;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  font-size: 0.9rem;
-  transition: all 0.2s ease;
-}
-
-.poll-btn:hover {
-  background: #252838;
-  border-color: var(--border-gold);
-  color: #fff;
-}
-
-.poll-btn.voted {
-  background: rgba(217, 56, 58, 0.2);
-  border-color: var(--crimson);
-  color: #fff;
-}
-
-/* ==================== 浪人茶屋・免登入留言板樣式 ==================== */
-.teahouse-comment-wall {
-  background: var(--bg-card);
-  border: 1px solid var(--border-gold);
-  border-radius: 8px;
-  padding: 20px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.6);
-  margin-top: 16px;
-}
-
-.teahouse-comment-wall h4 {
-  color: #fbbf24;
-  margin-bottom: 12px;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 1.15rem;
-  border-bottom: 1px solid rgba(212, 175, 55, 0.25);
-  padding-bottom: 10px;
-}
-
-.teahouse-banner {
-  background: rgba(185, 28, 28, 0.12);
-  border-left: 4px solid var(--crimson);
-  padding: 12px 16px;
-  border-radius: 0 6px 6px 0;
-  margin-bottom: 20px;
-  font-size: 0.88rem;
-  color: #e6dfcf;
-  line-height: 1.6;
-}
-
-/* HTML Comment Box 專屬日式風格覆蓋 */
-#HCB_comment_box {
-  background: transparent !important;
-  color: var(--text-main) !important;
-  font-family: inherit !important;
-}
-
-#HCB_comment_box h3,
-#HCB_comment_box h3 a {
-  color: #fbbf24 !important;
-  font-family: 'Cinzel', 'Noto Serif JP', serif !important;
-  font-size: 1.05rem !important;
-  margin-bottom: 14px !important;
-  text-decoration: none !important;
-}
-
-#HCB_comment_form_box {
-  background: rgba(15, 12, 18, 0.85);
-  border: 1px solid rgba(212, 175, 55, 0.3);
-  border-radius: 8px;
-  padding: 16px;
-  margin-bottom: 24px;
-}
-
-#HCB_comment_box input[type="text"],
-#HCB_comment_box #hcb_form_name {
-  background: #0d0a10 !important;
-  color: #f5eedc !important;
-  border: 1px solid rgba(212, 175, 55, 0.35) !important;
-  border-radius: 6px !important;
-  padding: 8px 12px !important;
-  font-size: 0.9rem !important;
-  margin-bottom: 10px !important;
-  width: 100% !important;
-  max-width: 280px !important;
-  box-sizing: border-box !important;
-  transition: border-color 0.2s;
-}
-
-#HCB_comment_box input[type="text"]:focus,
-#HCB_comment_box #hcb_form_name:focus {
-  border-color: #fbbf24 !important;
-  outline: none !important;
-  box-shadow: 0 0 8px rgba(251, 191, 36, 0.3) !important;
-}
-
-#HCB_comment_box textarea,
-#HCB_comment_box #hcb_form_content,
-#HCB_comment_box .commentbox {
-  width: 100% !important;
-  background: #0d0a10 !important;
-  color: #f5eedc !important;
-  border: 1px solid rgba(212, 175, 55, 0.35) !important;
-  border-radius: 6px !important;
-  padding: 12px !important;
-  font-size: 0.92rem !important;
-  line-height: 1.6 !important;
-  box-sizing: border-box !important;
-  font-family: inherit !important;
-  resize: vertical !important;
-  min-height: 90px !important;
-  transition: border-color 0.2s;
-}
-
-#HCB_comment_box textarea:focus,
-#HCB_comment_box #hcb_form_content:focus {
-  border-color: #fbbf24 !important;
-  outline: none !important;
-  box-shadow: 0 0 8px rgba(251, 191, 36, 0.3) !important;
-}
-
-#HCB_comment_box .submit,
-#HCB_comment_box input[type="submit"],
-#HCB_comment_box #hcb_submit {
-  background: linear-gradient(135deg, #8a1414, #c83232) !important;
-  color: #ffffff !important;
-  border: 1px solid #d4af37 !important;
-  padding: 10px 24px !important;
-  border-radius: 6px !important;
-  font-size: 0.95rem !important;
-  font-weight: bold !important;
-  cursor: pointer !important;
-  margin-top: 10px !important;
-  letter-spacing: 1px !important;
-  display: inline-block !important;
-  transition: all 0.2s ease !important;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4) !important;
-}
-
-#HCB_comment_box .submit:hover,
-#HCB_comment_box input[type="submit"]:hover,
-#HCB_comment_box #hcb_submit:hover {
-  background: linear-gradient(135deg, #b91c1c, #dc2626) !important;
-  box-shadow: 0 0 12px rgba(212, 175, 55, 0.6) !important;
-  transform: translateY(-1px) !important;
-}
-
-#HCB_comment_box .comment {
-  background: rgba(22, 18, 26, 0.9) !important;
-  border: 1px solid rgba(212, 175, 55, 0.25) !important;
-  border-left: 4px solid var(--crimson) !important;
-  border-radius: 6px !important;
-  padding: 14px 16px !important;
-  margin-top: 14px !important;
-  position: relative !important;
-}
-
-#HCB_comment_box .author-name {
-  color: #fbbf24 !important;
-  font-weight: bold !important;
-  font-size: 0.95rem !important;
-  letter-spacing: 0.5px;
-}
-
-#HCB_comment_box .date {
-  color: #8c8275 !important;
-  font-size: 0.8rem !important;
-  margin-left: 10px !important;
-}
-
-#HCB_comment_box .hcb-comment-body {
-  color: #e6dfcf !important;
-  line-height: 1.65 !important;
-  margin-top: 8px !important;
-  font-size: 0.92rem !important;
-  white-space: pre-wrap !important;
-  word-break: break-word !important;
-}
-
-#HCB_comment_box .hcb-comment-tb {
-  margin-top: 10px !important;
-  font-size: 0.82rem !important;
-  display: flex !important;
-  gap: 14px !important;
-}
-
-#HCB_comment_box .hcb-link,
-#HCB_comment_box .hcb-reply,
-#HCB_comment_box .hcb-like,
-#HCB_comment_box a {
-  color: #d4af37 !important;
-  text-decoration: none !important;
-  transition: color 0.15s;
-}
-
-#HCB_comment_box .hcb-link:hover,
-#HCB_comment_box a:hover {
-  color: #ffffff !important;
-  text-decoration: underline !important;
-}
-
-#HCB_comment_box .home-desc {
-  font-size: 0.75rem !important;
-  opacity: 0.4 !important;
-  margin-top: 16px !important;
-  text-align: right !important;
-}
-#HCB_comment_box .home-desc a {
-  color: #aaa !important;
-}
-
-/* 隱藏任何外部後台登入門戶與外鏈 */
-.admin-link,
-.hcb-icon.hcb-door-in,
-.hcb-icon.hcb-door-out,
-#HCB_comment_box .admin-link {
-  display: none !important;
-}
-
-/* 自動出刀快捷開關按鈕 (無障礙設計) */
-.btn-autoslash {
-  background: rgba(30, 25, 35, 0.9);
-  color: #a8a29e;
-  border: 1px solid rgba(212, 175, 55, 0.35);
-  padding: 6px 14px;
-  border-radius: 20px;
-  font-size: 0.82rem;
-  font-weight: bold;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  user-select: none;
-  margin-left: 8px;
-}
-
-.btn-autoslash.active {
-  background: linear-gradient(135deg, #166534, #15803d);
-  color: #fef08a;
-  border-color: #facc15;
-  box-shadow: 0 0 10px rgba(34, 197, 94, 0.4);
-}
-
-.btn-autoslash:hover {
-  transform: translateY(-1px);
-  filter: brightness(1.1);
-}
-
-
-/* ==================== 手動居合拔刀斬擊與自律開關控制列 ==================== */
-.manual-slash-control-bar {
-  display: flex;
-  gap: 10px;
-  align-items: center;
-  justify-content: center;
-  padding: 8px 12px;
-  background: rgba(18, 16, 22, 0.95);
-  border-top: 1px solid rgba(212, 175, 55, 0.25);
-  border-bottom: 1px solid rgba(212, 175, 55, 0.25);
-  flex-wrap: wrap;
-}
-
-.btn-manual-strike {
-  flex: 1;
-  min-width: 220px;
-  background: linear-gradient(135deg, #7f1d1d 0%, #b91c1c 50%, #991b1b 100%);
-  color: #fff;
-  border: 1.5px solid #f59e0b;
-  border-radius: 8px;
-  padding: 10px 18px;
-  cursor: pointer;
-  box-shadow: 0 4px 14px rgba(185, 28, 28, 0.4), inset 0 1px 2px rgba(255, 255, 255, 0.3);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  font-family: inherit;
-  transition: all 0.12s ease;
-  user-select: none;
-  -webkit-tap-highlight-color: transparent;
-}
-
-.btn-manual-strike:hover {
-  background: linear-gradient(135deg, #991b1b 0%, #dc2626 50%, #b91c1c 100%);
-  transform: translateY(-1px);
-  box-shadow: 0 6px 18px rgba(220, 38, 38, 0.5), inset 0 1px 3px rgba(255, 255, 255, 0.4);
-}
-
-.btn-manual-strike:active {
-  transform: translateY(1px) scale(0.98);
-  box-shadow: 0 2px 6px rgba(185, 28, 28, 0.3);
-  background: linear-gradient(135deg, #6b1515 0%, #991b1b 100%);
-}
-
-.btn-manual-strike .strike-blade-icon {
-  font-size: 1.25rem;
-  line-height: 1;
-}
-
-.btn-manual-strike .strike-title {
-  font-weight: 800;
-  font-size: 1.05rem;
-  letter-spacing: 1px;
-  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.8);
-}
-
-.btn-manual-strike .strike-sub {
-  font-size: 0.75rem;
-  color: #fef08a;
-  opacity: 0.85;
-}
-
-/* 戰鬥抬頭劍氣簡報徽章 */
-.battle-qi-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  background: rgba(15, 23, 42, 0.85);
-  border: 1px solid rgba(103, 232, 249, 0.4);
-  color: #e2e8f0;
-  padding: 4px 10px;
-  border-radius: 16px;
-  font-size: 0.82rem;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  user-select: none;
-}
-
-.battle-qi-badge:hover {
-  background: rgba(30, 41, 59, 0.95);
-  border-color: #67e8f9;
-  transform: translateY(-1px);
-}
-
-.battle-qi-badge .qi-jump-link {
-  color: #38bdf8;
-  font-size: 0.72rem;
-  font-weight: bold;
-}
-
-/* ==================== 劍境維度系統 (Antimatter Dimensions Style) ==================== */
-.dimensions-container {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-  padding: 4px 0 20px 0;
-}
-
-.dimensions-hero-card {
-  background: linear-gradient(135deg, rgba(15, 23, 42, 0.95) 0%, rgba(30, 27, 75, 0.95) 50%, rgba(15, 23, 42, 0.95) 100%);
-  border: 1px solid rgba(103, 232, 249, 0.35);
-  border-radius: 10px;
-  padding: 18px 20px;
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.5);
-  display: grid;
-  grid-template-columns: 1fr auto;
-  gap: 16px;
-  align-items: center;
-}
-
-.hero-qi-title {
-  font-size: 0.85rem;
-  color: #94a3b8;
-  letter-spacing: 1px;
-}
-
-.hero-qi-value {
-  font-size: 2.2rem;
-  font-weight: 900;
-  color: #67e8f9;
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-  text-shadow: 0 0 16px rgba(103, 232, 249, 0.5);
-  letter-spacing: 1px;
-  line-height: 1.1;
-  margin: 4px 0;
-}
-
-.hero-qi-rate, .hero-qi-bonus {
-  font-size: 0.85rem;
-  color: #cbd5e1;
-}
-
-.hero-controls-bar {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  min-width: 190px;
-}
-
-.btn-tickspeed {
-  background: linear-gradient(135deg, #1e1b4b, #312e81);
-  border: 1px solid #818cf8;
-  color: #f1f5f9;
-  border-radius: 8px;
-  padding: 8px 14px;
-  cursor: pointer;
-  text-align: left;
-  transition: all 0.2s ease;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
-}
-
-.btn-tickspeed:hover:not(:disabled) {
-  background: linear-gradient(135deg, #312e81, #4338ca);
-  transform: translateY(-1px);
-  border-color: #a5b4fc;
-}
-
-.btn-tickspeed:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-  filter: grayscale(0.6);
-}
-
-.btn-tickspeed .ts-title {
-  font-size: 0.85rem;
-  font-weight: bold;
-  color: #c7d2fe;
-}
-
-.btn-tickspeed .ts-stats {
-  font-size: 0.95rem;
-  font-weight: 800;
-  color: #a5f3fc;
-  font-family: ui-monospace, SFMono-Regular, monospace;
-}
-
-.btn-tickspeed .ts-cost {
-  font-size: 0.75rem;
-  color: #fbbf24;
-}
-
-.btn-max-all {
-  background: linear-gradient(135deg, #78350f, #b45309);
-  border: 1px solid #fbbf24;
-  color: #fff;
-  border-radius: 8px;
-  padding: 10px 14px;
-  font-size: 0.92rem;
-  font-weight: 800;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  box-shadow: 0 2px 10px rgba(180, 83, 9, 0.4);
-  text-align: center;
-}
-
-.btn-max-all:hover {
-  background: linear-gradient(135deg, #b45309, #d97706);
-  transform: translateY(-1px);
-  filter: brightness(1.1);
-}
-
-.btn-max-all:active {
-  transform: translateY(1px);
-}
-
-/* 8 大維度階層清單卡片 */
-.dimensions-table-card {
-  background: rgba(18, 20, 26, 0.95);
-  border: 1px solid rgba(212, 175, 55, 0.25);
-  border-radius: 10px;
-  padding: 16px;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
-}
-
-.dimensions-table-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding-bottom: 10px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-  margin-bottom: 10px;
-  font-size: 0.95rem;
-}
-
-.dimensions-rows-list {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.dim-row {
-  display: grid;
-  grid-template-columns: 1fr auto;
-  gap: 14px;
-  align-items: center;
-  background: rgba(28, 30, 38, 0.7);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 8px;
-  padding: 10px 14px;
-  transition: all 0.2s ease;
-}
-
-.dim-row:hover {
-  background: rgba(38, 40, 52, 0.85);
-  border-color: rgba(103, 232, 249, 0.3);
-}
-
-.dim-row.disabled {
-  opacity: 0.7;
-}
-
-.dim-name-row {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.dim-name {
-  font-weight: 700;
-  font-size: 0.95rem;
-  color: #f1f5f9;
-}
-
-.dim-mult {
-  font-size: 0.82rem;
-  font-weight: bold;
-  color: #38bdf8;
-  font-family: ui-monospace, monospace;
-}
-
-.dim-desc {
-  font-size: 0.75rem;
-  color: #94a3b8;
-  margin: 2px 0 4px 0;
-}
-
-.dim-count-row {
-  display: flex;
-  gap: 12px;
-  font-size: 0.82rem;
-  color: #cbd5e1;
-}
-
-.dim-amount {
-  color: #facc15;
-  font-family: ui-monospace, monospace;
-  font-weight: bold;
-}
-
-.dim-bought {
-  color: #94a3b8;
-  font-size: 0.75rem;
-}
-
-.btn-buy-dim {
-  background: #27272a;
-  color: #71717a;
-  border: 1px solid #3f3f46;
-  border-radius: 6px;
-  padding: 8px 14px;
-  font-size: 0.85rem;
-  font-weight: bold;
-  cursor: pointer;
-  transition: all 0.15s ease;
-  min-width: 140px;
-  text-align: center;
-}
-
-.btn-buy-dim.can-afford {
-  background: linear-gradient(135deg, #1e293b, #334155);
-  color: #fef08a;
-  border-color: #f59e0b;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
-}
-
-.btn-buy-dim.can-afford:hover {
-  background: linear-gradient(135deg, #334155, #475569);
-  color: #fff;
-  border-color: #fbbf24;
-  transform: translateY(-1px);
-}
-
-.btn-buy-dim:active {
-  transform: translateY(0);
-}
-
-/* 突破與天河轉生卡片 (Prestige Card in Dimensions) */
-.dimension-prestige-card {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 14px;
-}
-
-.prestige-sub-box {
-  background: rgba(20, 22, 30, 0.9);
-  border: 1px solid rgba(167, 139, 250, 0.35);
-  border-radius: 8px;
-  padding: 14px;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  gap: 10px;
-}
-
-.prestige-sub-box.galaxy {
-  border-color: rgba(56, 189, 248, 0.4);
-}
-
-.prestige-info h4 {
-  font-size: 0.95rem;
-  color: #c4b5fd;
-  margin-bottom: 4px;
-}
-
-.prestige-sub-box.galaxy .prestige-info h4 {
-  color: #7dd3fc;
-}
-
-.prestige-info p {
-  font-size: 0.78rem;
-  color: #94a3b8;
-  line-height: 1.4;
-}
-
-.prestige-req {
-  font-size: 0.8rem;
-  color: #fbbf24;
-  margin-top: 6px;
-  font-weight: 600;
-}
-
-.btn-dim-shift, .btn-dim-galaxy {
-  background: #27272a;
-  color: #71717a;
-  border: 1px solid #3f3f46;
-  border-radius: 6px;
-  padding: 8px 14px;
-  font-size: 0.88rem;
-  font-weight: bold;
-  cursor: not-allowed;
-  transition: all 0.2s ease;
-  text-align: center;
-}
-
-.btn-dim-shift.can-shift {
-  background: linear-gradient(135deg, #5b21b6, #7c3aed);
-  color: #fff;
-  border-color: #a78bfa;
-  cursor: pointer;
-  box-shadow: 0 2px 10px rgba(124, 58, 237, 0.4);
-}
-
-.btn-dim-shift.can-shift:hover {
-  background: linear-gradient(135deg, #6d28d9, #8b5cf6);
-  transform: translateY(-1px);
-}
-
-.btn-dim-galaxy.can-galaxy {
-  background: linear-gradient(135deg, #0369a1, #0284c7);
-  color: #fff;
-  border-color: #38bdf8;
-  cursor: pointer;
-  box-shadow: 0 2px 10px rgba(2, 132, 199, 0.4);
-}
-
-.btn-dim-galaxy.can-galaxy:hover {
-  background: linear-gradient(135deg, #0284c7, #38bdf8);
-  transform: translateY(-1px);
-}
-
-@media (max-width: 768px) {
-  .dimensions-hero-card {
-    grid-template-columns: 1fr;
-  }
-  .dimension-prestige-card {
-    grid-template-columns: 1fr;
-  }
-  .hero-qi-value {
-    font-size: 1.8rem;
-  }
-  .dim-row {
-    grid-template-columns: 1fr;
-    gap: 8px;
-  }
-  .btn-buy-dim {
-    width: 100%;
-  }
-}
-
-/* ==================== 日本名刀造型向量圖樣樣式 ==================== */
-.sword-illu {
-  width: 100%;
-  height: 52px;
-  display: block;
-  filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.7));
-  margin: 6px 0;
-}
-
-.inv-sword-visual {
-  background: radial-gradient(circle at center, rgba(30, 25, 38, 0.9) 0%, rgba(10, 8, 14, 0.95) 100%);
-  border: 1px solid rgba(212, 175, 55, 0.25);
-  border-radius: 6px;
-  padding: 4px 6px;
-  margin: 8px 0;
-}
-
-.codex-sword-visual {
-  background: radial-gradient(circle at center, rgba(35, 28, 45, 0.95) 0%, rgba(12, 10, 16, 0.98) 100%);
-  border: 1px solid rgba(212, 175, 55, 0.3);
-  border-radius: 8px;
-  padding: 8px 12px;
-  margin: 10px 0;
-}
-
-.equip-sword-visual {
-  background: rgba(15, 12, 20, 0.85);
-  border: 1px solid rgba(212, 175, 55, 0.3);
-  border-radius: 6px;
-  padding: 4px 8px;
-  margin: 8px 0;
-}
-
-.sharpen-sword-visual {
-  background: rgba(15, 12, 20, 0.85);
-  border: 1px solid rgba(212, 175, 55, 0.3);
-  border-radius: 6px;
-  padding: 6px 12px;
-  margin: 8px 0;
-}
-
-.modal-sword-visual {
-  width: 100%;
-  max-width: 380px;
-  margin: 0 auto 12px auto;
-  background: radial-gradient(circle at center, rgba(40, 25, 30, 0.9) 0%, rgba(10, 8, 12, 0.95) 100%);
-  border: 1px solid #d4af37;
+.inv-card {
   border-radius: 8px;
   padding: 10px;
-  box-shadow: 0 0 20px rgba(212, 175, 55, 0.3);
-}
-
-.codex-extra-info {
-  font-size: 0.82rem;
-  color: #e2e8f0;
-  margin: 3px 0;
-}
-.codex-extra-info b {
-  color: #fbbf24;
-  margin-right: 4px;
-}
-
-/* ==========================================================
-   8. 命運繪卷與故事線樣式 (Story & Branching Choices)
-   ========================================================== */
-.story-container {
   display: flex;
   flex-direction: column;
-  gap: 18px;
+  gap: 6px;
 }
 
-.faction-hero-banner {
-  background: linear-gradient(135deg, rgba(25, 20, 32, 0.95) 0%, rgba(12, 10, 16, 0.98) 100%);
-  border: 1px solid var(--border-gold);
-  border-radius: 8px;
-  padding: 16px 20px;
-  display: flex;
-  align-items: center;
-  gap: 18px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
-}
-
-.faction-badge-big {
-  width: 64px;
-  height: 64px;
-  border-radius: 50%;
-  border: 2px solid var(--border-gold);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 2rem;
-  background: rgba(0, 0, 0, 0.6);
-  flex-shrink: 0;
-}
-
-.faction-banner-info {
-  flex: 1;
-}
-
-.story-act-card {
-  background: var(--bg-card);
-  border: 1px solid var(--border-gold);
-  border-radius: 8px;
-  padding: 20px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.6);
-}
-
-.story-act-header {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  margin-bottom: 8px;
-  border-bottom: 1px solid rgba(212, 175, 55, 0.2);
-  padding-bottom: 8px;
-}
-
-.story-act-tag {
-  background: var(--crimson);
-  color: #fff;
-  padding: 2px 10px;
-  border-radius: 4px;
-  font-size: 0.8rem;
-  font-weight: bold;
-}
-
-.story-act-summary {
-  font-size: 0.9rem;
-  line-height: 1.7;
-  color: #cbd5e1;
-  margin-bottom: 16px;
-}
-
-.story-dialogue-container {
-  background: rgba(12, 10, 16, 0.85);
-  border: 1px solid var(--border-muted);
-  border-radius: 6px;
-  overflow: hidden;
-  margin-bottom: 18px;
-}
-
-.dialogue-title-bar {
-  background: #171822;
-  padding: 8px 14px;
-  font-size: 0.85rem;
-  color: var(--border-gold);
-  border-bottom: 1px solid var(--border-muted);
-  font-weight: bold;
-}
-
-.dialogue-scroll-stream {
-  padding: 12px;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  max-height: 220px;
-  overflow-y: auto;
-  -webkit-overflow-scrolling: touch;
-}
-
-.dialogue-line {
-  padding: 8px 12px;
-  border-radius: 6px;
-  font-size: 0.86rem;
-  line-height: 1.5;
-}
-
-.dialogue-line.npc {
-  background: rgba(30, 41, 59, 0.5);
-  border-left: 3px solid #38bdf8;
-  color: #e2e8f0;
-}
-
-.dialogue-line.player {
-  background: rgba(55, 30, 30, 0.5);
-  border-left: 3px solid #ef4444;
-  color: #fef08a;
-  align-self: flex-end;
-  width: 90%;
-}
-
-.dialogue-speaker {
-  font-weight: bold;
-  margin-right: 6px;
-  color: #fbbf24;
-}
-
-/* 分歧天命決斷區域 */
-.story-choice-section {
-  background: linear-gradient(135deg, rgba(45, 20, 22, 0.95) 0%, rgba(20, 16, 28, 0.95) 100%);
-  border: 2px solid #ef4444;
-  border-radius: 8px;
-  padding: 18px;
-  margin-top: 14px;
-  box-shadow: 0 0 25px rgba(239, 68, 68, 0.3);
-  animation: pulseGlow 2.5s infinite alternate;
-}
-
-@keyframes pulseGlow {
-  from { box-shadow: 0 0 15px rgba(239, 68, 68, 0.2); }
-  to { box-shadow: 0 0 30px rgba(239, 68, 68, 0.5); }
-}
-
-.choice-prompt-title {
-  color: #fbbf24;
-  font-size: 1.15rem;
-  margin-bottom: 14px;
-  text-align: center;
-}
-
-.story-choices-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-  gap: 14px;
-}
-
-.story-choice-card {
-  background: rgba(15, 12, 20, 0.9);
-  border: 1px solid var(--border-gold);
-  border-radius: 6px;
-  padding: 14px;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  transition: transform 0.2s;
-}
-
-.story-choice-card:hover {
-  transform: translateY(-3px);
-}
-
-.story-choice-card.faction-shogunate { border-color: #38bdf8; }
-.story-choice-card.faction-ishin { border-color: #f59e0b; }
-.story-choice-card.faction-shura { border-color: #ef4444; }
-
-.btn-choose-faction {
-  border: none;
-  padding: 10px 14px;
-  border-radius: 4px;
-  font-weight: bold;
-  font-size: 0.9rem;
-  cursor: pointer;
-  color: #fff;
-  transition: opacity 0.2s;
-  min-height: 44px;
-}
-
-.btn-choose-faction:hover { opacity: 0.9; }
-.btn-choose-faction.btn-shogunate { background: linear-gradient(180deg, #0284c7 0%, #0369a1 100%); }
-.btn-choose-faction.btn-ishin { background: linear-gradient(180deg, #d97706 0%, #b45309 100%); }
-.btn-choose-faction.btn-shura { background: linear-gradient(180deg, #dc2626 0%, #991b1b 100%); }
-
-/* 七大幕時間軸 */
-.story-acts-chronicle {
-  background: var(--bg-card);
-  border: 1px solid var(--border-gold);
-  border-radius: 8px;
-  padding: 16px;
-}
-
-.acts-timeline-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-  gap: 10px;
-}
-
-.timeline-act-cell {
-  background: #14151b;
-  border: 1px solid var(--border-muted);
-  border-radius: 6px;
-  padding: 10px 12px;
-}
-
-.timeline-act-cell.completed {
-  border-color: #4ade80;
-  background: rgba(74, 222, 128, 0.05);
-}
-
-.timeline-act-cell.current {
-  border-color: #fbbf24;
-  background: rgba(251, 191, 36, 0.08);
-  box-shadow: 0 0 10px rgba(251, 191, 36, 0.2);
-}
-
-.timeline-act-cell.locked {
-  opacity: 0.5;
-}
-
-.act-cell-top {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 4px;
-}
-
-.act-badge {
-  font-size: 0.75rem;
-  color: var(--border-gold);
-  font-weight: bold;
-}
-
-.act-status {
-  font-size: 0.75rem;
-  font-weight: bold;
-}
-
-.act-name {
-  font-size: 0.85rem;
-  color: #fff;
-}
-
-/* 歷史終章大結局錄 */
-.story-endings-gallery {
-  background: var(--bg-card);
-  border: 1px solid var(--border-gold);
-  border-radius: 8px;
-  padding: 16px;
-}
-
-.endings-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-  gap: 14px;
-}
-
-.ending-archive-card {
-  background: #15161d;
-  border: 1px solid var(--border-muted);
-  border-radius: 6px;
-  padding: 14px;
-}
-
-.ending-archive-card.unlocked {
-  background: rgba(25, 20, 32, 0.9);
-  box-shadow: 0 0 15px rgba(251, 191, 36, 0.2);
-}
-
-.ending-archive-card.locked {
-  opacity: 0.5;
-  filter: grayscale(0.8);
-}
-
-.ending-archive-header {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  margin-bottom: 10px;
-}
-
-.ending-archive-body {
-  font-size: 0.82rem;
-  line-height: 1.6;
-  color: #cbd5e1;
-  white-space: pre-line;
-  background: rgba(0, 0, 0, 0.4);
-  padding: 10px;
-  border-radius: 4px;
-  margin-bottom: 8px;
-}
-
-.ending-reward-badge {
-  font-size: 0.75rem;
-  font-weight: bold;
-  padding: 4px 8px;
-  border-radius: 4px;
-  text-align: center;
-}
-
-/* ==========================================================
-   9. 劍心輪迴與轉生神龕樣式 (Prestige & Reincarnation)
-   ========================================================== */
-.prestige-container {
-  display: flex;
-  flex-direction: column;
-  gap: 18px;
-}
-
-.reincarnation-hero {
-  background: linear-gradient(135deg, rgba(40, 20, 48, 0.95) 0%, rgba(20, 16, 28, 0.98) 100%);
-  border: 2px solid #c084fc;
-  border-radius: 8px;
-  padding: 20px 24px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 16px;
-  box-shadow: 0 0 25px rgba(192, 132, 252, 0.3);
-}
-
-.reincarnation-info h3 {
-  font-size: 1.45rem;
-  color: #e9d5ff;
-  margin-bottom: 6px;
-}
-
-.reincarnation-info p {
-  font-size: 0.88rem;
-  color: #cbd5e1;
-  margin-bottom: 12px;
-  max-width: 600px;
-}
-
-.reincarnation-stats-bar {
-  display: flex;
-  gap: 18px;
-  flex-wrap: wrap;
-}
-
-.re-stat {
-  background: rgba(0, 0, 0, 0.5);
-  border: 1px solid rgba(192, 132, 252, 0.4);
-  padding: 4px 12px;
-  border-radius: 20px;
-  font-size: 0.9rem;
-}
-
-.btn-reincarnate {
-  background: linear-gradient(180deg, #9333ea 0%, #6b21a8 100%);
-  color: #fff;
-  border: 1px solid #c084fc;
-  padding: 12px 24px;
-  border-radius: 6px;
-  font-weight: bold;
-  font-size: 1.05rem;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  box-shadow: 0 0 15px rgba(147, 51, 234, 0.5);
-  min-height: 48px;
-}
-
-.btn-reincarnate:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 0 25px rgba(192, 132, 252, 0.7);
-}
-
-.reincarnation-notice {
-  background: var(--bg-card);
-  border: 1px solid var(--border-gold);
-  border-radius: 8px;
-  padding: 14px 18px;
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 14px;
-  font-size: 0.85rem;
-  line-height: 1.6;
-}
-
-.prestige-altar-box {
-  background: var(--bg-card);
-  border: 1px solid var(--border-gold);
-  border-radius: 8px;
-  padding: 20px;
-}
-
-.prestige-perks-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(270px, 1fr));
-  gap: 14px;
-}
-
-.prestige-perk-card {
-  background: #14151e;
-  border: 1px solid var(--border-muted);
-  border-radius: 8px;
-  padding: 16px;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  gap: 8px;
-  transition: transform 0.2s;
-}
-
-.prestige-perk-card:hover {
-  transform: translateY(-2px);
-  border-color: #c084fc;
-}
-
-.prestige-perk-card.maxed {
-  border-color: #fbbf24;
-  background: rgba(251, 191, 36, 0.05);
-}
-
-.perk-card-header {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.perk-icon {
-  font-size: 2rem;
-  background: rgba(0, 0, 0, 0.4);
-  width: 48px;
-  height: 48px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 8px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-.perk-title-box {
-  flex: 1;
-}
-
-.perk-name {
-  font-weight: bold;
-  color: #fff;
-  font-size: 1rem;
-}
-
-.perk-level {
-  font-size: 0.8rem;
-  color: #38bdf8;
-  font-weight: bold;
-}
-
-.perk-level.max {
-  color: #fbbf24;
-}
-
-.perk-desc {
-  font-size: 0.8rem;
-  color: #94a3b8;
-  line-height: 1.5;
-}
-
-.perk-current-bonus {
-  font-size: 0.82rem;
-  color: #e2e8f0;
-  background: rgba(0, 0, 0, 0.3);
-  padding: 6px 10px;
-  border-radius: 4px;
-  border-left: 3px solid #c084fc;
-}
-
-.perk-current-bonus b {
-  color: #fbbf24;
-}
-
-.btn-upgrade-perk {
-  background: #334155;
-  color: #94a3b8;
-  border: 1px solid #475569;
-  padding: 8px 14px;
-  border-radius: 6px;
-  font-weight: bold;
-  font-size: 0.88rem;
-  cursor: not-allowed;
-  min-height: 42px;
-  transition: all 0.2s ease;
-}
-
-.btn-upgrade-perk.can-afford {
-  background: linear-gradient(180deg, #7c3aed 0%, #5b21b6 100%);
-  color: #fff;
-  border-color: #a855f7;
-  cursor: pointer;
-  box-shadow: 0 0 10px rgba(124, 58, 237, 0.4);
-}
-
-.btn-upgrade-perk.can-afford:hover {
-  background: linear-gradient(180deg, #9333ea 0%, #7c3aed 100%);
-  transform: translateY(-1px);
-}
-
-/* 結局 Modal */
-.ending-card-modal {
-  border-color: #fbbf24;
-  box-shadow: 0 0 40px rgba(251, 191, 36, 0.4);
-}
-
-/* 行動端適配：分歧故事與轉生系統 */
-@media (max-width: 768px) {
-  .faction-hero-banner {
-    flex-direction: column;
-    text-align: center;
-    padding: 14px;
-  }
-  .faction-hero-banner .faction-banner-info {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-  }
-  .reincarnation-hero {
-    flex-direction: column;
-    align-items: stretch;
-    padding: 16px;
-  }
-  .reincarnation-hero .btn-reincarnate {
-    width: 100%;
-  }
-  .reincarnation-notice {
-    grid-template-columns: 1fr;
-  }
-  .prestige-perks-grid {
-    grid-template-columns: 1fr;
-  }
-  .story-choices-grid {
-    grid-template-columns: 1fr;
-  }
-  .acts-timeline-grid {
-    grid-template-columns: 1fr;
-  }
-  .endings-grid {
-    grid-template-columns: 1fr;
-  }
-}
-
-
-
-/* ==========================================================
-   頂部導航控制項（多國語系切換器與音效開關 UI）
-   ========================================================== */
-.header-controls {
+.inv-card-header {
   display: flex;
   align-items: center;
   gap: 8px;
 }
 
-.header-sound-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  background: rgba(15, 16, 20, 0.85);
-  border: 1px solid rgba(212, 175, 55, 0.45);
-  color: #fbbf24;
-  border-radius: 20px;
-  padding: 3px 10px;
-  font-size: 0.78rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  user-select: none;
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.4);
-}
-
-.header-sound-btn:hover {
-  background: rgba(212, 175, 55, 0.2);
-  border-color: #d4af37;
-  color: #ffffff;
-  transform: translateY(-1px);
-}
-
-.header-sound-btn:active {
-  transform: translateY(0);
-}
-
-.header-sound-btn.muted {
-  background: rgba(30, 30, 35, 0.75);
-  border-color: rgba(156, 163, 175, 0.35);
-  color: #9ca3af;
-  opacity: 0.85;
-}
-
-.header-sound-btn.muted:hover {
-  background: rgba(239, 68, 68, 0.15);
-  border-color: #ef4444;
-  color: #fca5a5;
-  opacity: 1;
-}
-
-.header-sound-btn .sound-icon {
-  font-size: 0.95rem;
-  line-height: 1;
-}
-
-.lang-switch-container {
-  display: flex;
-  align-items: center;
-  background: rgba(15, 16, 20, 0.85);
-  border: 1px solid rgba(212, 175, 55, 0.35);
-  border-radius: 20px;
-  padding: 2px 4px;
-  gap: 3px;
-  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.5);
-}
-
-.lang-btn {
-  background: transparent;
-  border: none;
-  color: #9ca3af;
-  font-size: 0.75rem;
-  font-weight: 600;
-  padding: 3px 8px;
-  border-radius: 12px;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  white-space: nowrap;
-}
-
-.lang-btn:hover {
-  color: #f3f4f6;
-  background: rgba(255, 255, 255, 0.08);
-}
-
-.lang-btn.active {
-  background: linear-gradient(135deg, #d4af37, #92400e);
-  color: #ffffff;
-  box-shadow: 0 1px 6px rgba(212, 175, 55, 0.4);
-}
-
-.lang-setting-buttons {
-  display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
-}
-
-.lang-btn-setting {
-  padding: 6px 14px;
-  font-size: 0.85rem;
-  border-radius: 6px;
-  border: 1px solid #4b5563;
-  background: #1f2937;
-  color: #d1d5db;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.lang-btn-setting:hover {
-  border-color: #d4af37;
-  color: #fff;
-}
-
-.lang-btn-setting.active {
-  background: linear-gradient(135deg, #b45309, #d4af37) !important;
-  color: #ffffff !important;
-  border-color: #f59e0b !important;
-  font-weight: bold;
-  box-shadow: 0 2px 8px rgba(245, 158, 11, 0.3);
-}
-
-
-/* ==========================================================
-   榮譽成就系統樣式 (Achievements System)
-   ========================================================== */
-.achievements-container {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-  width: 100%;
-}
-
-.achievements-hero {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  background: linear-gradient(135deg, rgba(20, 20, 26, 0.95) 0%, rgba(38, 28, 14, 0.95) 50%, rgba(20, 20, 26, 0.95) 100%);
-  border: 1px solid var(--border-gold);
-  border-radius: 8px;
-  padding: 16px 20px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
-  flex-wrap: wrap;
-  gap: 16px;
-}
-
-.ach-hero-info {
-  flex: 1;
-  min-width: 260px;
-}
-
-.ach-hero-info h3 {
-  margin: 0 0 4px 0;
-  font-size: 1.3rem;
-  color: #fbbf24;
-  letter-spacing: 1px;
-}
-
-.ach-hero-info p {
-  margin: 0 0 10px 0;
-  font-size: 0.85rem;
-  color: #a8a29e;
-}
-
-.ach-progress-row {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.ach-progress-label {
-  font-size: 0.85rem;
-  color: #e5e7eb;
-}
-
-.ach-progress-bar-wrap {
-  flex: 1;
-  max-width: 240px;
-  height: 10px;
-  background: rgba(0, 0, 0, 0.6);
-  border: 1px solid #4b5563;
-  border-radius: 6px;
-  overflow: hidden;
-}
-
-.ach-progress-bar-fill {
-  height: 100%;
-  background: linear-gradient(90deg, #d97706, #fbbf24);
-  border-radius: 6px;
-  transition: width 0.3s ease;
-}
-
-.ach-percent-badge {
-  font-size: 0.8rem;
-  font-weight: bold;
-  color: #fbbf24;
-  background: rgba(251, 191, 36, 0.15);
-  padding: 2px 8px;
-  border-radius: 10px;
-  border: 1px solid rgba(251, 191, 36, 0.3);
-}
-
-.ach-hero-actions {
-  display: flex;
-  align-items: center;
-}
-
-.btn-claim-all {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  background: linear-gradient(135deg, #b45309, #d97706);
-  border: 1px solid #f59e0b;
-  color: #fff;
-  font-size: 0.9rem;
-  font-weight: bold;
-  padding: 10px 18px;
-  border-radius: 6px;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  box-shadow: 0 4px 12px rgba(217, 119, 6, 0.35);
-}
-
-.btn-claim-all:hover:not(:disabled) {
-  background: linear-gradient(135deg, #d97706, #fbbf24);
-  transform: translateY(-1px);
-  box-shadow: 0 6px 16px rgba(251, 191, 36, 0.45);
-}
-
-.btn-claim-all:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-  filter: grayscale(0.6);
-}
-
-.ach-badge-cnt {
-  background: #ef4444;
-  color: #fff;
-  font-size: 0.75rem;
-  padding: 2px 6px;
-  border-radius: 10px;
-  font-weight: 800;
-  box-shadow: 0 0 6px rgba(239, 68, 68, 0.8);
-}
-
-/* 成就分類切換 */
-.ach-filter-bar {
-  display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
-}
-
-.ach-filter-btn {
-  background: rgba(20, 20, 26, 0.85);
-  border: 1px solid var(--border-muted);
-  color: #9ca3af;
-  font-size: 0.82rem;
-  padding: 6px 14px;
-  border-radius: 20px;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.ach-filter-btn:hover {
-  border-color: #d4af37;
-  color: #fff;
-}
-
-.ach-filter-btn.active {
-  background: linear-gradient(135deg, #451a03, #78350f);
-  border-color: #fbbf24;
-  color: #fbbf24;
-  font-weight: bold;
-  box-shadow: 0 2px 8px rgba(251, 191, 36, 0.2);
-}
-
-/* 成就卡片網格 */
-.achievements-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
-  gap: 12px;
-}
-
-.achievement-card {
-  display: flex;
-  gap: 14px;
-  background: rgba(18, 19, 23, 0.92);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 8px;
-  padding: 14px;
-  position: relative;
-  transition: all 0.25s ease;
-}
-
-.achievement-card:hover {
-  border-color: rgba(212, 175, 55, 0.4);
-  transform: translateY(-2px);
-  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.4);
-}
-
-.achievement-card.completed {
-  border-color: #f59e0b;
-  background: linear-gradient(135deg, rgba(28, 22, 15, 0.95) 0%, rgba(18, 19, 23, 0.95) 100%);
-  box-shadow: 0 0 12px rgba(245, 158, 11, 0.2);
-}
-
-.achievement-card.claimed {
-  border-color: rgba(16, 185, 129, 0.3);
-  opacity: 0.78;
-}
-
-.ach-icon-box {
-  width: 48px;
-  height: 48px;
-  border-radius: 8px;
-  background: rgba(0, 0, 0, 0.5);
-  border: 1px solid var(--border-muted);
-  display: flex;
-  align-items: center;
-  justify-content: center;
+.inv-icon {
   font-size: 1.6rem;
-  flex-shrink: 0;
 }
 
-.achievement-card.completed .ach-icon-box {
-  border-color: #fbbf24;
-  background: rgba(251, 191, 36, 0.1);
-  box-shadow: 0 0 8px rgba(251, 191, 36, 0.3);
+.inv-name {
+  font-weight: 700;
+  font-size: 1rem;
 }
 
-.achievement-card.claimed .ach-icon-box {
-  border-color: #10b981;
-}
-
-.ach-info-box {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  min-width: 0;
-}
-
-.ach-header-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 8px;
-}
-
-.ach-name {
-  font-size: 0.95rem;
-  font-weight: bold;
-  color: #fff;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.achievement-card.completed .ach-name {
-  color: #fbbf24;
-}
-
-.achievement-card.claimed .ach-name {
-  color: #a7f3d0;
-}
-
-.ach-desc {
+.inv-sub {
   font-size: 0.8rem;
-  color: #9ca3af;
-  line-height: 1.35;
+  color: var(--text-muted);
 }
 
-.ach-progress-track {
-  width: 100%;
-  height: 6px;
-  background: rgba(0, 0, 0, 0.5);
-  border-radius: 3px;
-  overflow: hidden;
-  margin: 4px 0 2px 0;
+.inv-lore {
+  font-size: 0.78rem;
+  font-style: italic;
+  color: #94a3b8;
+  line-height: 1.3;
 }
 
-.ach-progress-fill {
-  height: 100%;
-  background: linear-gradient(90deg, #3b82f6, #60a5fa);
-  border-radius: 3px;
-  transition: width 0.3s ease;
-}
-
-.achievement-card.completed .ach-progress-fill {
-  background: linear-gradient(90deg, #d97706, #fbbf24);
-}
-
-.achievement-card.claimed .ach-progress-fill {
-  background: #10b981;
-}
-
-.ach-bottom-row {
+.inv-affixes {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-top: 4px;
-  gap: 8px;
+  flex-wrap: wrap;
+  gap: 4px;
 }
 
-.ach-reward-badge {
+.affix-tag {
+  background: rgba(0,0,0,0.4);
+  color: #38bdf8;
   font-size: 0.75rem;
-  color: #fbbf24;
-  background: rgba(0, 0, 0, 0.4);
   padding: 2px 6px;
   border-radius: 4px;
-  border: 1px solid rgba(251, 191, 36, 0.2);
 }
 
-.ach-progress-num {
-  font-size: 0.75rem;
-  color: #9ca3af;
-}
-
-.btn-claim-ach {
-  padding: 4px 12px;
+.power-tag {
+  background: rgba(245, 158, 11, 0.2);
+  color: #fde047;
   font-size: 0.78rem;
-  font-weight: bold;
+  padding: 4px;
   border-radius: 4px;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  white-space: nowrap;
-}
-
-.btn-claim-ach.claimable {
-  background: linear-gradient(135deg, #d97706, #fbbf24);
-  color: #000;
-  border: 1px solid #fef08a;
-  box-shadow: 0 0 10px rgba(251, 191, 36, 0.5);
-  animation: pulse-glow 1.8s infinite;
-}
-
-.btn-claim-ach.claimable:hover {
-  transform: scale(1.05);
-}
-
-.btn-claim-ach.claimed {
-  background: rgba(16, 185, 129, 0.15);
-  color: #10b981;
-  border: 1px solid rgba(16, 185, 129, 0.3);
-  cursor: default;
-}
-
-.btn-claim-ach.locked {
-  background: rgba(255, 255, 255, 0.05);
-  color: #6b7280;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  cursor: default;
-}
-
-/* ==========================================================
-   暗黑破壞神3風格：史詩榮譽成就中央橫幅彈窗 (Diablo 3 Epic Achievement Center Banner)
-   ========================================================== */
-
-#achievement-toast-container {
-  position: fixed;
-  top: 16px;
-  left: 50%;
-  transform: translateX(-50%);
-  z-index: 99999;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  pointer-events: none;
-  width: 92%;
-  max-width: 560px;
-}
-
-.d3-achievement-banner {
-  position: relative;
   width: 100%;
-  pointer-events: none;
+}
+
+.inv-actions {
+  display: flex;
+  gap: 6px;
+  margin-top: 4px;
+}
+
+/* 客製造型選項 */
+.cosmetics-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 14px;
+}
+
+.cosmetic-box {
+  background: #181a20;
+  padding: 12px;
   border-radius: 8px;
-  overflow: visible;
-  animation: d3BannerEntrance 0.7s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
-  box-shadow: 
-    0 15px 40px rgba(0, 0, 0, 0.95),
-    0 0 35px rgba(245, 158, 11, 0.4),
-    0 0 10px rgba(217, 56, 58, 0.3);
 }
 
-/* 背後神聖金色放射光暈 (Radial Sunburst Flare) */
-.d3-ach-flare {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  width: 130%;
-  height: 280%;
-  transform: translate(-50%, -50%);
-  background: radial-gradient(ellipse at center, rgba(245, 158, 11, 0.45) 0%, rgba(217, 56, 58, 0.2) 35%, rgba(0, 0, 0, 0) 70%);
-  pointer-events: none;
-  z-index: -2;
-  animation: d3FlarePulse 2.8s ease-in-out infinite alternate;
+.cosmetic-label {
+  font-weight: 700;
+  margin-bottom: 8px;
+  color: var(--gold-accent);
 }
 
-@keyframes d3FlarePulse {
-  0% { transform: translate(-50%, -50%) scale(0.9); opacity: 0.7; }
-  100% { transform: translate(-50%, -50%) scale(1.15); opacity: 1; }
+.cosmetic-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
 }
 
-/* 橫向劃過耀眼劍氣強光 (Light Sheen Streak) */
-.d3-ach-sheen {
-  position: absolute;
-  top: 0;
-  left: -120%;
-  width: 70%;
-  height: 100%;
-  background: linear-gradient(105deg, transparent 20%, rgba(255, 255, 255, 0.45) 48%, rgba(251, 191, 36, 0.55) 52%, transparent 80%);
-  transform: skewX(-25deg);
-  pointer-events: none;
-  z-index: 10;
-  opacity: 0;
-  animation: d3SheenSweep 1.4s 0.15s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+.btn-avatar-pick, .btn-cosmetic-pick {
+  background: #232730;
+  border: 1px solid var(--border-muted);
+  color: var(--text-main);
+  padding: 6px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.9rem;
 }
 
-@keyframes d3SheenSweep {
-  0% { left: -120%; opacity: 0; }
-  15% { opacity: 1; }
-  85% { opacity: 1; }
-  100% { left: 200%; opacity: 0; }
+.btn-avatar-pick:hover, .btn-cosmetic-pick:hover {
+  border-color: var(--border-gold);
 }
 
-/* 主框體：暗黑破壞神黑金浮雕外觀 (D3 Plaque Body) */
-.d3-ach-frame {
-  position: relative;
-  overflow: hidden;
+/* ==========================================
+   6. 職業與天賦 (Talents)
+   ========================================== */
+.talents-header-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.talent-points-wrap {
   display: flex;
   align-items: center;
-  gap: 16px;
-  padding: 16px 20px;
-  background: linear-gradient(180deg, #2a2218 0%, #17130f 45%, #0b0907 100%);
-  border: 2px solid #eab308;
+  gap: 12px;
+}
+
+.class-selector {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+  margin: 12px 0;
+}
+
+.class-card-btn {
+  background: #181a20;
+  border: 1px solid var(--border-muted);
+  color: var(--text-main);
+  padding: 12px;
   border-radius: 8px;
-  box-shadow: 
-    inset 0 0 25px rgba(234, 179, 8, 0.25),
-    inset 0 1px 0 rgba(255, 255, 255, 0.25),
-    inset 0 -1px 0 rgba(0, 0, 0, 0.8);
-}
-
-/* 仿暗黑徽章四角鍛造鉚釘裝飾 */
-.d3-ach-frame::before,
-.d3-ach-frame::after {
-  content: "";
-  position: absolute;
-  width: 14px;
-  height: 14px;
-  border-style: solid;
-  border-color: #f59e0b;
-  pointer-events: none;
-}
-.d3-ach-frame::before {
-  top: 3px;
-  left: 3px;
-  border-width: 2px 0 0 2px;
-}
-.d3-ach-frame::after {
-  bottom: 3px;
-  right: 3px;
-  border-width: 0 2px 2px 0;
-}
-
-/* 左側圓形功勳徽章 (Medallion Crest) */
-.d3-ach-crest-wrap {
-  position: relative;
-  flex-shrink: 0;
-  width: 68px;
-  height: 68px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 50%;
-  background: radial-gradient(circle, #3b2814 0%, #15110c 80%);
-  border: 2px solid #fbbf24;
-  box-shadow: 
-    0 0 18px rgba(245, 158, 11, 0.6),
-    inset 0 0 12px rgba(245, 158, 11, 0.5);
-}
-
-.d3-ach-crest-glow {
-  position: absolute;
-  top: -4px;
-  left: -4px;
-  right: -4px;
-  bottom: -4px;
-  border-radius: 50%;
-  border: 1px dashed rgba(251, 191, 36, 0.6);
-  animation: d3CrestRotate 12s linear infinite;
-}
-
-@keyframes d3CrestRotate {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
-}
-
-.d3-ach-crest-icon {
-  font-size: 2.2rem;
-  line-height: 1;
-  filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.9));
-  transform: scale(1);
-  transition: transform 0.3s;
-}
-
-/* 右側成就文字內容 (Banner Body) */
-.d3-ach-body {
-  flex: 1;
-  min-width: 0;
+  cursor: pointer;
   display: flex;
   flex-direction: column;
-}
-
-/* 頂部鍛金勳章緞帶 (Header Ribbon) */
-.d3-ach-header-ribbon {
-  display: inline-flex;
   align-items: center;
   gap: 6px;
-  margin-bottom: 4px;
+  transition: all 0.2s;
 }
 
-.d3-ach-ribbon-wing {
-  color: #f59e0b;
-  font-size: 0.75rem;
-  opacity: 0.8;
+.class-card-btn:hover {
+  border-color: var(--border-gold);
 }
 
-.d3-ach-ribbon-title {
+.class-card-btn.active {
+  border: 2px solid var(--gold-accent);
+  background: rgba(245, 158, 11, 0.12);
+}
+
+.class-icon {
+  font-size: 2rem;
+}
+
+.class-name {
+  font-size: 1.1rem;
+  font-weight: 900;
+}
+
+.class-subtitle {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+.current-class-hero {
+  background: #181a20;
+  padding: 12px 16px;
+  border-radius: 6px;
+  margin-bottom: 14px;
+}
+
+.talents-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+}
+
+.talent-card {
+  background: #181a20;
+  border: 1px solid var(--border-muted);
+  border-radius: 8px;
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.talent-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.talent-icon {
+  font-size: 2rem;
+}
+
+.talent-name {
+  font-weight: 700;
+  font-size: 1.1rem;
+}
+
+.talent-rank {
+  font-size: 0.85rem;
+  color: var(--gold-accent);
+}
+
+.talent-desc {
+  font-size: 0.9rem;
+  color: var(--text-muted);
+  line-height: 1.4;
+}
+
+/* ==========================================
+   7. 拍賣場與聊天室 (Market & Chat)
+   ========================================== */
+.market-layout {
+  display: grid;
+  grid-template-columns: 3fr 2fr;
+  gap: 14px;
+}
+
+.market-toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.market-filters select {
+  background: #181a20;
+  border: 1px solid var(--border-gold);
+  color: var(--text-main);
+  padding: 6px 10px;
+  border-radius: 6px;
+  font-size: 0.9rem;
+}
+
+.my-listings-wrap {
+  background: #181a20;
+  padding: 10px;
+  border-radius: 6px;
+}
+
+.my-listing-pill {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 6px 10px;
+  background: #232730;
+  border-radius: 6px;
+  margin-top: 6px;
+  font-size: 0.9rem;
+}
+
+.market-listings-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 10px;
+  max-height: 480px;
+  overflow-y: auto;
+}
+
+.market-item-card {
+  border-radius: 8px;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.market-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.market-item-icon {
+  font-size: 2rem;
+}
+
+.market-item-name {
+  font-weight: 700;
+  font-size: 1.05rem;
+}
+
+.market-item-meta {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+.market-item-score {
+  font-weight: 900;
+  color: var(--gold-accent);
+  font-size: 0.95rem;
+}
+
+.market-card-lore {
   font-size: 0.78rem;
+  font-style: italic;
+  color: #94a3b8;
+}
+
+.market-card-affixes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.market-card-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 6px;
+  border-top: 1px solid var(--border-muted);
+  padding-top: 6px;
+}
+
+.market-price {
   font-weight: 900;
-  letter-spacing: 2.5px;
-  text-transform: uppercase;
-  background: linear-gradient(180deg, #fffbeb 0%, #f59e0b 55%, #b45309 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.8));
+  font-size: 1.05rem;
+  color: #fde047;
 }
 
-/* 成就主標題 (Diablo 3 Bold Gold Typography) */
-.d3-ach-title {
-  font-family: 'Noto Serif TC', serif;
-  font-size: 1.25rem;
+/* 聊天室 */
+.chat-box {
+  background: #111317;
+  border: 1px solid var(--border-muted);
+  border-radius: 8px;
+  height: 380px;
+  overflow-y: auto;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.chat-row {
+  font-size: 0.9rem;
+  line-height: 1.4;
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+}
+
+.chat-system {
+  background: rgba(245, 158, 11, 0.1);
+  padding: 4px 8px;
+  border-radius: 4px;
+}
+
+.chat-sender {
+  color: #38bdf8;
+  font-weight: 700;
+}
+
+.chat-badge-system {
+  color: #f59e0b;
   font-weight: 900;
-  color: #fff9e6;
-  text-shadow: 
-    0 0 14px rgba(245, 158, 11, 0.85),
-    0 2px 4px #000,
-    0 0 2px #d97706;
-  letter-spacing: 0.5px;
-  line-height: 1.25;
 }
 
-/* 成就描述 (Achievement Description) */
-.d3-ach-desc {
-  font-size: 0.86rem;
-  color: #d8d4cb;
-  margin-top: 4px;
-  line-height: 1.35;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.9);
+.chat-time {
+  font-size: 0.7rem;
+  color: #64748b;
+  margin-left: auto;
 }
 
-/* 獎勵膠囊徽章 (Reward Badges) */
-.d3-ach-rewards {
+.quick-chat-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 6px;
+}
+
+.chip-btn {
+  background: #232730;
+  border: 1px solid var(--border-muted);
+  color: var(--text-muted);
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 0.8rem;
+  cursor: pointer;
+}
+
+.chip-btn:hover {
+  color: #fff;
+  border-color: var(--border-gold);
+}
+
+.chat-input-bar {
+  display: flex;
+  gap: 8px;
   margin-top: 8px;
 }
 
-.d3-ach-reward-tag {
-  display: inline-flex;
-  align-items: center;
+.chat-input-bar input {
+  flex: 1;
+  background: #181a20;
+  border: 1px solid var(--border-muted);
+  color: var(--text-main);
+  padding: 8px 12px;
+  border-radius: 6px;
+  font-size: 0.95rem;
+}
+
+/* ==========================================
+   8. 成就與簽到 (Achievements & Sign-in)
+   ========================================== */
+.daily-signin-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
   gap: 8px;
-  padding: 3px 10px;
-  background: rgba(15, 12, 9, 0.75);
-  border: 1px solid rgba(245, 158, 11, 0.5);
-  border-radius: 12px;
-  color: #fbbf24;
-  font-size: 0.82rem;
-  font-weight: bold;
-  letter-spacing: 0.5px;
-  box-shadow: inset 0 0 6px rgba(245, 158, 11, 0.2);
 }
 
-/* 暗黑破壞神風格重擊震盪進場動畫 (Slam & Bloom Entrance) */
-@keyframes d3BannerEntrance {
-  0% {
-    opacity: 0;
-    transform: translateY(-60px) scale(0.65);
-    filter: brightness(2.6) drop-shadow(0 0 40px #fbbf24);
-  }
-  50% {
-    opacity: 1;
-    transform: translateY(10px) scale(1.08);
-    filter: brightness(1.5) drop-shadow(0 0 25px #f59e0b);
-  }
-  75% {
-    transform: translateY(-4px) scale(0.97);
-  }
-  100% {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-    filter: brightness(1);
-  }
+.daily-reward-card {
+  background: #181a20;
+  border: 1px solid var(--border-muted);
+  border-radius: 8px;
+  padding: 10px 6px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 4px;
 }
 
-/* 優雅淡出退場 (Elegant Dissolve Exit) */
-.d3-achievement-banner.fade-out {
-  opacity: 0;
-  transform: translateY(-30px) scale(0.92);
-  filter: blur(2px);
-  transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+.daily-reward-card.active-today {
+  border: 2px solid var(--gold-accent);
+  background: rgba(245, 158, 11, 0.15);
+  box-shadow: 0 0 10px rgba(245, 158, 11, 0.4);
 }
 
-/* 舊版 toast 相容性維持 */
-.achievement-toast {
+.daily-reward-card.claimed {
+  opacity: 0.6;
+}
+
+.daily-day-label {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+.daily-icon {
+  font-size: 1.8rem;
+}
+
+.daily-name {
+  font-weight: 700;
+  font-size: 0.85rem;
+}
+
+.daily-desc {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  line-height: 1.2;
+}
+
+.achievements-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 480px;
+  overflow-y: auto;
+}
+
+.achievement-card {
+  background: #181a20;
+  border: 1px solid var(--border-muted);
+  border-radius: 8px;
+  padding: 10px 14px;
   display: flex;
   align-items: center;
   gap: 12px;
-  background: linear-gradient(135deg, rgba(20, 20, 26, 0.98) 0%, rgba(45, 30, 10, 0.98) 100%);
-  border: 2px solid #fbbf24;
-  border-radius: 8px;
-  padding: 10px 16px;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.7), 0 0 15px rgba(251, 191, 36, 0.4);
-  color: #fff;
-  min-width: 280px;
-  max-width: 380px;
-}
-.toast-icon { font-size: 1.8rem; }
-.toast-content { display: flex; flex-direction: column; }
-.toast-title { font-size: 0.75rem; color: #fbbf24; font-weight: bold; }
-.toast-name { font-size: 0.9rem; font-weight: bold; color: #fff; }
-
-@media (max-width: 768px) {
-  .achievements-grid {
-    grid-template-columns: 1fr;
-  }
-  .achievements-hero {
-    flex-direction: column;
-    align-items: stretch;
-  }
-  .ach-hero-actions {
-    justify-content: stretch;
-  }
-  .btn-claim-all {
-    width: 100%;
-    justify-content: center;
-  }
-  #achievement-toast-container {
-    top: 12px;
-    width: 95%;
-  }
-  .d3-ach-frame {
-    padding: 12px 14px;
-    gap: 12px;
-  }
-  .d3-ach-crest-wrap {
-    width: 54px;
-    height: 54px;
-  }
-  .d3-ach-crest-icon {
-    font-size: 1.8rem;
-  }
-  .d3-ach-title {
-    font-size: 1.05rem;
-  }
-  .d3-ach-desc {
-    font-size: 0.8rem;
-  }
 }
 
-/* ==========================================================
-   天下全圖・諸國遊歷 (World Map Styles)
-   ========================================================== */
-.btn-world-map {
-  background: linear-gradient(135deg, #2a1f14 0%, #17110c 100%);
-  border: 1px solid var(--border-gold);
-  color: #fbbf24;
-  padding: 5px 12px;
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 0.82rem;
-  font-weight: bold;
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  transition: all 0.2s ease;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
+.achievement-card.unlocked {
+  border-color: var(--border-gold);
+  background: rgba(197, 160, 89, 0.08);
 }
 
-.btn-world-map:hover {
-  background: linear-gradient(135deg, #3d2c1c 0%, #23180f 100%);
-  border-color: #fde047;
-  color: #fff;
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(212, 175, 55, 0.35);
+.ach-crest {
+  font-size: 2.2rem;
 }
 
-.world-map-card {
-  max-width: 900px;
-  width: 95%;
-  max-height: 88vh;
-  overflow-y: auto;
-  padding: 24px;
-  background: radial-gradient(circle at 50% 10%, #1f1a24 0%, #0d0a12 100%);
-  border: 1.5px solid var(--border-gold);
-  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.85), 0 0 25px rgba(212, 175, 55, 0.2);
+.ach-details {
+  flex: 1;
 }
 
-.world-map-header {
-  text-align: center;
-  margin-bottom: 20px;
-  border-bottom: 1px solid rgba(212, 175, 55, 0.25);
-  padding-bottom: 16px;
+.ach-name {
+  font-weight: 700;
+  font-size: 1.05rem;
 }
 
-.world-map-sub {
-  color: #a8a29e;
-  font-size: 0.88rem;
-  margin: 6px 0 12px;
+.ach-pts {
+  color: var(--gold-accent);
+  font-size: 0.85rem;
 }
 
-.world-map-legend {
+.ach-desc {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+
+/* ==========================================
+   9. 懸浮特效：一鍵智慧換裝通知 (Smart Equip Floating)
+   ========================================== */
+.smart-equip-banner {
+  position: fixed;
+  bottom: 25px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: linear-gradient(135deg, #1e212a 0%, #111317 100%);
+  border: 2px solid var(--gold-accent);
+  box-shadow: 0 0 25px rgba(245, 158, 11, 0.6);
+  border-radius: 12px;
+  padding: 12px 20px;
+  z-index: 1000;
+  animation: bounce-float 2s infinite ease-in-out;
+}
+
+@keyframes bounce-float {
+  0%, 100% { transform: translateX(-50%) translateY(0); }
+  50% { transform: translateX(-50%) translateY(-6px); }
+}
+
+.smart-equip-content {
   display: flex;
-  justify-content: center;
-  gap: 18px;
-  font-size: 0.82rem;
-  flex-wrap: wrap;
-}
-
-.wm-legend-item {
-  display: inline-flex;
   align-items: center;
-  gap: 6px;
-  color: #d1d5db;
-}
-
-.wm-dot {
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
-  display: inline-block;
-}
-
-.wm-dot.current {
-  background: #fbbf24;
-  box-shadow: 0 0 8px #fbbf24;
-}
-
-.wm-dot.cleared {
-  background: #4ade80;
-  box-shadow: 0 0 6px #4ade80;
-}
-
-.wm-dot.locked {
-  background: #64748b;
-}
-
-.world-map-nodes-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
   gap: 16px;
-  margin-bottom: 20px;
 }
 
-.wm-node-card {
-  background: rgba(22, 18, 28, 0.85);
-  border: 1px solid rgba(212, 175, 55, 0.3);
+.smart-equip-icon {
+  font-size: 2.2rem;
+}
+
+.smart-equip-title {
+  font-weight: 900;
+  color: var(--gold-accent);
+  font-size: 1.05rem;
+}
+
+.smart-equip-name {
+  font-size: 0.95rem;
+  font-weight: 700;
+}
+
+.smart-equip-diff {
+  background: #15803d;
+  color: #fff;
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-weight: 900;
+  font-size: 0.95rem;
+}
+
+.btn-smart-equip {
+  font-size: 1.05rem;
+  padding: 10px 18px;
+}
+
+/* ==========================================
+   10. 暗黑 3 式中下方金邊成就橫幅 (Diablo 3 Banner)
+   ========================================== */
+.diablo-banner {
+  position: fixed;
+  bottom: -150px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 480px;
+  max-width: 90vw;
+  background: linear-gradient(180deg, #2b2314 0%, #15130f 100%);
+  border: 2px solid #d4af37;
   border-radius: 8px;
-  padding: 14px;
+  box-shadow: 0 0 35px rgba(212, 175, 55, 0.7);
+  padding: 12px 20px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  z-index: 2000;
+  transition: bottom 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.diablo-banner.banner-visible {
+  bottom: 30px;
+}
+
+.diablo-banner-crest {
+  font-size: 2.5rem;
+  filter: drop-shadow(0 0 8px #f59e0b);
+}
+
+.diablo-banner-body {
+  flex: 1;
+}
+
+.diablo-banner-header {
+  font-size: 0.8rem;
+  letter-spacing: 2px;
+  color: #fde047;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.diablo-banner-title {
+  font-size: 1.2rem;
+  font-weight: 900;
+  color: #ffffff;
+}
+
+.diablo-banner-desc {
+  font-size: 0.85rem;
+  color: #cbd5e1;
+}
+
+.diablo-banner-points {
+  font-size: 1.4rem;
+  font-weight: 900;
+  color: #facc15;
+}
+
+/* 暗金光柱特效 */
+.loot-beam-overlay {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  border: 10px solid #fb923c;
+  box-shadow: inset 0 0 80px rgba(249, 115, 22, 0.6);
+  pointer-events: none;
+  z-index: 1500;
+  animation: flash-beam 1.2s ease-out;
+}
+
+@keyframes flash-beam {
+  0% { opacity: 0; }
+  25% { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+/* 離線結算彈窗 */
+.modal-overlay {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 3000;
+  padding: 16px;
+}
+
+.modal-card {
+  background: var(--bg-card);
+  border: 2px solid var(--border-gold);
+  border-radius: 12px;
+  width: 520px;
+  max-width: 95vw;
+  padding: 24px;
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
-  transition: all 0.25s ease;
-  position: relative;
-  overflow: hidden;
+  gap: 16px;
+  box-shadow: 0 0 40px rgba(0,0,0,0.9);
 }
 
-.wm-node-card::before {
-  content: "";
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 4px;
-  height: 100%;
-  background: #64748b;
+.offline-stat-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+  margin-top: 10px;
 }
 
-.wm-node-card.current {
-  border-color: #fbbf24;
-  box-shadow: 0 0 18px rgba(251, 191, 36, 0.25);
-  background: rgba(35, 27, 40, 0.95);
+.offline-stat-box {
+  background: #181a20;
+  padding: 12px;
+  border-radius: 8px;
+  font-size: 1rem;
 }
 
-.wm-node-card.current::before {
-  background: #fbbf24;
-  box-shadow: 0 0 10px #fbbf24;
-}
-
-.wm-node-card.cleared {
-  border-color: rgba(74, 222, 128, 0.45);
-}
-
-.wm-node-card.cleared::before {
-  background: #4ade80;
-}
-
-.wm-node-card.locked {
-  opacity: 0.6;
-  filter: grayscale(0.5);
-  border: 1px dashed rgba(255, 255, 255, 0.18);
-}
-
-.wm-node-card:hover:not(.locked) {
-  transform: translateY(-2px);
-  border-color: #fbbf24;
-}
-
-.wm-node-top {
+/* Toast 提示 */
+.toast-container {
+  position: fixed;
+  top: 20px;
+  right: 20px;
   display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 8px;
+  flex-direction: column;
+  gap: 8px;
+  z-index: 4000;
+  pointer-events: none;
 }
 
-.wm-node-badge {
-  font-size: 0.75rem;
-  padding: 2px 8px;
-  border-radius: 12px;
-  background: rgba(255, 255, 255, 0.08);
-  color: #e2e8f0;
-  font-weight: bold;
-}
-
-.wm-node-card.current .wm-node-badge {
-  background: rgba(251, 191, 36, 0.2);
-  color: #fbbf24;
-  border: 1px solid rgba(251, 191, 36, 0.4);
-}
-
-.wm-node-card.cleared .wm-node-badge {
-  background: rgba(74, 222, 128, 0.15);
-  color: #4ade80;
-}
-
-.wm-node-name {
-  font-size: 1.05rem;
-  font-weight: bold;
+.game-toast {
+  background: #181a20;
+  border: 1px solid var(--border-muted);
   color: #fff;
-  margin-bottom: 3px;
+  padding: 10px 16px;
+  border-radius: 6px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+  font-size: 0.95rem;
+  animation: slide-toast 0.3s ease;
+  pointer-events: auto;
 }
 
-.wm-node-sub {
-  font-size: 0.8rem;
-  color: #a8a29e;
-  margin-bottom: 10px;
+.toast-success { border-color: #22c55e; }
+.toast-warning { border-color: #f59e0b; }
+.toast-error { border-color: #ef4444; }
+.toast-info { border-color: #3b82f6; }
+
+@keyframes slide-toast {
+  from { transform: translateX(50px); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
 }
 
-.wm-node-info-row {
-  font-size: 0.8rem;
-  color: #cbd5e1;
-  margin-bottom: 4px;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.wm-node-boss-tag {
-  color: #f87171;
-  font-weight: 500;
-}
-
-.wm-node-drops-tag {
-  color: #38bdf8;
-  font-size: 0.78rem;
-  word-break: break-all;
-}
-
-.wm-node-actions {
-  margin-top: 12px;
-  border-top: 1px solid rgba(255, 255, 255, 0.06);
-  padding-top: 10px;
-}
-
-.wm-travel-btn {
-  width: 100%;
-  padding: 8px 12px;
-  border-radius: 4px;
-  font-size: 0.85rem;
-  font-weight: bold;
-  cursor: pointer;
-  transition: all 0.2s;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  border: 1px solid transparent;
-}
-
-.wm-travel-btn.active {
-  background: linear-gradient(135deg, #b91c1c 0%, #7f1d1d 100%);
-  color: #fff;
-  border-color: #ef4444;
-}
-
-.wm-travel-btn.active:hover {
-  background: linear-gradient(135deg, #dc2626 0%, #991b1b 100%);
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.4);
-}
-
-.wm-travel-btn.current {
-  background: rgba(251, 191, 36, 0.15);
-  color: #fbbf24;
-  border-color: rgba(251, 191, 36, 0.4);
-  cursor: default;
-}
-
-.wm-travel-btn.locked {
-  background: rgba(255, 255, 255, 0.04);
-  color: #64748b;
-  border-color: rgba(255, 255, 255, 0.08);
-  cursor: not-allowed;
+/* 響應式優化 */
+@media (max-width: 768px) {
+  #main-nav-tabs {
+    grid-template-columns: repeat(5, 1fr);
+    gap: 4px;
+  }
+  .tab-btn {
+    padding: 10px 2px;
+    font-size: 0.85rem;
+    min-height: 56px;
+  }
+  .tab-label {
+    display: none;
+  }
+  .market-layout {
+    grid-template-columns: 1fr;
+  }
+  .equipped-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .class-selector {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .talents-grid {
+    grid-template-columns: 1fr;
+  }
+  .daily-signin-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
 }
