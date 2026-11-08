@@ -4,7 +4,13 @@
 class SamuraiAudio {
   constructor() {
     this.ctx = null;
-    this.enabled = true;
+    let saved = null;
+    try {
+      if (typeof window !== "undefined" && window.localStorage) {
+        saved = window.localStorage.getItem("SAMURAI_AUDIO_ENABLED");
+      }
+    } catch (e) {}
+    this.enabled = saved !== null ? saved === "true" : true;
     this.initAudioContext();
     this.setupMobileUnlock();
   }
@@ -47,8 +53,17 @@ class SamuraiAudio {
   }
 
   toggle(enable) {
-    this.enabled = enable;
-    if (enable) this.ensureContext();
+    if (typeof enable === "boolean") {
+      this.enabled = enable;
+    } else {
+      this.enabled = !this.enabled;
+    }
+    try {
+      if (typeof window !== "undefined" && window.localStorage) {
+        window.localStorage.setItem("SAMURAI_AUDIO_ENABLED", this.enabled ? "true" : "false");
+      }
+    } catch (e) {}
+    if (this.enabled) this.ensureContext();
     return this.enabled;
   }
 
@@ -378,4 +393,7 @@ if (typeof window !== "undefined") {
 }
 if (typeof global !== "undefined") {
   global.SamuraiAudio = SamuraiAudio;
+}
+if (typeof module !== "undefined" && module.exports) {
+  module.exports = SamuraiAudio;
 }
