@@ -1,5 +1,5 @@
 /**
- * 天明七年・戰國暗黑武士RPG — 核心 TypeScript 型別定義
+ * 天明武士・五輪百鬼譚 (Samurai Tenmei 7 RPG) — 核心 TypeScript 型別定義
  */
 
 export type GearSlot = 'weapon' | 'offhand' | 'helm' | 'armor' | 'boots' | 'accessory';

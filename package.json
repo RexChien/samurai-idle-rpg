@@ -1,7 +1,7 @@
 {
   "name": "samurai-tenmei-rpg",
   "version": "2.0.0",
-  "description": "天明七年・戰國暗黑武士RPG（Svelte 5 + TypeScript + Canvas 開放世界地圖版）",
+  "description": "《天明武士・五輪百鬼譚》(Samurai Tenmei 7 RPG) — Svelte 5 + TypeScript + Canvas 2D 3頭身像素風開放世界 × 暗黑刷寶武士 RPG",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -13,8 +13,9 @@
     "samurai",
     "tenmei",
     "open-world",
-    "idle-rpg",
-    "game",
+    "pixel-art",
+    "diablo-loot",
+    "rpg",
     "svelte5",
     "typescript"
   ],
