@@ -109,6 +109,10 @@ window.PRESTIGE_DATA = {
     const bossKarma = (player.stats.bossKills || 0) * 3;
     const swordsKarma = (player.swordsInventory ? player.swordsInventory.length : 0) * 2;
     const endingsKarma = (player.story && player.story.unlockedEndings ? player.story.unlockedEndings.length : 0) * 100;
-    return Math.max(15, levelKarma + zoneKarma + bossKarma + swordsKarma + endingsKarma);
+    let total = Math.max(15, levelKarma + zoneKarma + bossKarma + swordsKarma + endingsKarma);
+    if (player.story && player.story.faction === 'ishin') {
+      total = Math.floor(total * 1.25); // 尊皇倒幕維新：魂火收益提升 25%
+    }
+    return total;
   }
 };
