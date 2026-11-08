@@ -80,6 +80,32 @@ class SamuraiGame {
         currentZone: 1
       },
 
+      // 命運分歧故事線 (Branching Storyline)
+      story: {
+        currentAct: 1,
+        faction: "unaligned", // unaligned, shogunate, ishin, shura
+        completedActs: [],
+        unlockedEndings: [],
+        history: []
+      },
+
+      // 劍心輪迴與轉生神龕 (Prestige & Permanent Upgrades)
+      prestige: {
+        reincarnationCount: 0,
+        karma: 0, // 輪迴魂火
+        totalKarmaEarned: 0,
+        perks: {
+          perk_atk: 0,
+          perk_hp: 0,
+          perk_speed: 0,
+          perk_crit: 0,
+          perk_forge: 0,
+          perk_wealth: 0,
+          perk_wisdom: 0,
+          perk_boss_slayer: 0
+        }
+      },
+
       lastTimestamp: Date.now()
     };
 
@@ -210,6 +236,34 @@ class SamuraiGame {
     const codexCount = this.player.codex.length;
     baseAtk += codexCount * 5;
     baseHp += codexCount * 30;
+
+    // 命運陣營專屬被動庇佑 (Story Faction Blessings)
+    if (this.player.story && this.player.story.faction) {
+      const f = this.player.story.faction;
+      if (f === "shogunate") {
+        baseHp = Math.floor(baseHp * 1.35);
+        baseDef = Math.floor(baseDef * 1.30);
+      } else if (f === "ishin") {
+        baseAtk = Math.floor(baseAtk * 1.35);
+        speed *= 1.20;
+      } else if (f === "shura") {
+        critDmg += 75;
+        armorPen += 40;
+      }
+    }
+
+    // 輪迴天賦神龕永久加成 (Prestige Altar Perks)
+    if (this.player.prestige && this.player.prestige.perks) {
+      const perks = this.player.prestige.perks;
+      if (perks.perk_atk > 0) baseAtk = Math.floor(baseAtk * (1 + perks.perk_atk * 0.15));
+      if (perks.perk_hp > 0) baseHp = Math.floor(baseHp * (1 + perks.perk_hp * 0.20));
+      if (perks.perk_speed > 0) speed *= (1 + perks.perk_speed * 0.08);
+      if (perks.perk_crit > 0) {
+        crit += perks.perk_crit * 2;
+        critDmg += perks.perk_crit * 15;
+      }
+      if (perks.perk_boss_slayer > 0) armorPen += perks.perk_boss_slayer * 4;
+    }
 
     return {
       maxHp: baseHp,
@@ -379,6 +433,18 @@ class SamuraiGame {
       goldGain = Math.floor(goldGain * 1.15); // 陸奧守吉行加成
     }
 
+    // 尊皇維新陣營金小判加成 35%
+    if (this.player.story && this.player.story.faction === "ishin") {
+      goldGain = Math.floor(goldGain * 1.35);
+    }
+
+    // 輪迴天賦神龕：大黑天招財加成
+    if (this.player.prestige && this.player.prestige.perks && this.player.prestige.perks.perk_wealth > 0) {
+      const wealthBonus = 1 + this.player.prestige.perks.perk_wealth * 0.25;
+      goldGain = Math.floor(goldGain * wealthBonus);
+      steelGain = Math.floor(steelGain * wealthBonus);
+    }
+
     this.player.gold += goldGain;
     this.player.steel += steelGain;
     this.gainExp(expGain);
@@ -387,6 +453,7 @@ class SamuraiGame {
 
     // 首領擊破
     if (e.isBoss) {
+      const currentDefeatedZone = this.player.stats.currentZone;
       this.player.stats.bossKills++;
       this.inBossFight = false;
       this.zoneKillProgress = 0;
@@ -407,10 +474,16 @@ class SamuraiGame {
       }
 
       if (window.samuraiAudio) window.samuraiAudio.playLevelUp();
+
+      // 推進歷史章節與大結局判定
+      this.completeAct(currentDefeatedZone);
     } else {
       // 普通怪進度增加
       if (this.zoneKillProgress < 10) {
         this.zoneKillProgress++;
+        if (this.zoneKillProgress === 5) {
+          this.advanceStoryMilestone(this.player.stats.currentZone);
+        }
       }
 
       // 一般怪物掉落判定 (15% 磨刀石或飯糰)
@@ -901,6 +974,34 @@ class SamuraiGame {
             this.player.equipped.weapon.lore = base.lore;
           }
         }
+
+        // 兼容舊存檔自動補充故事與轉生結構
+        if (!this.player.story) {
+          this.player.story = {
+            currentAct: this.player.stats.currentZone || 1,
+            faction: "unaligned",
+            completedActs: [],
+            unlockedEndings: [],
+            history: []
+          };
+        }
+        if (!this.player.prestige) {
+          this.player.prestige = {
+            reincarnationCount: 0,
+            karma: 0,
+            totalKarmaEarned: 0,
+            perks: {
+              perk_atk: 0,
+              perk_hp: 0,
+              perk_speed: 0,
+              perk_crit: 0,
+              perk_forge: 0,
+              perk_wealth: 0,
+              perk_wisdom: 0,
+              perk_boss_slayer: 0
+            }
+          };
+        }
         return true;
       }
     } catch (e) {
@@ -957,6 +1058,8 @@ class SamuraiGame {
       pane.classList.toggle("active", pane.id === `tab-${tabName}`);
     });
 
+    if (tabName === "story") this.updateStoryUI();
+    if (tabName === "prestige") this.updatePrestigeUI();
     if (tabName === "forge") this.updateForgeUI();
     if (tabName === "dojo") this.updateDojoUI();
     if (tabName === "inventory") this.updateInventoryUI();
@@ -977,9 +1080,23 @@ class SamuraiGame {
     document.getElementById("player-exp-bar").style.width = `${expPercent}%`;
     document.getElementById("player-exp-text").textContent = `${this.player.exp} / ${reqExp} (${expPercent}%)`;
 
-    // 資源
+    // 資源（金幣、玉鋼、輪迴魂火）
     document.getElementById("res-gold").textContent = this.player.gold.toLocaleString();
     document.getElementById("res-steel").textContent = this.player.steel.toLocaleString();
+    const karmaEl = document.getElementById("res-karma");
+    if (karmaEl) {
+      karmaEl.textContent = (this.player.prestige ? this.player.prestige.karma : 0).toLocaleString();
+    }
+
+    // 命運陣營標籤
+    const factionBadge = document.getElementById("player-faction-badge");
+    if (factionBadge && window.STORY_DATA && this.player.story) {
+      const f = window.STORY_DATA.factions[this.player.story.faction] || window.STORY_DATA.factions.unaligned;
+      factionBadge.textContent = `${f.icon} ${f.name}`;
+      factionBadge.style.background = f.color + "22";
+      factionBadge.style.borderColor = f.color;
+      factionBadge.style.color = f.color;
+    }
 
     // 戰鬥屬性面板
     document.getElementById("stat-atk").textContent = stats.atk.toLocaleString();
@@ -1326,6 +1443,415 @@ class SamuraiGame {
     this.updateForgeUI();
     this.updateDojoUI();
     this.updateCodexUI();
+    this.updateStoryUI();
+    this.updatePrestigeUI();
+  }
+
+  // ==========================================================
+  // 命運繪卷與分歧故事線引擎 (Story & Branching Choices)
+  // ==========================================================
+
+  // 選擇命運陣營
+  chooseFaction(factionId) {
+    if (!window.STORY_DATA || !window.STORY_DATA.factions[factionId]) return;
+    const f = window.STORY_DATA.factions[factionId];
+    this.player.story.faction = factionId;
+    this.player.story.history.push({
+      timestamp: Date.now(),
+      act: 3,
+      event: `選擇投身【${f.name}】`
+    });
+
+    if (window.samuraiAudio) window.samuraiAudio.playLevelUp();
+    this.addCombatLog(`<span style="color:${f.color};font-weight:bold;">⚔️ 【天命抉擇】你立下誓言，正式投身【${f.name}】！獲得專屬陣營庇佑：${f.passiveDesc}！</span>`);
+
+    alert(`📜 【天命立誓】\n你已投身【${f.name}】！\n\n信念：${f.sub}\n專屬庇佑：${f.passiveDesc}`);
+    this.updateCharacterUI();
+    this.updateStoryUI();
+    this.updateBattleUI();
+    this.save();
+  }
+
+  // 推進故事對白里程碑
+  advanceStoryMilestone(zoneId) {
+    if (!window.STORY_DATA) return;
+    const chapter = window.STORY_DATA.chapters.find(c => c.act === zoneId);
+    if (chapter && chapter.milestoneDialogue && chapter.milestoneDialogue.length > 0) {
+      const line = chapter.milestoneDialogue[0];
+      this.addCombatLog(`<span style="color:#38bdf8;">📜 【劇情推進】${line.speaker}：「${line.text}」</span>`);
+      this.updateStoryUI();
+    }
+  }
+
+  // 擊破當幕首領，完成章節推進
+  completeAct(actNum) {
+    if (!this.player.story) return;
+    if (!this.player.story.completedActs.includes(actNum)) {
+      this.player.story.completedActs.push(actNum);
+      this.addCombatLog(`<span style="color:#fbbf24;font-weight:bold;">📜 【命運繪卷】突破第 ${actNum} 幕歷史篇章！</span>`);
+    }
+
+    if (actNum === 7) {
+      // 最終第 7 幕擊破：迎向歷史大結局！
+      this.triggerEnding();
+    } else {
+      if (this.player.story.currentAct <= actNum) {
+        this.player.story.currentAct = actNum + 1;
+      }
+    }
+    this.updateStoryUI();
+    this.save();
+  }
+
+  // 觸發歷史大結局
+  triggerEnding() {
+    let endingId = "ending_hermit";
+    if (this.player.story.faction === "shogunate") endingId = "ending_shogunate";
+    else if (this.player.story.faction === "ishin") endingId = "ending_ishin";
+    else if (this.player.story.faction === "shura") endingId = "ending_shura";
+
+    const ending = window.STORY_DATA.endings[endingId];
+    if (!ending) return;
+
+    if (!this.player.story.unlockedEndings.includes(endingId)) {
+      this.player.story.unlockedEndings.push(endingId);
+      this.player.prestige.karma += ending.karmaReward;
+      this.player.prestige.totalKarmaEarned += ending.karmaReward;
+    }
+
+    if (window.samuraiAudio) window.samuraiAudio.playLevelUp();
+    this.addCombatLog(`<span style="color:${ending.color};font-size:1.15em;font-weight:bold;">🏆 【歷史大結局達成】${ending.title}！獲得 ${ending.karmaReward} 輪迴魂火獎勵！</span>`);
+
+    this.showEndingModal(ending);
+    this.updateCharacterUI();
+    this.updateStoryUI();
+    this.updatePrestigeUI();
+    this.save();
+  }
+
+  // 顯示結局 Modal
+  showEndingModal(ending) {
+    const modal = document.getElementById("ending-modal");
+    if (!modal) return;
+    document.getElementById("ending-modal-icon").textContent = ending.icon;
+    document.getElementById("ending-modal-title").textContent = ending.title;
+    document.getElementById("ending-modal-title").style.color = ending.color;
+    document.getElementById("ending-modal-tagline").textContent = ending.tagline;
+    document.getElementById("ending-modal-epilogue").textContent = ending.epilogue;
+    document.getElementById("ending-modal-reward").textContent = `${ending.rewardTitle}（+${ending.karmaReward} 輪迴魂火）`;
+    modal.classList.add("active");
+  }
+
+  // 故事線 UI 渲染
+  updateStoryUI() {
+    if (!window.STORY_DATA || !this.player.story) return;
+
+    // 1. 當前陣營英雄旗幟
+    const factionId = this.player.story.faction || "unaligned";
+    const f = window.STORY_DATA.factions[factionId] || window.STORY_DATA.factions.unaligned;
+    const bannerEl = document.getElementById("story-faction-banner");
+    if (bannerEl) {
+      bannerEl.innerHTML = `
+        <div class="faction-badge-big" style="border-color:${f.color};color:${f.color};box-shadow:0 0 15px ${f.color}44;">
+          ${f.icon}
+        </div>
+        <div class="faction-banner-info">
+          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+            <h3 style="color:${f.color};font-size:1.35rem;margin:0;">${f.name}</h3>
+            <span style="font-size:0.75rem;padding:2px 8px;border-radius:4px;background:${f.color}22;border:1px solid ${f.color};color:${f.color};">${f.sub}</span>
+          </div>
+          <p style="font-size:0.85rem;color:#cbd5e1;margin:4px 0;">${f.desc}</p>
+          <div class="faction-passive-pill" style="border-left:3px solid ${f.color};background:rgba(0,0,0,0.4);padding:4px 8px;border-radius:4px;font-size:0.82rem;color:#fbbf24;">
+            ✨ <b>陣營天賦庇佑</b>：${f.passiveDesc}
+          </div>
+        </div>
+      `;
+    }
+
+    // 2. 當前章節情報
+    const currentActNum = Math.min(7, Math.max(1, this.player.stats.currentZone || 1));
+    const chapter = window.STORY_DATA.chapters.find(c => c.act === currentActNum) || window.STORY_DATA.chapters[0];
+
+    const tagEl = document.getElementById("story-act-tag");
+    if (tagEl) tagEl.textContent = `第 ${chapter.act} 幕（${this.inBossFight ? "決戰頭目中" : `進度: ${this.zoneKillProgress}/10`}）`;
+    const titleEl = document.getElementById("story-act-title");
+    if (titleEl) titleEl.textContent = chapter.title;
+    const summaryEl = document.getElementById("story-act-summary");
+    if (summaryEl) {
+      let flavor = chapter.summary;
+      if (chapter.branchFlavor && chapter.branchFlavor[factionId]) {
+        flavor += `<br><span style="color:${f.color};font-size:0.88rem;display:inline-block;margin-top:6px;">🏮 <b>【${f.name}專屬歷史線索】</b>：${chapter.branchFlavor[factionId]}</span>`;
+      }
+      summaryEl.innerHTML = flavor;
+    }
+
+    // 3. 歷練劇幕對白 Stream
+    const dialogueStream = document.getElementById("story-dialogue-stream");
+    if (dialogueStream) {
+      let dialogues = [...chapter.introDialogue];
+      if (this.zoneKillProgress >= 5 && chapter.milestoneDialogue) {
+        dialogues = dialogues.concat(chapter.milestoneDialogue);
+      }
+      if (this.inBossFight && chapter.bossDialogue) {
+        dialogues = dialogues.concat(chapter.bossDialogue);
+      }
+      if (this.player.story.completedActs.includes(chapter.act) && chapter.clearDialogue) {
+        dialogues = dialogues.concat(chapter.clearDialogue);
+      }
+
+      dialogueStream.innerHTML = dialogues.map(d => {
+        const isPlayer = d.speaker === "你" || d.speaker === "浪人";
+        return `
+          <div class="dialogue-line ${isPlayer ? 'player' : 'npc'}">
+            <span class="dialogue-speaker">${d.speaker}:</span>
+            <span class="dialogue-text">${d.text}</span>
+          </div>
+        `;
+      }).join("");
+    }
+
+    // 4. 分歧天命決斷區域 (在第 3 幕，且陣營仍為 unaligned 時出現)
+    const choiceSection = document.getElementById("story-choice-section");
+    const choicesGrid = document.getElementById("story-choices-grid");
+    if (choiceSection && choicesGrid) {
+      if (currentActNum >= 3 && this.player.story.faction === "unaligned") {
+        choiceSection.style.display = "block";
+        const chapter3 = window.STORY_DATA.chapters[2];
+        choicesGrid.innerHTML = chapter3.choices.map(c => `
+          <div class="story-choice-card faction-${c.faction}">
+            <h4 style="margin-bottom:6px;color:${window.STORY_DATA.factions[c.faction].color};">${c.name}</h4>
+            <p style="font-size:0.83rem;color:#cbd5e1;line-height:1.5;margin-bottom:12px;">${c.desc}</p>
+            <button class="btn-choose-faction btn-${c.faction}" onclick="window.game.chooseFaction('${c.faction}')">
+              立誓投身此道
+            </button>
+          </div>
+        `).join("");
+      } else {
+        choiceSection.style.display = "none";
+      }
+    }
+
+    // 5. 七大幕天命全記錄時間軸 (Timeline)
+    const timelineEl = document.getElementById("story-acts-timeline");
+    if (timelineEl) {
+      timelineEl.innerHTML = window.STORY_DATA.chapters.map(c => {
+        const isCompleted = this.player.story.completedActs.includes(c.act);
+        const isCurrent = this.player.stats.currentZone === c.act;
+        let statusTag = isCompleted ? "✅ 已突破" : (isCurrent ? "⚔️ 討伐中" : "🔒 未開闢");
+        let statusClass = isCompleted ? "completed" : (isCurrent ? "current" : "locked");
+        return `
+          <div class="timeline-act-cell ${statusClass}">
+            <div class="act-cell-top">
+              <span class="act-badge">第 ${c.act} 幕</span>
+              <span class="act-status">${statusTag}</span>
+            </div>
+            <div class="act-name">${c.title}</div>
+          </div>
+        `;
+      }).join("");
+    }
+
+    // 6. 四大歷史終章大結局錄
+    const endingsGrid = document.getElementById("story-endings-grid");
+    if (endingsGrid) {
+      endingsGrid.innerHTML = Object.values(window.STORY_DATA.endings).map(ed => {
+        const isUnlocked = this.player.story.unlockedEndings.includes(ed.id);
+        return `
+          <div class="ending-archive-card ${isUnlocked ? 'unlocked' : 'locked'}" style="${isUnlocked ? `border-color:${ed.color}` : ''}">
+            <div class="ending-archive-header">
+              <span style="font-size:1.8rem;">${isUnlocked ? ed.icon : '🔒'}</span>
+              <div>
+                <h4 style="color:${isUnlocked ? ed.color : '#6b7280'};font-size:1rem;margin:0;">${isUnlocked ? ed.title : '【未勘破之歷史迷霧】'}</h4>
+                <span style="font-size:0.75rem;color:#9ca3af;">${isUnlocked ? ed.tagline : '達成第 7 幕特定陣營終局解鎖'}</span>
+              </div>
+            </div>
+            ${isUnlocked ? `
+              <div class="ending-archive-body">${ed.epilogue}</div>
+              <div class="ending-reward-badge" style="color:${ed.color};border:1px solid ${ed.color}44;">
+                🏆 永久頭銜：${ed.rewardTitle} | 魂火 +${ed.karmaReward}
+              </div>
+            ` : `
+              <div style="font-size:0.8rem;color:#6b7280;margin-top:8px;">需於本幕或轉生後選擇相應命運路線，並在江戶天守閣擊破天下無雙。</div>
+            `}
+          </div>
+        `;
+      }).join("");
+    }
+  }
+
+  // ==========================================================
+  // 劍心輪迴與轉生神龕引擎 (Prestige & Reincarnation System)
+  // ==========================================================
+
+  // 發動劍心輪迴轉生
+  reincarnate() {
+    if (this.player.level < window.PRESTIGE_DATA.unlockLevel && (this.player.stats.highestZone || 1) < window.PRESTIGE_DATA.unlockZone) {
+      alert(`🌀 劍心尚未歷練圓滿！需要達到等級 ${window.PRESTIGE_DATA.unlockLevel} 或通過第 ${window.PRESTIGE_DATA.unlockZone} 幕（京都三條）方可發動劍心輪迴。`);
+      return;
+    }
+
+    const karmaEarned = window.PRESTIGE_DATA.calculateKarmaEarned(this.player);
+    const confirmMsg = `🌀 【劍心輪迴・宿命轉生】\n\n` +
+      `本次輪迴將獲得：🔥 ${karmaEarned} 點【輪迴魂火】！\n\n` +
+      `✅ 永久保留：\n` +
+      `• 所有已解鎖名刀與研磨強化等級\n` +
+      `• 名刀鑑賞圖鑑全收集與屬性\n` +
+      `• 輪迴天賦神龕永久強化項目\n` +
+      `• 已解鎖之歷史終章大結局繪卷\n\n` +
+      `🔄 重置內容：\n` +
+      `• 角色等級重置為初始（受輪迴宿慧天賦加成）\n` +
+      `• 當前關卡與金小判重置\n` +
+      `• 故事線陣營重置（可重新選擇其他分歧劇情與收集全結局！）\n\n` +
+      `是否立即啟動劍心輪迴？`;
+
+    if (!confirm(confirmMsg)) return;
+
+    // 發放魂火
+    this.player.prestige.karma += karmaEarned;
+    this.player.prestige.totalKarmaEarned += karmaEarned;
+    this.player.prestige.reincarnationCount++;
+
+    // 計算初始起步等級（受 perk_wisdom 影響）
+    const wisdomLevel = (this.player.prestige.perks && this.player.prestige.perks.perk_wisdom) || 0;
+    const startLevel = 1 + wisdomLevel * 2;
+    const wealthLevel = (this.player.prestige.perks && this.player.prestige.perks.perk_wealth) || 0;
+    const startGold = 100 + wealthLevel * 50;
+    const startSteel = 30 + wealthLevel * 15;
+
+    // 執行重置
+    this.player.level = startLevel;
+    this.player.exp = 0;
+    this.player.gold = startGold;
+    this.player.steel = startSteel;
+    this.player.skillPoints = (startLevel - 1) * 2;
+    this.player.skills = { shinkage: 0, jigen: 0, rishin: 0 };
+    this.player.stats.currentZone = 1;
+    this.zoneKillProgress = 0;
+    this.inBossFight = false;
+
+    // 重置故事線以便體驗其他分歧
+    this.player.story.currentAct = 1;
+    this.player.story.faction = "unaligned";
+
+    const stats = this.getCalculatedStats();
+    this.playerCurrentHp = stats.maxHp;
+
+    if (window.samuraiAudio) window.samuraiAudio.playLevelUp();
+    this.addCombatLog(`<span style="color:#f59e0b;font-size:1.15em;font-weight:bold;">🌀 【劍心輪迴完成】轉生重生！獲得 ${karmaEarned} 輪迴魂火！天賦點數與屬性已大幅強化！</span>`);
+
+    this.spawnEnemy();
+    this.updateCharacterUI();
+    this.updateBattleUI();
+    this.updateDojoUI();
+    this.updateForgeUI();
+    this.updateInventoryUI();
+    this.updateStoryUI();
+    this.updatePrestigeUI();
+    this.save();
+
+    alert(`✨ 轉生成功！\n已獲得 ${karmaEarned} 點輪迴魂火！\n您現在可以在【劍心轉生】分頁點選強大的永久天賦神龕！`);
+  }
+
+  // 升級輪迴天賦神龕
+  upgradePrestigePerk(perkId) {
+    const perk = window.PRESTIGE_DATA.perks.find(p => p.id === perkId);
+    if (!perk) return;
+
+    const currentLevel = this.player.prestige.perks[perkId] || 0;
+    if (currentLevel >= perk.maxLevel) {
+      alert("此輪迴天賦已修煉至至高大圓滿階級！");
+      return;
+    }
+
+    const cost = window.PRESTIGE_DATA.getPerkCost(perkId, currentLevel);
+    if (this.player.prestige.karma < cost) {
+      alert(`輪迴魂火不足！需要 ${cost} 點魂火，當前持有 ${this.player.prestige.karma} 點。`);
+      return;
+    }
+
+    this.player.prestige.karma -= cost;
+    this.player.prestige.perks[perkId] = currentLevel + 1;
+
+    if (window.samuraiAudio) window.samuraiAudio.playHammer();
+    this.addCombatLog(`🔥 點亮輪迴神龕【${perk.name}】至 Lv.${this.player.prestige.perks[perkId]}！獲得永久神力加護！`);
+
+    this.updateCharacterUI();
+    this.updateBattleUI();
+    this.updatePrestigeUI();
+    this.save();
+  }
+
+  // 輪迴天賦 UI 渲染
+  updatePrestigeUI() {
+    if (!window.PRESTIGE_DATA || !this.player.prestige) return;
+
+    const karma = this.player.prestige.karma || 0;
+    const count = this.player.prestige.reincarnationCount || 0;
+    const gainPreview = window.PRESTIGE_DATA.calculateKarmaEarned(this.player);
+
+    const countEl = document.getElementById("prestige-count");
+    if (countEl) countEl.textContent = count;
+    const karmaEl = document.getElementById("prestige-karma");
+    if (karmaEl) karmaEl.textContent = karma.toLocaleString();
+    const previewEl = document.getElementById("prestige-gain-preview");
+    if (previewEl) previewEl.textContent = `+${gainPreview.toLocaleString()}`;
+
+    // 判斷轉生按鈕可用性
+    const btnReincarnate = document.getElementById("btn-do-reincarnate");
+    if (btnReincarnate) {
+      const canReincarnate = (this.player.level >= window.PRESTIGE_DATA.unlockLevel || (this.player.stats.highestZone || 1) >= window.PRESTIGE_DATA.unlockZone);
+      if (canReincarnate) {
+        btnReincarnate.disabled = false;
+        btnReincarnate.style.opacity = "1";
+        btnReincarnate.style.cursor = "pointer";
+        btnReincarnate.innerHTML = `🌀 啟動劍心輪迴（領取 +${gainPreview} 魂火）`;
+      } else {
+        btnReincarnate.disabled = true;
+        btnReincarnate.style.opacity = "0.5";
+        btnReincarnate.style.cursor = "not-allowed";
+        btnReincarnate.innerHTML = `🔒 需達到 Lv.${window.PRESTIGE_DATA.unlockLevel} 或第 ${window.PRESTIGE_DATA.unlockZone} 幕`;
+      }
+    }
+
+    // 8 大輪迴天賦神龕渲染
+    const perksGrid = document.getElementById("prestige-perks-grid");
+    if (perksGrid) {
+      perksGrid.innerHTML = window.PRESTIGE_DATA.perks.map(p => {
+        const curLvl = this.player.prestige.perks[p.id] || 0;
+        const isMax = curLvl >= p.maxLevel;
+        const cost = window.PRESTIGE_DATA.getPerkCost(p.id, curLvl);
+        const canAfford = karma >= cost && !isMax;
+
+        let bonusText = "";
+        if (p.id === "perk_atk") bonusText = `基礎攻擊力 +${curLvl * 15}%`;
+        else if (p.id === "perk_hp") bonusText = `最大體力上限 +${curLvl * 20}%`;
+        else if (p.id === "perk_speed") bonusText = `拔刀與自律斬頻率 +${curLvl * 8}%`;
+        else if (p.id === "perk_crit") bonusText = `會心率 +${curLvl * 2}% | 會心傷 +${curLvl * 15}%`;
+        else if (p.id === "perk_forge") bonusText = `高品質名刀機率 +${curLvl * 4}%`;
+        else if (p.id === "perk_wealth") bonusText = `金小判與玉鋼獲取 +${curLvl * 25}%`;
+        else if (p.id === "perk_wisdom") bonusText = `轉生初始等級保留 Lv.${1 + curLvl * 2}`;
+        else if (p.id === "perk_boss_slayer") bonusText = `首領增傷 +${curLvl * 20}% | 破甲 +${curLvl * 4}%`;
+
+        return `
+          <div class="prestige-perk-card ${isMax ? 'maxed' : ''}">
+            <div class="perk-card-header">
+              <span class="perk-icon">${p.icon}</span>
+              <div class="perk-title-box">
+                <div class="perk-name">${p.name}</div>
+                <div class="perk-level ${isMax ? 'max' : ''}">Lv.${curLvl} / ${p.maxLevel}</div>
+              </div>
+            </div>
+            <div class="perk-desc">${p.desc}</div>
+            <div class="perk-current-bonus">當前加護：<b>${curLvl > 0 ? bonusText : '尚未領悟'}</b></div>
+            <button class="btn-upgrade-perk ${canAfford ? 'can-afford' : ''}" 
+                    ${(!canAfford || isMax) ? 'disabled' : ''} 
+                    onclick="window.game.upgradePrestigePerk('${p.id}')">
+              ${isMax ? '✨ 至高圓滿' : `🔥 領悟強化 (${cost} 魂火)`}
+            </button>
+          </div>
+        `;
+      }).join("");
+    }
   }
 }
 
