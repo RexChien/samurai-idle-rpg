@@ -1,17 +1,31 @@
 {
-  "name": "samurai-idle-rpg",
-  "version": "1.0.0",
-  "description": "Japanese Samurai Blade Idle RPG",
+  "name": "samurai-tenmei-rpg",
+  "version": "2.0.0",
+  "description": "天明七年・戰國暗黑武士RPG（Svelte 5 + TypeScript + Canvas 開放世界地圖版）",
+  "type": "module",
   "scripts": {
-    "test": "node --test test/*.test.js"
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "test": "vitest run test/*.test.ts"
   },
   "keywords": [
     "samurai",
+    "tenmei",
+    "open-world",
     "idle-rpg",
     "game",
-    "japanese",
-    "katana"
+    "svelte5",
+    "typescript"
   ],
   "author": "RexChien",
-  "license": "MIT"
+  "license": "MIT",
+  "devDependencies": {
+    "@sveltejs/vite-plugin-svelte": "^5.0.3",
+    "svelte": "^5.57.3",
+    "typescript": "^5.7.3",
+    "vite": "^6.2.0",
+    "vite-plugin-singlefile": "^2.1.0",
+    "vitest": "^3.0.7"
+  }
 }
