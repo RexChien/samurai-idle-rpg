@@ -1958,3 +1958,550 @@ nav.tab-nav::-webkit-scrollbar {
   color: #fbbf24;
   margin-right: 4px;
 }
+
+/* ==========================================================
+   8. 命運繪卷與故事線樣式 (Story & Branching Choices)
+   ========================================================== */
+.story-container {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.faction-hero-banner {
+  background: linear-gradient(135deg, rgba(25, 20, 32, 0.95) 0%, rgba(12, 10, 16, 0.98) 100%);
+  border: 1px solid var(--border-gold);
+  border-radius: 8px;
+  padding: 16px 20px;
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+}
+
+.faction-badge-big {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  border: 2px solid var(--border-gold);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2rem;
+  background: rgba(0, 0, 0, 0.6);
+  flex-shrink: 0;
+}
+
+.faction-banner-info {
+  flex: 1;
+}
+
+.story-act-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-gold);
+  border-radius: 8px;
+  padding: 20px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.6);
+}
+
+.story-act-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 8px;
+  border-bottom: 1px solid rgba(212, 175, 55, 0.2);
+  padding-bottom: 8px;
+}
+
+.story-act-tag {
+  background: var(--crimson);
+  color: #fff;
+  padding: 2px 10px;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  font-weight: bold;
+}
+
+.story-act-summary {
+  font-size: 0.9rem;
+  line-height: 1.7;
+  color: #cbd5e1;
+  margin-bottom: 16px;
+}
+
+.story-dialogue-container {
+  background: rgba(12, 10, 16, 0.85);
+  border: 1px solid var(--border-muted);
+  border-radius: 6px;
+  overflow: hidden;
+  margin-bottom: 18px;
+}
+
+.dialogue-title-bar {
+  background: #171822;
+  padding: 8px 14px;
+  font-size: 0.85rem;
+  color: var(--border-gold);
+  border-bottom: 1px solid var(--border-muted);
+  font-weight: bold;
+}
+
+.dialogue-scroll-stream {
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 220px;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.dialogue-line {
+  padding: 8px 12px;
+  border-radius: 6px;
+  font-size: 0.86rem;
+  line-height: 1.5;
+}
+
+.dialogue-line.npc {
+  background: rgba(30, 41, 59, 0.5);
+  border-left: 3px solid #38bdf8;
+  color: #e2e8f0;
+}
+
+.dialogue-line.player {
+  background: rgba(55, 30, 30, 0.5);
+  border-left: 3px solid #ef4444;
+  color: #fef08a;
+  align-self: flex-end;
+  width: 90%;
+}
+
+.dialogue-speaker {
+  font-weight: bold;
+  margin-right: 6px;
+  color: #fbbf24;
+}
+
+/* 分歧天命決斷區域 */
+.story-choice-section {
+  background: linear-gradient(135deg, rgba(45, 20, 22, 0.95) 0%, rgba(20, 16, 28, 0.95) 100%);
+  border: 2px solid #ef4444;
+  border-radius: 8px;
+  padding: 18px;
+  margin-top: 14px;
+  box-shadow: 0 0 25px rgba(239, 68, 68, 0.3);
+  animation: pulseGlow 2.5s infinite alternate;
+}
+
+@keyframes pulseGlow {
+  from { box-shadow: 0 0 15px rgba(239, 68, 68, 0.2); }
+  to { box-shadow: 0 0 30px rgba(239, 68, 68, 0.5); }
+}
+
+.choice-prompt-title {
+  color: #fbbf24;
+  font-size: 1.15rem;
+  margin-bottom: 14px;
+  text-align: center;
+}
+
+.story-choices-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 14px;
+}
+
+.story-choice-card {
+  background: rgba(15, 12, 20, 0.9);
+  border: 1px solid var(--border-gold);
+  border-radius: 6px;
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  transition: transform 0.2s;
+}
+
+.story-choice-card:hover {
+  transform: translateY(-3px);
+}
+
+.story-choice-card.faction-shogunate { border-color: #38bdf8; }
+.story-choice-card.faction-ishin { border-color: #f59e0b; }
+.story-choice-card.faction-shura { border-color: #ef4444; }
+
+.btn-choose-faction {
+  border: none;
+  padding: 10px 14px;
+  border-radius: 4px;
+  font-weight: bold;
+  font-size: 0.9rem;
+  cursor: pointer;
+  color: #fff;
+  transition: opacity 0.2s;
+  min-height: 44px;
+}
+
+.btn-choose-faction:hover { opacity: 0.9; }
+.btn-choose-faction.btn-shogunate { background: linear-gradient(180deg, #0284c7 0%, #0369a1 100%); }
+.btn-choose-faction.btn-ishin { background: linear-gradient(180deg, #d97706 0%, #b45309 100%); }
+.btn-choose-faction.btn-shura { background: linear-gradient(180deg, #dc2626 0%, #991b1b 100%); }
+
+/* 七大幕時間軸 */
+.story-acts-chronicle {
+  background: var(--bg-card);
+  border: 1px solid var(--border-gold);
+  border-radius: 8px;
+  padding: 16px;
+}
+
+.acts-timeline-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 10px;
+}
+
+.timeline-act-cell {
+  background: #14151b;
+  border: 1px solid var(--border-muted);
+  border-radius: 6px;
+  padding: 10px 12px;
+}
+
+.timeline-act-cell.completed {
+  border-color: #4ade80;
+  background: rgba(74, 222, 128, 0.05);
+}
+
+.timeline-act-cell.current {
+  border-color: #fbbf24;
+  background: rgba(251, 191, 36, 0.08);
+  box-shadow: 0 0 10px rgba(251, 191, 36, 0.2);
+}
+
+.timeline-act-cell.locked {
+  opacity: 0.5;
+}
+
+.act-cell-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 4px;
+}
+
+.act-badge {
+  font-size: 0.75rem;
+  color: var(--border-gold);
+  font-weight: bold;
+}
+
+.act-status {
+  font-size: 0.75rem;
+  font-weight: bold;
+}
+
+.act-name {
+  font-size: 0.85rem;
+  color: #fff;
+}
+
+/* 歷史終章大結局錄 */
+.story-endings-gallery {
+  background: var(--bg-card);
+  border: 1px solid var(--border-gold);
+  border-radius: 8px;
+  padding: 16px;
+}
+
+.endings-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 14px;
+}
+
+.ending-archive-card {
+  background: #15161d;
+  border: 1px solid var(--border-muted);
+  border-radius: 6px;
+  padding: 14px;
+}
+
+.ending-archive-card.unlocked {
+  background: rgba(25, 20, 32, 0.9);
+  box-shadow: 0 0 15px rgba(251, 191, 36, 0.2);
+}
+
+.ending-archive-card.locked {
+  opacity: 0.5;
+  filter: grayscale(0.8);
+}
+
+.ending-archive-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.ending-archive-body {
+  font-size: 0.82rem;
+  line-height: 1.6;
+  color: #cbd5e1;
+  white-space: pre-line;
+  background: rgba(0, 0, 0, 0.4);
+  padding: 10px;
+  border-radius: 4px;
+  margin-bottom: 8px;
+}
+
+.ending-reward-badge {
+  font-size: 0.75rem;
+  font-weight: bold;
+  padding: 4px 8px;
+  border-radius: 4px;
+  text-align: center;
+}
+
+/* ==========================================================
+   9. 劍心輪迴與轉生神龕樣式 (Prestige & Reincarnation)
+   ========================================================== */
+.prestige-container {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.reincarnation-hero {
+  background: linear-gradient(135deg, rgba(40, 20, 48, 0.95) 0%, rgba(20, 16, 28, 0.98) 100%);
+  border: 2px solid #c084fc;
+  border-radius: 8px;
+  padding: 20px 24px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 16px;
+  box-shadow: 0 0 25px rgba(192, 132, 252, 0.3);
+}
+
+.reincarnation-info h3 {
+  font-size: 1.45rem;
+  color: #e9d5ff;
+  margin-bottom: 6px;
+}
+
+.reincarnation-info p {
+  font-size: 0.88rem;
+  color: #cbd5e1;
+  margin-bottom: 12px;
+  max-width: 600px;
+}
+
+.reincarnation-stats-bar {
+  display: flex;
+  gap: 18px;
+  flex-wrap: wrap;
+}
+
+.re-stat {
+  background: rgba(0, 0, 0, 0.5);
+  border: 1px solid rgba(192, 132, 252, 0.4);
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 0.9rem;
+}
+
+.btn-reincarnate {
+  background: linear-gradient(180deg, #9333ea 0%, #6b21a8 100%);
+  color: #fff;
+  border: 1px solid #c084fc;
+  padding: 12px 24px;
+  border-radius: 6px;
+  font-weight: bold;
+  font-size: 1.05rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 0 15px rgba(147, 51, 234, 0.5);
+  min-height: 48px;
+}
+
+.btn-reincarnate:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 0 25px rgba(192, 132, 252, 0.7);
+}
+
+.reincarnation-notice {
+  background: var(--bg-card);
+  border: 1px solid var(--border-gold);
+  border-radius: 8px;
+  padding: 14px 18px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+  font-size: 0.85rem;
+  line-height: 1.6;
+}
+
+.prestige-altar-box {
+  background: var(--bg-card);
+  border: 1px solid var(--border-gold);
+  border-radius: 8px;
+  padding: 20px;
+}
+
+.prestige-perks-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(270px, 1fr));
+  gap: 14px;
+}
+
+.prestige-perk-card {
+  background: #14151e;
+  border: 1px solid var(--border-muted);
+  border-radius: 8px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 8px;
+  transition: transform 0.2s;
+}
+
+.prestige-perk-card:hover {
+  transform: translateY(-2px);
+  border-color: #c084fc;
+}
+
+.prestige-perk-card.maxed {
+  border-color: #fbbf24;
+  background: rgba(251, 191, 36, 0.05);
+}
+
+.perk-card-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.perk-icon {
+  font-size: 2rem;
+  background: rgba(0, 0, 0, 0.4);
+  width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.perk-title-box {
+  flex: 1;
+}
+
+.perk-name {
+  font-weight: bold;
+  color: #fff;
+  font-size: 1rem;
+}
+
+.perk-level {
+  font-size: 0.8rem;
+  color: #38bdf8;
+  font-weight: bold;
+}
+
+.perk-level.max {
+  color: #fbbf24;
+}
+
+.perk-desc {
+  font-size: 0.8rem;
+  color: #94a3b8;
+  line-height: 1.5;
+}
+
+.perk-current-bonus {
+  font-size: 0.82rem;
+  color: #e2e8f0;
+  background: rgba(0, 0, 0, 0.3);
+  padding: 6px 10px;
+  border-radius: 4px;
+  border-left: 3px solid #c084fc;
+}
+
+.perk-current-bonus b {
+  color: #fbbf24;
+}
+
+.btn-upgrade-perk {
+  background: #334155;
+  color: #94a3b8;
+  border: 1px solid #475569;
+  padding: 8px 14px;
+  border-radius: 6px;
+  font-weight: bold;
+  font-size: 0.88rem;
+  cursor: not-allowed;
+  min-height: 42px;
+  transition: all 0.2s ease;
+}
+
+.btn-upgrade-perk.can-afford {
+  background: linear-gradient(180deg, #7c3aed 0%, #5b21b6 100%);
+  color: #fff;
+  border-color: #a855f7;
+  cursor: pointer;
+  box-shadow: 0 0 10px rgba(124, 58, 237, 0.4);
+}
+
+.btn-upgrade-perk.can-afford:hover {
+  background: linear-gradient(180deg, #9333ea 0%, #7c3aed 100%);
+  transform: translateY(-1px);
+}
+
+/* 結局 Modal */
+.ending-card-modal {
+  border-color: #fbbf24;
+  box-shadow: 0 0 40px rgba(251, 191, 36, 0.4);
+}
+
+/* 行動端適配：分歧故事與轉生系統 */
+@media (max-width: 768px) {
+  .faction-hero-banner {
+    flex-direction: column;
+    text-align: center;
+    padding: 14px;
+  }
+  .faction-hero-banner .faction-banner-info {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  .reincarnation-hero {
+    flex-direction: column;
+    align-items: stretch;
+    padding: 16px;
+  }
+  .reincarnation-hero .btn-reincarnate {
+    width: 100%;
+  }
+  .reincarnation-notice {
+    grid-template-columns: 1fr;
+  }
+  .prestige-perks-grid {
+    grid-template-columns: 1fr;
+  }
+  .story-choices-grid {
+    grid-template-columns: 1fr;
+  }
+  .acts-timeline-grid {
+    grid-template-columns: 1fr;
+  }
+  .endings-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
