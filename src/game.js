@@ -1314,7 +1314,13 @@ class SamuraiGame {
   switchTab(tabName) {
     this.activeTab = tabName;
     document.querySelectorAll(".tab-btn").forEach(btn => {
-      btn.classList.toggle("active", btn.dataset.tab === tabName);
+      const isActive = btn.dataset && btn.dataset.tab === tabName;
+      btn.classList.toggle("active", isActive);
+      if (isActive && typeof btn.scrollIntoView === "function") {
+        try {
+          btn.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+        } catch (e) {}
+      }
     });
     document.querySelectorAll(".tab-pane").forEach(pane => {
       pane.classList.toggle("active", pane.id === `tab-${tabName}`);
@@ -1330,6 +1336,9 @@ class SamuraiGame {
     if (tabName === "dimensions") this.updateDimensionsUI();
 
     window.dispatchEvent(new Event('resize'));
+    setTimeout(() => {
+      if (this.updateTabNavArrows) this.updateTabNavArrows();
+    }, 350);
   }
 
   // UI 渲染更新整合
@@ -1763,6 +1772,115 @@ class SamuraiGame {
     });
   }
 
+  // 左右平滑滾動分頁選單
+  scrollTabNav(direction) {
+    const tabNav = document.querySelector(".tab-nav");
+    if (!tabNav) return;
+    const scrollAmount = Math.max(220, (tabNav.clientWidth || 300) * 0.55);
+    if (typeof tabNav.scrollBy === "function") {
+      tabNav.scrollBy({ left: direction * scrollAmount, behavior: "smooth" });
+    } else {
+      tabNav.scrollLeft = (tabNav.scrollLeft || 0) + direction * scrollAmount;
+    }
+    setTimeout(() => this.updateTabNavArrows(), 280);
+  }
+
+  // 更新左右箭頭按鈕的可見性與透明度
+  updateTabNavArrows() {
+    const tabNav = document.querySelector(".tab-nav");
+    const prevBtn = document.getElementById("tab-nav-prev");
+    const nextBtn = document.getElementById("tab-nav-next");
+    if (!tabNav || !prevBtn || !nextBtn) return;
+
+    const scrollLeft = tabNav.scrollLeft || 0;
+    const clientWidth = tabNav.clientWidth || 0;
+    const scrollWidth = tabNav.scrollWidth || 0;
+
+    const canScrollLeft = scrollLeft > 5;
+    const canScrollRight = scrollLeft + clientWidth < scrollWidth - 5;
+
+    prevBtn.style.opacity = canScrollLeft ? "1" : "0.3";
+    prevBtn.style.pointerEvents = canScrollLeft ? "auto" : "none";
+    nextBtn.style.opacity = canScrollRight ? "1" : "0.3";
+    nextBtn.style.pointerEvents = canScrollRight ? "auto" : "none";
+  }
+
+  // 設置電腦版選單滑鼠拖曳、滾輪橫向滾動與箭頭互動
+  setupTabNavControls() {
+    const tabNav = document.querySelector(".tab-nav");
+    if (!tabNav) return;
+
+    // 1. 滑鼠滾輪直接橫向滾動 (Vertical wheel to horizontal scroll)
+    tabNav.addEventListener("wheel", (e) => {
+      if (Math.abs(e.deltaY) > Math.abs(e.deltaX) && e.deltaY !== 0) {
+        e.preventDefault();
+        tabNav.scrollLeft += e.deltaY * 1.2;
+        this.updateTabNavArrows();
+      }
+    }, { passive: false });
+
+    // 2. 電腦版滑鼠按住拖曳移動 (Mouse drag-to-scroll / grab to pan)
+    let isMouseDown = false;
+    let startX = 0;
+    let startScrollLeft = 0;
+    let draggedDistance = 0;
+
+    tabNav.addEventListener("mousedown", (e) => {
+      if (e.button !== 0) return; // 僅響應滑鼠左鍵
+      isMouseDown = true;
+      startX = e.pageX - tabNav.offsetLeft;
+      startScrollLeft = tabNav.scrollLeft || 0;
+      draggedDistance = 0;
+      tabNav.classList.add("is-dragging");
+    });
+
+    if (typeof window !== "undefined" && window.addEventListener) {
+      window.addEventListener("mousemove", (e) => {
+        if (!isMouseDown) return;
+        const x = e.pageX - tabNav.offsetLeft;
+        const walk = x - startX;
+        draggedDistance = Math.abs(walk);
+        if (draggedDistance > 3) {
+          if (e.preventDefault) e.preventDefault();
+          tabNav.scrollLeft = startScrollLeft - walk;
+          this.updateTabNavArrows();
+        }
+      });
+
+      const endDrag = () => {
+        if (!isMouseDown) return;
+        isMouseDown = false;
+        setTimeout(() => {
+          tabNav.classList.remove("is-dragging");
+          draggedDistance = 0;
+        }, 50);
+        this.updateTabNavArrows();
+      };
+
+      window.addEventListener("mouseup", endDrag);
+      window.addEventListener("resize", () => {
+        this.updateTabNavArrows();
+      });
+    }
+
+    // 拖曳結束時如果移動距離超過 6px，攔截該次 click 事件，防止放開滑鼠時誤切換分頁
+    tabNav.addEventListener("click", (e) => {
+      if (draggedDistance > 6) {
+        if (e.preventDefault) e.preventDefault();
+        if (e.stopPropagation) e.stopPropagation();
+        draggedDistance = 0;
+      }
+    }, true);
+
+    // 3. 滾動與視窗改變大小時即時更新箭頭按鈕狀態
+    tabNav.addEventListener("scroll", () => {
+      this.updateTabNavArrows();
+    }, { passive: true });
+
+    // 初始狀態檢測
+    setTimeout(() => this.updateTabNavArrows(), 200);
+  }
+
   // 初始化啟動
   start() {
     this.load();
@@ -1772,6 +1890,7 @@ class SamuraiGame {
     this.spawnEnemy();
     this.startCombatLoop();
     this.setupAccessibilityControls();
+    this.setupTabNavControls();
 
     // 每 10 秒自動存檔
     this.autoSaveTimer = setInterval(() => {
