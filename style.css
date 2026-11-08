@@ -1238,6 +1238,11 @@ nav.tab-nav::-webkit-scrollbar {
     letter-spacing: 1px;
   }
 
+  .header-controls {
+    justify-content: space-between;
+    width: 100%;
+  }
+
   .resource-bar {
     justify-content: space-between;
     width: 100%;
@@ -2508,8 +2513,61 @@ nav.tab-nav::-webkit-scrollbar {
 
 
 /* ==========================================================
-   多國語系切換器 (Language Switcher UI)
+   頂部導航控制項（多國語系切換器與音效開關 UI）
    ========================================================== */
+.header-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.header-sound-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: rgba(15, 16, 20, 0.85);
+  border: 1px solid rgba(212, 175, 55, 0.45);
+  color: #fbbf24;
+  border-radius: 20px;
+  padding: 3px 10px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  user-select: none;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.4);
+}
+
+.header-sound-btn:hover {
+  background: rgba(212, 175, 55, 0.2);
+  border-color: #d4af37;
+  color: #ffffff;
+  transform: translateY(-1px);
+}
+
+.header-sound-btn:active {
+  transform: translateY(0);
+}
+
+.header-sound-btn.muted {
+  background: rgba(30, 30, 35, 0.75);
+  border-color: rgba(156, 163, 175, 0.35);
+  color: #9ca3af;
+  opacity: 0.85;
+}
+
+.header-sound-btn.muted:hover {
+  background: rgba(239, 68, 68, 0.15);
+  border-color: #ef4444;
+  color: #fca5a5;
+  opacity: 1;
+}
+
+.header-sound-btn .sound-icon {
+  font-size: 0.95rem;
+  line-height: 1;
+}
+
 .lang-switch-container {
   display: flex;
   align-items: center;
