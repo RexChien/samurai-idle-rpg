@@ -324,10 +324,6 @@ nav.tab-nav.is-dragging {
   scroll-behavior: auto !important;
 }
 
-nav.tab-nav.is-dragging .tab-btn {
-  pointer-events: none;
-}
-
 /* 典雅和風金質水平滾動條 (電腦版可見並可直接拖曳) */
 nav.tab-nav::-webkit-scrollbar {
   height: 5px;
