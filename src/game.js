@@ -1822,22 +1822,28 @@ class SamuraiGame {
     // 2. 電腦版滑鼠按住拖曳移動 (Mouse drag-to-scroll / grab to pan)
     let isMouseDown = false;
     let startX = 0;
+    let startY = 0;
     let startScrollLeft = 0;
     let hasDragged = false;
+    let mouseDownTime = 0;
 
     tabNav.addEventListener("mousedown", (e) => {
       if (e.button !== 0) return; // 僅響應滑鼠左鍵
       isMouseDown = true;
       startX = e.pageX;
+      startY = e.pageY;
       startScrollLeft = tabNav.scrollLeft || 0;
       hasDragged = false;
+      mouseDownTime = Date.now();
     });
 
     if (typeof window !== "undefined" && window.addEventListener) {
       window.addEventListener("mousemove", (e) => {
         if (!isMouseDown) return;
         const dx = e.pageX - startX;
-        if (!hasDragged && Math.abs(dx) > 8) {
+        const dy = e.pageY - startY;
+        // 必須有顯著水平位移（大於 20px 且橫向明顯大於縱向）才進入拖曳狀態
+        if (!hasDragged && Math.abs(dx) > 20 && Math.abs(dx) > Math.abs(dy)) {
           hasDragged = true;
           tabNav.classList.add("is-dragging");
         }
@@ -1852,11 +1858,14 @@ class SamuraiGame {
         if (!isMouseDown) return;
         isMouseDown = false;
         tabNav.classList.remove("is-dragging");
+        // 點擊判定：按下至放開時間小於 250ms 一律視為純點擊
+        if (Date.now() - mouseDownTime < 250) {
+          hasDragged = false;
+        }
         if (hasDragged) {
-          // 短暫保持 hasDragged 為 true，讓緊隨其後的 click 事件被捕獲攔截
           setTimeout(() => {
             hasDragged = false;
-          }, 80);
+          }, 100);
         }
         this.updateTabNavArrows();
       };
@@ -1867,13 +1876,18 @@ class SamuraiGame {
       });
     }
 
-    // 僅在發生實際拖曳位移時攔截按鈕點擊，一般點擊則完全不受影響
+    // 點擊事件代理：確保點擊分頁按鈕時能 100% 觸發切換
     tabNav.addEventListener("click", (e) => {
       if (hasDragged) {
         if (e.preventDefault) e.preventDefault();
         if (e.stopPropagation) e.stopPropagation();
+        return;
       }
-    }, true);
+      const btn = e.target && e.target.closest ? e.target.closest(".tab-btn") : null;
+      if (btn && btn.dataset && btn.dataset.tab) {
+        this.switchTab(btn.dataset.tab);
+      }
+    });
 
     // 3. 滾動與視窗改變大小時即時更新箭頭按鈕狀態
     tabNav.addEventListener("scroll", () => {
