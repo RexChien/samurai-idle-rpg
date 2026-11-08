@@ -180,6 +180,8 @@ describe('Game Engine & Mechanics (src/game.js)', () => {
     game.spawnEnemy();
     const enemy = game.currentEnemy;
     assert.ok(enemy, 'Enemy should be spawned');
+    enemy.hp = 9999;
+    enemy.maxHp = 9999;
     const initialEnemyHp = enemy.hp;
 
     // Player attacks
@@ -190,11 +192,12 @@ describe('Game Engine & Mechanics (src/game.js)', () => {
     enemy.hp = 0;
     const prevGold = game.player.gold;
     const prevExp = game.player.exp;
+    const prevKills = game.zoneKillProgress;
     game.handleEnemyDefeated();
 
     assert.ok(game.player.gold > prevGold, 'Player should gain gold upon defeating enemy');
     assert.ok(game.player.exp > prevExp, 'Player should gain EXP upon defeating enemy');
-    assert.equal(game.zoneKillProgress, 1, 'Zone kill progress should increment');
+    assert.equal(game.zoneKillProgress, prevKills + 1, 'Zone kill progress should increment');
   });
 
   it('whetstone sharpening enhances weapon attack power and level', () => {
