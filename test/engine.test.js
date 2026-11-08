@@ -740,11 +740,15 @@ describe('Game Engine & Mechanics (src/game.js)', () => {
     });
     assert.equal(clickPrevented, false, 'Normal click must not be prevented');
 
-    // 7. Test drag > 8px cancels accidental click on mouseup
+    // 7. Test intentional drag > 20px cancels accidental click on mouseup
     let dragClickPrevented = false;
-    tabNav.dispatch('mousedown', { button: 0, pageX: 200 });
+    const realNow = Date.now;
+    let fakeTime = realNow();
+    Date.now = () => fakeTime;
+    tabNav.dispatch('mousedown', { button: 0, pageX: 200, pageY: 100 });
+    fakeTime += 350; // Hold drag for > 250ms
     if (global.window._listeners && global.window._listeners['mousemove']) {
-      global.window._listeners['mousemove'].forEach(fn => fn({ pageX: 250, preventDefault: () => {} }));
+      global.window._listeners['mousemove'].forEach(fn => fn({ pageX: 260, pageY: 100, preventDefault: () => {} }));
     }
     if (global.window._listeners && global.window._listeners['mouseup']) {
       global.window._listeners['mouseup'].forEach(fn => fn({}));
@@ -753,7 +757,8 @@ describe('Game Engine & Mechanics (src/game.js)', () => {
       preventDefault: () => { dragClickPrevented = true; },
       stopPropagation: () => {}
     });
-    assert.equal(dragClickPrevented, true, 'Dragging must prevent accidental button click');
+    Date.now = realNow;
+    assert.equal(dragClickPrevented, true, 'Intentional drag must prevent accidental button click');
 
     // 8. Test switchTab updates active tab
     game.switchTab('story');
