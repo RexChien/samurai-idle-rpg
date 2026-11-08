@@ -4,17 +4,127 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <title>《武士之刃：無雙斬》- 暗黑打寶日式無障礙放置RPG</title>
-  <link rel="stylesheet" href="style.css?v=20261108_reborn">
+  <link rel="stylesheet" href="style.css?v=20261108_world">
   <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🗡️</text></svg>">
-  <!-- Google Identity Services (GIS) 免費客戶端一鍵登入 -->
-  <script src="https://accounts.google.com/gsi/client" async defer></script>
 </head>
 <body>
+  <!-- ========================================================
+       首頁大廳：New Game / Continue Game (Title Screen Overlay)
+       ======================================================== -->
+  <div id="title-screen-overlay" class="fullscreen-overlay">
+    <div class="title-hero-box">
+      <div class="title-emblem">⚔️</div>
+      <h1 class="title-main">《武士之刃：無雙斬》</h1>
+      <p class="title-sub">SAMURAI BLADE: RESURRECTED — 戰國暗黑打寶無障礙 RPG</p>
+
+      <div class="title-features-badges">
+        <span>💎 暗黑6階光柱掉寶</span>
+        <span>🏯 京都主城＆傳送小站</span>
+        <span>♿ 全自動無障礙友善</span>
+        <span>🛡️ 100% 純本機零帳單</span>
+      </div>
+
+      <div class="title-actions">
+        <button id="btn-continue-game" class="btn btn-gold btn-xl" style="display: none;" onclick="window.game.continueGameFlow()">
+          ⚡ 繼續武道征途 (Continue)
+        </button>
+        <button id="btn-new-game" class="btn btn-crimson btn-xl" onclick="window.game.startNewGameFlow()">
+          🗡️ 開啟新武士傳奇 (New Game)
+        </button>
+        <button class="btn btn-outline btn-lg" onclick="window.game.importSave()">
+          📥 匯入存檔代碼 (Import Save)
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================================
+       創角儀式大廳 (Character Creation Overlay)
+       ======================================================== -->
+  <div id="character-creation-overlay" class="fullscreen-overlay" style="display: none;">
+    <div class="creation-modal-card">
+      <div class="creation-header">
+        <h2>🔥 戰國武士創角儀式 (Create Your Samurai)</h2>
+        <p class="text-muted">打造專屬於您的無雙劍客，踏上誅滅百鬼的暗黑征途</p>
+      </div>
+
+      <div class="creation-body">
+        <!-- 1. 輸入武士名號 -->
+        <div class="creation-step">
+          <label class="creation-label">1. 賜予武士名號：</label>
+          <div class="creation-name-row">
+            <input type="text" id="creation-name-input" value="宮本武藏" maxlength="16" placeholder="請輸入您的武士尊號...">
+            <button class="btn btn-outline btn-sm" onclick="randomizeSamuraiName()">🎲 隨機戰國名號</button>
+          </div>
+        </div>
+
+        <!-- 2. 選擇起始武士流派 -->
+        <div class="creation-step">
+          <label class="creation-label">2. 選擇起始武士流派（進入遊戲後仍可隨時自由切換）：</label>
+          <div class="creation-class-grid">
+            <button class="create-class-btn active" data-class="kensei" onclick="window.game.selectCreationClass('kensei')">
+              <span class="c-icon">⚔️</span>
+              <span class="c-title">劍聖</span>
+              <span class="c-tag">二天一流・極速暴擊</span>
+            </button>
+            <button class="create-class-btn" data-class="onimusha" onclick="window.game.selectCreationClass('onimusha')">
+              <span class="c-icon">👹</span>
+              <span class="c-title">鬼武者</span>
+              <span class="c-tag">修羅狂戰・吸血破甲</span>
+            </button>
+            <button class="create-class-btn" data-class="onmyoji" onclick="window.game.selectCreationClass('onmyoji')">
+              <span class="c-icon">☯️</span>
+              <span class="c-title">陰陽劍士</span>
+              <span class="c-tag">式神護盾・五行真火</span>
+            </button>
+            <button class="create-class-btn" data-class="daimyo" onclick="window.game.selectCreationClass('daimyo')">
+              <span class="c-icon">🏯</span>
+              <span class="c-title">守護大名</span>
+              <span class="c-tag">重甲鐵壁・霸王反傷</span>
+            </button>
+          </div>
+          <div id="creation-class-desc-box" class="creation-desc-preview">
+            <!-- 流派介紹由 JS 動態注入 -->
+          </div>
+        </div>
+
+        <!-- 3. 選擇正統日本武士形象 -->
+        <div class="creation-step">
+          <label class="creation-label">3. 選擇武士形象頭像：</label>
+          <div class="creation-avatar-row">
+            <button class="create-avatar-btn active" data-avatar="samurai_general" onclick="window.game.selectCreationAvatar('samurai_general')">
+              <span>⚔️</span> 武士大將
+            </button>
+            <button class="create-avatar-btn" data-avatar="samurai_oni" onclick="window.game.selectCreationAvatar('samurai_oni')">
+              <span>👺</span> 鬼面豪傑
+            </button>
+            <button class="create-avatar-btn" data-avatar="samurai_lord" onclick="window.game.selectCreationAvatar('samurai_lord')">
+              <span>🏯</span> 旗本武士
+            </button>
+            <button class="create-avatar-btn" data-avatar="samurai_female" onclick="window.game.selectCreationAvatar('samurai_female')">
+              <span>🌸</span> 櫻華劍姬
+            </button>
+            <button class="create-avatar-btn" data-avatar="samurai_daimyo" onclick="window.game.selectCreationAvatar('samurai_daimyo')">
+              <span>👑</span> 戰國大名
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div class="creation-footer">
+        <button class="btn btn-outline" onclick="window.game.showTitleScreen()">⬅️ 返回首頁</button>
+        <button id="btn-confirm-create" class="btn btn-gold btn-xl" onclick="window.game.confirmCharacterCreation()">
+          🔥 拔刀踏入亂世 (完成創角)
+        </button>
+      </div>
+    </div>
+  </div>
+
   <div id="game-app">
     <!-- 頂部資訊列 (Header Bar) -->
     <header id="game-header">
       <div class="header-left">
-        <div class="player-avatar-badge" id="player-avatar-badge" title="點擊切換外觀">
+        <div class="player-avatar-badge" id="player-avatar-badge" title="武士形象">
           <span id="player-avatar-icon">⚔️</span>
         </div>
         <div class="player-identity">
@@ -51,19 +161,20 @@
       </div>
 
       <div class="header-right">
-        <!-- 登入與角色綁定按鈕 -->
-        <button class="btn btn-header btn-google" id="header-auth-btn" onclick="window.game.openAuthModal()" title="Google 帳號與角色雲端綁定">
-          <span class="g-icon">G</span> <span id="header-auth-text">登入綁定</span>
+        <button class="btn btn-header btn-map" onclick="window.game.openWorldMap()" title="打開暗黑小站傳送陣世界地圖 (快捷鍵 M)">
+          🗺️ 世界地圖
         </button>
-
-        <button class="btn btn-header btn-mute" id="mute-btn" onclick="toggleAudioMute()" title="切換音效靜音 (快捷鍵 M)">
+        <button class="btn btn-header btn-town" onclick="window.game.teleportToTown()" title="開啟回城傳送返回京都主城 (快捷鍵 T)">
+          🏯 回城
+        </button>
+        <button class="btn btn-header btn-mute" id="mute-btn" onclick="toggleAudioMute()" title="切換音效靜音">
           🔊 音效
         </button>
         <button class="btn btn-header btn-save" onclick="window.game.exportSave()" title="匯出存檔代碼至剪貼簿">
           📋 備份
         </button>
-        <button class="btn btn-header btn-load" onclick="window.game.importSave()" title="匯入存檔代碼">
-          📥 匯入
+        <button class="btn btn-header" onclick="window.game.showTitleScreen()" title="返回標題畫面或開啟新角色">
+          🏠 首頁
         </button>
       </div>
     </header>
@@ -72,7 +183,7 @@
     <nav id="main-nav-tabs">
       <button class="tab-btn active" data-tab="battle" onclick="window.game.switchTab('battle')">
         <span class="tab-icon">⚔️</span>
-        <span class="tab-label">自動討伐＆故事</span>
+        <span class="tab-label">世界征戰＆主城</span>
         <span class="tab-key">1</span>
       </button>
       <button class="tab-btn" data-tab="gear" onclick="window.game.switchTab('gear')">
@@ -99,18 +210,28 @@
 
     <!-- 分頁內容容器 -->
     <main id="tab-content-area">
-      <!-- 1. 自動討伐＆故事分頁 -->
+      <!-- 1. 自動討伐＆主城＆世界地圖分頁 -->
       <section id="tab-battle" class="tab-pane active">
+        <!-- 頂部區域狀態與傳送控制列 -->
         <div class="act-banner-box">
-          <div class="act-name" id="current-act-title">第一章：櫻落之村</div>
-          <div class="act-progress-badge" id="act-progress-text">討伐進度: 0 / 10</div>
+          <div class="act-banner-left">
+            <div class="act-name" id="current-act-title">🌸 第一章：櫻落之村</div>
+            <div class="act-progress-badge" id="act-progress-text">討伐進度: 0 / 10</div>
+          </div>
+          <div class="act-banner-actions">
+            <button class="btn btn-gold" onclick="window.game.openWorldMap()">
+              🗺️ 開啟世界地圖 (傳送小站)
+            </button>
+            <button class="btn btn-outline" onclick="window.game.teleportToTown()">
+              🏯 回城傳送 (京都本陣)
+            </button>
+          </div>
         </div>
 
-        <div class="battle-arena" onclick="window.game.manualSlash()">
-          <!-- 戰鬥傷害跳字圖層 -->
+        <!-- A. 野外戰場討伐畫面 (Combat Field View) -->
+        <div id="combat-field-view" class="battle-arena" onclick="window.game.manualSlash()">
           <div id="battle-damage-layer"></div>
 
-          <!-- 妖怪對戰卡片 -->
           <div class="enemy-battle-card">
             <div class="enemy-avatar-wrap">
               <span class="enemy-avatar-large" id="enemy-avatar">👹</span>
@@ -125,7 +246,65 @@
           </div>
 
           <div class="battle-hint-bar">
-            <span>⚡ 全自動流暢討伐中</span> | <span>點擊畫面或空白鍵可額外揮刀</span>
+            <span>⚡ 全自動流暢討伐中</span> | <span>點擊畫面或空白鍵可額外揮刀</span> | <span>隨時可點上方【🗺️ 世界地圖】切換章節或回主城</span>
+          </div>
+        </div>
+
+        <!-- B. 京都主城營地安全區畫面 (Town Hub View - 暗黑3/4主城概念) -->
+        <div id="town-hub-view" class="town-arena" style="display: none;">
+          <div class="town-header-hero">
+            <div class="town-campfire-icon">🔥</div>
+            <div>
+              <h2>🏯 京都・新選本陣（主城安全區）</h2>
+              <p class="text-muted">篝火溫暖地燃燒著，此處百鬼不侵。您可在此祈福強化、整備神兵，再透過小站傳送陣重返前線。</p>
+            </div>
+          </div>
+
+          <div class="town-npc-grid">
+            <div class="town-npc-card" onclick="window.game.prayAtTownShrine()">
+              <div class="npc-avatar">⛩️</div>
+              <div class="npc-info">
+                <div class="npc-name">出雲巫女・阿國</div>
+                <div class="npc-role">【神社篝火祈福】免費恢復生機並賦予 30 分鐘 +15% 攻擊力祝福</div>
+              </div>
+              <button class="btn btn-gold btn-sm">🙏 祈福加持</button>
+            </div>
+
+            <div class="town-npc-card" onclick="window.game.switchTab('gear')">
+              <div class="npc-avatar">🔨</div>
+              <div class="npc-info">
+                <div class="npc-name">備前名刀匠・正宗</div>
+                <div class="npc-role">【神兵鍛造屋】強化全身 6 槽位裝備、拆解多餘玄鐵</div>
+              </div>
+              <button class="btn btn-outline btn-sm">🎒 前往鍛造</button>
+            </div>
+
+            <div class="town-npc-card" onclick="window.game.switchTab('market')">
+              <div class="npc-avatar">⚖️</div>
+              <div class="npc-info">
+                <div class="npc-name">堺港豪商・呂宋助左衛門</div>
+                <div class="npc-role">【戰國交易所】選購傳奇暗金神裝、於浪人茶館交流</div>
+              </div>
+              <button class="btn btn-outline btn-sm">🛒 前往市集</button>
+            </div>
+
+            <div class="town-npc-card" onclick="window.game.switchTab('talents')">
+              <div class="npc-avatar">🌳</div>
+              <div class="npc-info">
+                <div class="npc-name">劍聖宗師・上泉信綱</div>
+                <div class="npc-role">【御前演武場】切換四大武士流派、免費重置與配點天賦</div>
+              </div>
+              <button class="btn btn-outline btn-sm">⚡ 修煉天賦</button>
+            </div>
+          </div>
+
+          <div class="town-footer-actions">
+            <button class="btn btn-crimson btn-xl" onclick="window.game.travelToZone(window.game.player.act)">
+              ⚔️ 踏出傳送陣・重返前線戰場 (第 <span id="town-return-act-num">1</span> 章)
+            </button>
+            <button class="btn btn-gold btn-lg" onclick="window.game.openWorldMap()">
+              🗺️ 開啟世界地圖選擇其他區域
+            </button>
           </div>
         </div>
       </section>
@@ -138,9 +317,7 @@
             <span>🥋 武士穿戴裝備 (6大槽位)</span>
             <span class="title-sub">點擊裝備進行強化或卸下</span>
           </div>
-          <div class="equipped-grid" id="equipped-slots-grid">
-            <!-- 6格裝備由 JS 動態生成 -->
-          </div>
+          <div class="equipped-grid" id="equipped-slots-grid"></div>
         </div>
 
         <!-- 背包與自動過濾工具列 -->
@@ -163,15 +340,13 @@
               </button>
             </div>
           </div>
-          <div class="inventory-grid" id="inventory-grid">
-            <!-- 背包裝備由 JS 動態生成 -->
-          </div>
+          <div class="inventory-grid" id="inventory-grid"></div>
         </div>
 
         <!-- 武士個人客製外觀造型 -->
         <div class="section-card">
           <div class="section-card-title">
-            <span>🎭 武士造型客製 (無忍者，正統日本武士外觀)</span>
+            <span>🎭 武士造型與名號客製</span>
           </div>
           <div class="cosmetics-grid">
             <div class="cosmetic-box">
@@ -212,20 +387,14 @@
             </div>
           </div>
 
-          <div class="class-selector" id="class-select-container">
-            <!-- 四大流派選擇鈕由 JS 生成 -->
-          </div>
-
-          <div id="talents-tree-container">
-            <!-- 天賦樹由 JS 生成 -->
-          </div>
+          <div class="class-selector" id="class-select-container"></div>
+          <div id="talents-tree-container"></div>
         </div>
       </section>
 
       <!-- 4. 交易所與聊天室分頁 -->
       <section id="tab-market" class="tab-pane" style="display: none;">
         <div class="market-layout">
-          <!-- 左側：拍賣場商品列表 -->
           <div class="market-left-panel section-card">
             <div class="market-toolbar">
               <h3>⚖️ 戰國武器行・裝備拍賣場</h3>
@@ -249,26 +418,18 @@
               </div>
             </div>
 
-            <!-- 我上架中的商品 -->
             <div class="my-listings-wrap">
               <h4>📦 您目前上架中的裝備：</h4>
               <div id="my-listings-container"></div>
             </div>
 
-            <!-- 市集掛單清單 -->
-            <div class="market-listings-grid" id="market-listings-container">
-              <!-- 商品由 JS 動態生成 -->
-            </div>
+            <div class="market-listings-grid" id="market-listings-container"></div>
           </div>
 
-          <!-- 右側：世界頻道與即時社群聊天室 -->
           <div class="market-right-panel section-card">
             <h3>💬 浪人茶館・全服公頻留言</h3>
-            <div class="chat-box" id="chat-messages-container">
-              <!-- 聊天訊息由 JS 動態生成 -->
-            </div>
+            <div class="chat-box" id="chat-messages-container"></div>
 
-            <!-- 無障礙單鍵快速發言 Chip -->
             <div class="quick-chat-chips">
               <button class="chip-btn" onclick="sendQuickChat('大家好，初入武林請多指教！')">💬 大家好！</button>
               <button class="chip-btn" onclick="sendQuickChat('求一把高戰力劍聖名刀！')">🗡️ 求購名刀</button>
@@ -286,39 +447,47 @@
 
       <!-- 5. 成就與每日簽到分頁 -->
       <section id="tab-achievements" class="tab-pane" style="display: none;">
-        <!-- 每日登入 7 日簽到 -->
         <div class="section-card">
           <div class="section-card-title">
-            <span>📅 每日簽到薄 (7日循環大賞)</span>
+            <span>📅 每日簽到簿 (7日循環大賞)</span>
             <span class="title-sub">天天登入領取大量元寶、傳奇神兵與限定稱號</span>
           </div>
-          <div class="daily-signin-grid" id="daily-signin-grid">
-            <!-- 簽到卡片由 JS 動態生成 -->
-          </div>
+          <div class="daily-signin-grid" id="daily-signin-grid"></div>
         </div>
 
-        <!-- 成就獎勵區 -->
         <div class="section-card">
           <div class="achievements-toolbar">
             <h3>🏆 暗黑榮耀成就庫 (35+ 挑戰)</h3>
             <button class="btn btn-gold" onclick="window.game.claimAllAchievements()">🎁 一鍵領取所有已達成成就</button>
           </div>
-          <div class="achievements-list" id="achievements-list-container">
-            <!-- 成就卡片由 JS 動態生成 -->
-          </div>
+          <div class="achievements-list" id="achievements-list-container"></div>
         </div>
       </section>
     </main>
 
-    <!-- 懸浮組件 1：一鍵智慧換裝通知 (Smart Equip Floating Banner) -->
-    <div id="smart-equip-banner" class="smart-equip-banner" style="display: none;">
-      <!-- 由 JS 動態注入 -->
+    <!-- ========================================================
+         暗黑 3/4 風格：世界地圖小站傳送陣彈窗 (World Map Waypoints Modal)
+         ======================================================== -->
+    <div id="world-map-modal" class="modal-overlay" style="display: none;">
+      <div class="modal-card world-map-card">
+        <div class="modal-header world-map-header">
+          <div>
+            <h2>🗺️ 戰國常世繪卷・小站傳送陣 (World Map Waypoints)</h2>
+            <p class="text-muted" style="font-size: 0.9rem;">點擊任意已解鎖的小站節點，即可瞬間傳送前往主城或討伐戰場</p>
+          </div>
+          <button class="btn btn-outline btn-sm" onclick="window.game.closeWorldMap()">✖ 關閉地圖</button>
+        </div>
+        <div class="world-map-nodes-list" id="world-map-nodes-container">
+          <!-- 主城與7大章節節點由 JS 動態渲染 -->
+        </div>
+      </div>
     </div>
 
+    <!-- 懸浮組件 1：一鍵智慧換裝通知 (Smart Equip Floating Banner) -->
+    <div id="smart-equip-banner" class="smart-equip-banner" style="display: none;"></div>
+
     <!-- 懸浮組件 2：暗黑 3 式中下方金邊成就橫幅 (Diablo 3 Achievement Banner) -->
-    <div id="diablo-achievement-banner" class="diablo-banner">
-      <!-- 由 JS 動態注入 -->
-    </div>
+    <div id="diablo-achievement-banner" class="diablo-banner"></div>
 
     <!-- 懸浮組件 3：暗金光柱特效遮罩 -->
     <div id="loot-beam-overlay" class="loot-beam-overlay" style="display: none;"></div>
@@ -329,9 +498,7 @@
         <div class="modal-header">
           <h2>🌙 武士常世修煉・離線收益結算</h2>
         </div>
-        <div class="modal-body" id="offline-modal-body">
-          <!-- 離線數據由 JS 注入 -->
-        </div>
+        <div class="modal-body" id="offline-modal-body"></div>
         <div class="modal-footer">
           <button class="btn btn-gold btn-large" onclick="window.game.closeOfflineModal()">
             ⚡ 一鍵領取所有修煉戰果
@@ -340,65 +507,18 @@
       </div>
     </div>
 
-    <!-- 懸浮組件 5：角色與 Google 登入綁定彈窗 (Auth Modal) -->
-    <div id="auth-modal" class="modal-overlay" style="display: none;">
-      <div class="modal-card auth-modal-card">
-        <div class="modal-header">
-          <h2>🛡️ 武士身份與 Google 帳號綁定</h2>
-        </div>
-        <div class="modal-body" id="auth-modal-body">
-          <div class="auth-status-box" id="auth-status-display">
-            <!-- 狀態由 JS 動態注入 -->
-          </div>
-
-          <div class="auth-tabs-wrap">
-            <div class="auth-section">
-              <h4 style="color: var(--gold-accent); margin-bottom: 8px;">⚡ 途徑一：快速武士身份命名（推薦）</h4>
-              <p class="text-muted" style="font-size: 0.85rem; margin-bottom: 10px;">
-                無需任何繁瑣設定，直接設定您的專屬名號。存檔自動保存在瀏覽器與雲端備份代碼中，100% 絕對穩定！
-              </p>
-              <div class="auth-input-row">
-                <input type="text" id="custom-samurai-name-input" placeholder="輸入武士稱號/名稱" maxlength="16">
-                <button class="btn btn-gold" onclick="window.game.saveCustomName()">確認綁定</button>
-              </div>
-            </div>
-
-            <div class="auth-section" style="margin-top: 16px; border-top: 1px solid var(--border-muted); padding-top: 14px;">
-              <h4 style="color: #60a5fa; margin-bottom: 8px;">🌐 途徑二：Google 帳號官方一鍵登入</h4>
-              <p class="text-muted" style="font-size: 0.85rem; margin-bottom: 10px;">
-                基於 Google 官方安全政策，需要您的網址 (<code style="color: #fde047;">https://rexchien.github.io</code>) 在 Google Cloud 登記的免費 Client ID。
-              </p>
-              <div class="auth-input-row">
-                <input type="text" id="google-client-id-input" placeholder="貼上您的 Google Client ID (選填)">
-                <button class="btn btn-google" onclick="window.game.startGoogleLoginWithClientId()">
-                  <span class="g-icon">G</span> 啟動登入
-                </button>
-              </div>
-              <div style="font-size: 0.75rem; color: #94a3b8; margin-top: 6px;">
-                💡 貼心提示：如果您尚未建立 Google Client ID，請優先使用【途徑一】即可完美體驗全部遊戲功能，完全不受任何影響！
-              </div>
-            </div>
-          </div>
-        </div>
-        <div class="modal-footer" style="display: flex; justify-content: space-between;">
-          <button class="btn btn-outline" onclick="window.game.closeAuthModal()">關閉視窗</button>
-          <button class="btn btn-danger btn-sm" onclick="window.game.clearAuthBinding()">解除 Google 綁定</button>
-        </div>
-      </div>
-    </div>
-
-    <!-- 懸浮組件 6：全域 Toast 提示訊息容器 -->
+    <!-- 懸浮組件 5：全域 Toast 提示訊息容器 -->
     <div id="toast-container" class="toast-container"></div>
   </div>
 
   <!-- 模組腳本載入 -->
-  <script src="data/gear.js?v=20261108_reborn"></script>
-  <script src="data/classes.js?v=20261108_reborn"></script>
-  <script src="data/campaign.js?v=20261108_reborn"></script>
-  <script src="data/rewards.js?v=20261108_reborn"></script>
-  <script src="src/audio.js?v=20261108_reborn"></script>
-  <script src="src/market_chat.js?v=20261108_reborn"></script>
-  <script src="src/game.js?v=20261108_reborn"></script>
+  <script src="data/gear.js?v=20261108_world"></script>
+  <script src="data/classes.js?v=20261108_world"></script>
+  <script src="data/campaign.js?v=20261108_world"></script>
+  <script src="data/rewards.js?v=20261108_world"></script>
+  <script src="src/audio.js?v=20261108_world"></script>
+  <script src="src/market_chat.js?v=20261108_world"></script>
+  <script src="src/game.js?v=20261108_world"></script>
 
   <!-- 輔助互動腳本 -->
   <script>
@@ -426,27 +546,15 @@
       }
     }
 
-    // Google Identity Services (GIS) 回調橋樑
-    function handleGoogleLoginBridge(response) {
-      if (window.game) {
-        window.game.handleGoogleLogin(response);
-      }
-    }
-
-    function triggerGoogleLoginPrompt() {
-      if (window.google && window.google.accounts && window.google.accounts.id) {
-        window.google.accounts.id.prompt();
-      } else {
-        if (window.game) {
-          const customName = prompt('請輸入您想綁定的武士名稱（離線/Google通用）：', window.game.player.name);
-          if (customName && customName.trim()) {
-            window.game.player.name = customName.trim();
-            window.game.updateHeaderUI();
-            window.game.save();
-            window.game.showToast(`已成功綁定角色名稱為【${customName.trim()}】！`, 'success');
-          }
-        }
-      }
+    function randomizeSamuraiName() {
+      const names = [
+        '宮本武藏', '真田幸村', '柳生十兵衛', '伊達政宗',
+        '上杉謙信', '橘誾千代', '佐佐木小次郎', '沖田總司',
+        '齋藤一', '立花宗茂', '本多忠勝', '巴御前'
+      ];
+      const pick = names[Math.floor(Math.random() * names.length)];
+      const input = document.getElementById('creation-name-input');
+      if (input) input.value = pick;
     }
   </script>
 </body>
