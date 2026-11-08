@@ -7,6 +7,7 @@ import { MAIN_QUESTS, SIDE_QUESTS, generateProceduralBounty } from '../src/data/
 import { getPvPRankTier, generatePvPOpponents, simulateSamuraiDuel, getAbyssFloorData } from '../src/data/pvpAbyss';
 import { MAP_ZONES } from '../src/engine/WorldMapEngine';
 import { SPRITE_SPECS, resolveSpriteId } from '../src/engine/pixelSprites';
+import { BGM_TRACKS, audio } from '../src/engine/AudioEngine';
 
 describe('1. Tenmei 7 Historical Lore, Lighthearted Town Tone & IP Compliance', () => {
   it('strictly adheres to Tenmei 7 (1787 AD) historical setting', () => {
@@ -149,10 +150,37 @@ describe('6. Tactical PvP Arena & 1000-Floor Abyssal Rift', () => {
   });
 });
 
-describe('7. 2D World Map Engine Zones', () => {
-  it('defines 6 authentic Japanese map zones from Kyoto to Yomi Rift', () => {
+describe('7. 2D Full-Color World Map Engine Zones & Scenery', () => {
+  it('defines 6 full-color Japanese map zones with grass, road, river, and flora palettes', () => {
     expect(MAP_ZONES).toHaveLength(6);
     expect(MAP_ZONES[0].name).toContain('京都');
+    expect(MAP_ZONES[0].treeKind).toBe('sakura');
+    expect(MAP_ZONES[1].treeKind).toBe('bamboo');
+    expect(MAP_ZONES[2].treeKind).toBe('maple');
     expect(MAP_ZONES[5].name).toContain('常世狹縫');
+    for (const z of MAP_ZONES) {
+      expect(z.grassBase).toMatch(/^#/);
+      expect(z.roadBase).toMatch(/^#/);
+      expect(z.waterDeep).toMatch(/^#/);
+      expect(z.riverX).toBeGreaterThan(500);
+    }
+  });
+});
+
+describe('8. Multi-Track Japanese Edo / Samurai BGM Synthesizer', () => {
+  it('defines 4 traditional Japanese BGM tracks and supports track switching & zone sync', () => {
+    expect(BGM_TRACKS).toHaveLength(4);
+    expect(BGM_TRACKS.map(t => t.id)).toEqual(['kyoto', 'bushido', 'shrine', 'battle']);
+
+    audio.autoSwitchByZone = true;
+    audio.setZoneBGM('kurama');
+    expect(audio.currentTrackId).toBe('shrine');
+
+    audio.setZoneBGM('tokaido');
+    expect(audio.currentTrackId).toBe('bushido');
+
+    audio.selectTrack('battle');
+    expect(audio.currentTrackId).toBe('battle');
+    expect(audio.autoSwitchByZone).toBe(false);
   });
 });

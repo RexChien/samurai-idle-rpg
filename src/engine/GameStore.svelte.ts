@@ -119,6 +119,7 @@ class GameStoreClass {
   public mapEnemyDefeatedTick: number = $state(0);
   public openedChests: Record<string, boolean> = $state({});
   public artBurstCooldownUntil: number = $state(0);
+  public lastSlashEvent: { tick: number; damage: number; isCrit: boolean } = $state({ tick: 0, damage: 0, isCrit: false });
 
   public toast: { text: string; type: 'info' | 'success' | 'warning' | 'danger' } | null = $state(null);
   public storyModal: { open: boolean; title: string; chapter: string; npc: string; dialogue: string; lore: string } | null = $state(null);
@@ -265,6 +266,11 @@ class GameStoreClass {
     const totalDamage = Math.max(1, Math.round(baseDamage * artMult * (0.9 + Math.random() * 0.2)));
 
     this.currentEnemy.hp -= totalDamage;
+    this.lastSlashEvent = {
+      tick: this.lastSlashEvent.tick + 1,
+      damage: totalDamage,
+      isCrit
+    };
     audio.playSlash(isCrit);
 
     if (this.currentEnemy.hp <= 0) {

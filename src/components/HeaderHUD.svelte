@@ -1,12 +1,18 @@
 <script lang="ts">
   import { gameStore } from '../engine/GameStore.svelte';
   import { MAIN_QUESTS } from '../data/quests';
+  import { audio } from '../engine/AudioEngine';
   import PixelPortrait from './PixelPortrait.svelte';
 
   const player = $derived(gameStore.player);
   const stats = $derived(gameStore.calculatedStats);
   const curMain = $derived(MAIN_QUESTS[player.quests.currentMainIndex] || MAIN_QUESTS[0]);
   const mainProg = $derived(player.quests.mainProgress[curMain.id] || 0);
+  let bgmOn = $state(audio.bgmEnabled);
+
+  function toggleHeaderBgm() {
+    bgmOn = audio.toggleBGM();
+  }
 
   function autoTravelToQuest() {
     gameStore.showToast(`🧭 正在前往【${curMain.zone}】任務目標...`, 'info');
@@ -38,6 +44,9 @@
       <div class="currency-pill"><span class="icon">💰</span> <span class="val">{player.gold.toLocaleString()}</span> <span class="lbl">兩</span></div>
       <div class="currency-pill"><span class="icon">🪨</span> <span class="val">{player.iron.toLocaleString()}</span> <span class="lbl">玉鋼</span></div>
       <div class="currency-pill"><span class="icon">🔮</span> <span class="val">{player.souls.toLocaleString()}</span> <span class="lbl">魂玉</span></div>
+      <button class="btn {bgmOn ? 'btn-gold' : 'btn-outline'} btn-sm" onclick={toggleHeaderBgm} title="開關和風背景音樂">
+        {bgmOn ? '🎵 BGM' : '🔇 靜音'}
+      </button>
     </div>
   </div>
 

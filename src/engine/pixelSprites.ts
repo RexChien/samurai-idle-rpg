@@ -499,6 +499,32 @@ export function drawChibiSprite(
   const startX = -Math.round(spriteW / 2);
   const startY = -spriteH;
 
+  // 第一層：繪製武士道列傳風格的深色像素外框 (1px Pixel Outline)，讓角色在全彩地圖上立體鮮明
+  ctx.fillStyle = '#090d16';
+  for (let r = 0; r < rows; r++) {
+    const rowStr = spec.grid[r];
+    if (!rowStr) continue;
+    for (let c = 0; c < cols; c++) {
+      const ch = rowStr[c];
+      if (!ch || ch === '.') continue;
+
+      let drawR = r;
+      if (isStepping && r >= 19 && r <= 22) {
+        const isLeftLeg = c < 8;
+        if ((stepPhase === 0 && isLeftLeg) || (stepPhase === 1 && !isLeftLeg)) {
+          drawR = r - 1;
+        }
+      }
+      const px = startX + c * scale;
+      const py = startY + drawR * scale;
+      ctx.fillRect(px - scale, py, scale, scale);
+      ctx.fillRect(px + scale, py, scale, scale);
+      ctx.fillRect(px, py - scale, scale, scale);
+      ctx.fillRect(px, py + scale, scale, scale);
+    }
+  }
+
+  // 第二層：繪製全彩 3頭身像素角色本體
   for (let r = 0; r < rows; r++) {
     const rowStr = spec.grid[r];
     if (!rowStr) continue;
