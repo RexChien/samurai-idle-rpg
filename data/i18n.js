@@ -223,7 +223,48 @@ window.I18N = {
       settingSoundOn: "🔊 音效：開啟",
       settingSoundOff: "🔇 音效：靜音",
       settingSoundShort: "音效",
-      soundToggleTip: "音效開關"
+      settingSoundOffShort: "靜音",
+      soundToggleTip: "音效開關",
+
+      // 戰鬥介面標籤與日誌
+      labelSwordExp: "劍理:",
+      labelPlayerHp: "武士體力:",
+      zoneSelectLabel: "疆界:",
+      btnManualSlashSub: "(點擊 / 空白鍵 Space)",
+      combatLogHeader: "📜 討伐戰報記錄",
+      combatLogClear: "清空",
+      bossBattleFighting: "⚔️ 首領決戰激鬥中...",
+      bossBattleReady: "⚡ 首領挑戰已解鎖！點擊拔刀！",
+      bossBattleProgress: "討伐小怪召喚首領 ({current}/{total})",
+      comboText: "{combo} 連斬！",
+      logDefeatEnemy: "⚔️ 成功斬殺「{title} {name}」！獲得 <b>{gold} 金小判</b>、<b>{steel} 玉鋼</b>、<b>{exp} 經驗</b>！",
+      logCritStrike: "💥 刀芒如電！出刀【{weapon}】會心一閃，重創「{enemy}」造成 <b style=\"color:#ef4444\">{damage}</b> 點巨額破甲傷害！",
+      logManualStrike: "⚡ 玩家疾風拔刀！【{weapon}】斬中「{enemy}」造成 {damage} 點傷害！",
+      logBossIncoming: "【強敵來襲】{title} {name} 現身！限時 {time} 秒！",
+      logBossTimeout: "⏳ 首領狂暴！時限已過，挑戰失敗！",
+      logPlayerDefeated: "⚠️ 氣力耗盡！你暫時退回道場調養生息，體力已完全恢復。",
+      logLevelUp: "⛩️ 頓悟突破！境界提升至等級 {level}（{rank}）！獲得 2 點天賦點！",
+      logLootItem: "🎁 搜獲戰利品：獲得【{item}】x{count}",
+      logLootFood: "🍙 拾得乾糧：獲得【{item}】x{count}",
+      logZoneUnlock: "🏆 突破當前疆界！已解鎖新戰役關卡：第 {zone} 幕！",
+      logStoryMilestone: "📜 【劇情推進】{speaker}：「{text}」",
+      logStoryActComplete: "📜 【命運繪卷】突破第 {act} 幕歷史篇章！",
+      logGrandEnding: "🏆 【歷史大結局達成】{title}！獲得 {karma} 輪迴魂火獎勵！",
+      logEquipSword: "🗡️ 帶刀一新！拔出日本名刃【{sword}】，殺氣大盛！",
+      logSharpenSword: "✨ 使用砥石細心研磨！佩刀【{sword}】磨礪至 +{refine}！鋒利度大幅提昇！",
+      logDismantleSword: "🔥 投入熔爐！將【{tier}】{sword} 分解回融，獲得 {steel} 玉鋼、{gold} 金小判！",
+      logConsumeItem: "🍙 食用了【{item}】，瞬間回復了 {amount} 點體力！",
+      logBuffSpeed: "💊 服下了【{item}】，出刀神速提升 35%（持續 {duration} 秒）！",
+      logBuffAtk: "🍶 豪飲【{item}】，狂暴殺氣提升 50% 攻擊力（持續 {duration} 秒）！",
+      logBuffGold: "🍵 品味【{item}】，擊敵收穫金小判翻倍（持續 {duration} 秒）！",
+      logReincarnate: "🌀 【劍心輪迴完成】轉生重生！獲得 {karma} 輪迴魂火！天賦點數與屬性已大幅強化！",
+      logUpgradePerk: "🔥 點亮輪迴神龕【{perk}】至 Lv.{level}！獲得永久神力加護！",
+      logClaimAchievement: "🏆 【成就達成】領取【{name}】！獲得 🪙 +{gold}、💎 +{steel}{karma}！",
+      logClaimAllAchievements: "🎁 【成就總領】一口氣領取 {count} 項成就！獲得 🪙 +{gold}、💎 +{steel}、🌀 +{karma}！",
+      logVowFaction: "⚔️ 【天命抉擇】你立下誓言，正式投身【{faction}】！獲得專屬陣營庇佑：{desc}！",
+      logCodexAdd: "📖 【名刀鑑賞錄】收錄新名刀：【{tier}】{name}！全屬性永久提昇！",
+      logAcquireSword: "🗡️ {source}：獲得名刀【{tier}】{name}（{type}・{smith}）！",
+      sourceBossLoot: "首領戰利品"
     },
 
     "en": {
@@ -442,7 +483,48 @@ window.I18N = {
       settingSoundOn: "🔊 Sound: Enabled",
       settingSoundOff: "🔇 Sound: Muted",
       settingSoundShort: "Sound",
-      soundToggleTip: "Toggle Sound"
+      settingSoundOffShort: "Mute",
+      soundToggleTip: "Toggle Sound",
+
+      // Battle UI Labels & Combat Log
+      labelSwordExp: "Mastery:",
+      labelPlayerHp: "Samurai HP:",
+      zoneSelectLabel: "Zone:",
+      btnManualSlashSub: "(Click / Spacebar)",
+      combatLogHeader: "📜 Combat Log",
+      combatLogClear: "Clear",
+      bossBattleFighting: "⚔️ Boss Duel in Progress...",
+      bossBattleReady: "⚡ Boss Ready! Strike to Duel!",
+      bossBattleProgress: "Defeat Minions to Summon Boss ({current}/{total})",
+      comboText: "{combo} Combos!",
+      logDefeatEnemy: "⚔️ Vanquished \"{title} {name}\"! Gained <b>{gold} Gold</b>, <b>{steel} Tamahagane</b>, <b>{exp} EXP</b>!",
+      logCritStrike: "💥 Critical Strike! Drawn blade [{weapon}] flashed, dealing <b style=\"color:#ef4444\">{damage}</b> massive damage to \"{enemy}\"!",
+      logManualStrike: "⚡ Swift Blade Draw! [{weapon}] struck \"{enemy}\" for {damage} damage!",
+      logBossIncoming: "【Boss Alert】{title} {name} appears! Time limit: {time}s!",
+      logBossTimeout: "⏳ Boss Enraged! Time expired, challenge failed!",
+      logPlayerDefeated: "⚠️ Exhausted! You retreated to the dojo to rest. Health fully restored.",
+      logLevelUp: "⛩️ Breakthrough! Ascended to Lv.{level} ({rank})! Gained 2 Talent Points!",
+      logLootItem: "🎁 Loot gathered: [{item}] x{count}",
+      logLootFood: "🍙 Rations found: [{item}] x{count}",
+      logZoneUnlock: "🏆 Frontier Breached! Unlocked new campaign: Act {zone}!",
+      logStoryMilestone: "📜 [Story Progression] {speaker}: \"{text}\"",
+      logStoryActComplete: "📜 [Destiny Scroll] Conquered Act {act} history chapter!",
+      logGrandEnding: "🏆 [Grand Historical Ending] {title}! Received {karma} Karma Flame!",
+      logEquipSword: "🗡️ Blade Equipped! Drew legendary katana [{sword}], battle aura surging!",
+      logSharpenSword: "✨ Polished with whetstone! [{sword}] sharpened to +{refine}!",
+      logDismantleSword: "🔥 Melted in the forge! Dismantled [{tier}] {sword} for {steel} Tamahagane and {gold} Gold!",
+      logConsumeItem: "🍙 Consumed [{item}], recovered {amount} HP!",
+      logBuffSpeed: "💊 Took [{item}], speed boosted by 35% ({duration}s)!",
+      logBuffAtk: "🍶 Drank [{item}], ATK boosted by 50% ({duration}s)!",
+      logBuffGold: "🍵 Savored [{item}], Gold drops doubled ({duration}s)!",
+      logReincarnate: "🌀 [Reincarnation Complete] Reborn anew! Gained {karma} Karma Flame!",
+      logUpgradePerk: "🔥 Consecrated Shrine [{perk}] to Lv.{level}! Permanent divine boon active!",
+      logClaimAchievement: "🏆 [Achievement Claimed] Claimed [{name}]! Gained 🪙 +{gold}, 💎 +{steel}{karma}!",
+      logClaimAllAchievements: "🎁 [Claim All] Claimed {count} achievements! Gained 🪙 +{gold}, 💎 +{steel}, 🌀 +{karma}!",
+      logVowFaction: "⚔️ [Destiny Vow] You pledged to [{faction}]! Gained faction blessing: {desc}!",
+      logCodexAdd: "📖 [Sword Codex] New blade cataloged: [{tier}] {name}! Permanent stats increased!",
+      logAcquireSword: "🗡️ {source}: Acquired Katana [{tier}] {name} ({type} / {smith})!",
+      sourceBossLoot: "Boss Trophy"
     },
 
     "ja": {
@@ -661,7 +743,48 @@ window.I18N = {
       settingSoundOn: "🔊 効果音：有効",
       settingSoundOff: "🔇 効果音：消音",
       settingSoundShort: "効果音",
-      soundToggleTip: "効果音の切替"
+      settingSoundOffShort: "消音",
+      soundToggleTip: "効果音の切替",
+
+      // 戦闘画面ラベル＆討伐戦記ログ
+      labelSwordExp: "剣理:",
+      labelPlayerHp: "武士体力:",
+      zoneSelectLabel: "戦域:",
+      btnManualSlashSub: "(タップ / Spaceキー)",
+      combatLogHeader: "📜 討伐戦記",
+      combatLogClear: "消去",
+      bossBattleFighting: "⚔️ 頭目との死闘中...",
+      bossBattleReady: "⚡ 頭目戦が解禁！タップして抜刀！",
+      bossBattleProgress: "配下討伐で頭目を誘引 ({current}/{total})",
+      comboText: "{combo} 連斬！",
+      logDefeatEnemy: "⚔️ 「{title} {name}」を討伐！<b>{gold} 小判</b>、<b>{steel} 玉鋼</b>、<b>{exp} 経験値</b>を獲得！",
+      logCritStrike: "💥 刃光一閃！【{weapon}】会心の一太刀、「{enemy}」に <b style=\"color:#ef4444\">{damage}</b> の痛打！",
+      logManualStrike: "⚡ 疾風抜刀！【{weapon}】が「{enemy}」を一閃、{damage} ダメージ！",
+      logBossIncoming: "【強敵襲来】{title} {name} 参上！制限時間 {time} 秒！",
+      logBossTimeout: "⏳ 頭目狂暴化！制限時間切れ、討伐失敗！",
+      logPlayerDefeated: "⚠️ 気力尽きたり！一旦道場へ退き調養す。体力が全快した。",
+      logLevelUp: "⛩️ 開眼突破！境界がLv.{level}（{rank}）に到達！天賦ポイントを2獲得！",
+      logLootItem: "🎁 戦利品を獲得：【{item}】x{count}",
+      logLootFood: "🍙 兵糧を拾得：【{item}】x{count}",
+      logZoneUnlock: "🏆 境界突破！新たな合戦場が解禁：第 {zone} 幕！",
+      logStoryMilestone: "📜 【物語進行】{speaker}：「{text}」",
+      logStoryActComplete: "📜 【運命絵巻】第 {act} 幕の歴史篇章を突破！",
+      logGrandEnding: "🏆 【歴史大団円達成】{title}！輪廻の魂火 {karma} を獲得！",
+      logEquipSword: "🗡️ 帯刀一新！名刀【{sword}】を抜き放ち、気迫満つ！",
+      logSharpenSword: "✨ 砥石で丹念に研ぎ澄ます！佩刀【{sword}】が +{refine} に到達！切れ味大幅上昇！",
+      logDismantleSword: "🔥 炉に投ず！【{tier}】{sword} を分解し、玉鋼 {steel}、小判 {gold} を回収！",
+      logConsumeItem: "🍙 【{item}】を食し、体力が {amount} 回復！",
+      logBuffSpeed: "💊 【{item}】を服用、抜刀神速が35%向上（{duration}秒間）！",
+      logBuffAtk: "🍶 【{item}】を豪飲、殺気が滾り攻撃力+50%（{duration}秒間）！",
+      logBuffGold: "🍵 【{item}】を喫す、討伐小判が2倍に倍増（{duration}秒間）！",
+      logReincarnate: "🌀 【剣心輪廻達成】転生を果たした！魂火 {karma} を獲得！天賦と能力が大幅強化！",
+      logUpgradePerk: "🔥 輪廻神籬【{perk}】をLv.{level}に強化！恒久の加護を獲得！",
+      logClaimAchievement: "🏆 【実績達成】「{name}」を受領！🪙 +{gold}、💎 +{steel}{karma} を獲得！",
+      logClaimAllAchievements: "🎁 【実績一括受領】{count} 件の実績を受領！🪙 +{gold}、💎 +{steel}、🌀 +{karma} を獲得！",
+      logVowFaction: "⚔️ 【天命選択】誓いを立て【{faction}】へ身を投じた！勢力加護「{desc}」を獲得！",
+      logCodexAdd: "📖 【名刀鑑賞録】新たな名刀を登録：【{tier}】{name}！全能力が永久向上！",
+      logAcquireSword: "🗡️ {source}：名刀【{tier}】{name}（{type}・刀工：{smith}）を獲得！",
+      sourceBossLoot: "頭目の戦利品"
     }
   },
 
@@ -1781,4 +1904,159 @@ window.getAchievementText = function(ach, lang) {
     return ach.translations[lang];
   }
   return ach.translations ? ach.translations["zh-TW"] : { name: ach.name, desc: ach.desc };
+};
+
+// 敵人多語言名稱與稱號資料庫
+window.I18N.enemies = {
+  "持棒野盜": {
+    "zh-TW": { name: "持棒野盜", title: "雜寇" },
+    "en": { name: "Club-Wielding Bandit", title: "Thug" },
+    "ja": { name: "棒持ちの野盗", title: "雑魚" }
+  },
+  "竹林野伏": {
+    "zh-TW": { name: "竹林野伏", title: "強盜" },
+    "en": { name: "Bamboo Grove Brigand", title: "Robber" },
+    "ja": { name: "竹林の野伏", title: "山賊" }
+  },
+  "落魄足輕": {
+    "zh-TW": { name: "落魄足輕", title: "逃兵" },
+    "en": { name: "Fallen Ashigaru", title: "Deserter" },
+    "ja": { name: "落魄れの足軽", title: "逃亡兵" }
+  },
+  "破戒僧・豪圓": {
+    "zh-TW": { name: "破戒僧・豪圓", title: "【第一幕 守門狂僧】" },
+    "en": { name: "Fallen Monk Gouen", title: "【Act I Gatekeeper Monk】" },
+    "ja": { name: "破戒僧・豪円", title: "【第一幕 守門の狂僧】" }
+  },
+  "下忍・影縫": {
+    "zh-TW": { name: "下忍・影縫", title: "刺客" },
+    "en": { name: "Shadow Genin: Kagenui", title: "Assassin" },
+    "ja": { name: "下忍・影縫い", title: "刺客" }
+  },
+  "伏見狐火靈": {
+    "zh-TW": { name: "伏見狐火靈", title: "妖狐" },
+    "en": { name: "Fushimi Kitsune Fire Spirit", title: "Kitsune" },
+    "ja": { name: "伏見の狐火霊", title: "妖狐" }
+  },
+  "手裏劍突擊者": {
+    "zh-TW": { name: "手裏劍突擊者", title: "精銳" },
+    "en": { name: "Shuriken Striker", title: "Elite" },
+    "ja": { name: "手裏剣突撃兵", title: "精鋭" }
+  },
+  "甲賀上忍・夜叉丸": {
+    "zh-TW": { name: "甲賀上忍・夜叉丸", title: "【第二幕 幻影忍魁】" },
+    "en": { name: "Koga Jonin Yashamaru", title: "【Act II Phantom Shinobi】" },
+    "ja": { name: "甲賀上忍・夜叉丸", title: "【第二幕 幻影の忍魁】" }
+  },
+  "倒幕尊王派志士": {
+    "zh-TW": { name: "倒幕尊王派志士", title: "激進武士" },
+    "en": { name: "Sonno-Joi Rebel Samurai", title: "Radical" },
+    "ja": { name: "倒幕尊皇派志士", title: "過激武士" }
+  },
+  "柳生門叛徒劍客": {
+    "zh-TW": { name: "柳生門叛徒劍客", title: "新陰流" },
+    "en": { name: "Yagyu Renegade Swordsman", title: "Shinkage-ryu" },
+    "ja": { name: "柳生門の破門剣客", title: "新陰流" }
+  },
+  "破戒新選組員": {
+    "zh-TW": { name: "破戒新選組員", title: "脫藩狼" },
+    "en": { name: "Rogue Shinsengumi Member", title: "Wolf" },
+    "ja": { name: "破戒の新選組隊士", title: "脱藩狼" }
+  },
+  "示現流狂徒・大石": {
+    "zh-TW": { name: "示現流狂徒・大石", title: "【第三幕 斬人太刀】" },
+    "en": { name: "Jigen-ryu Madman Oishi", title: "【Act III Manslayer Blade】" },
+    "ja": { name: "示現流の狂徒・大石", title: "【第三幕 人斬り太刀】" }
+  },
+  "越後雪嶺野狼": {
+    "zh-TW": { name: "越後雪嶺野狼", title: "魔獸" },
+    "en": { name: "Echigo Ridge Wolf", title: "Beast" },
+    "ja": { name: "越後雪嶺の野狼", title: "魔獣" }
+  },
+  "毘沙門堂僧兵": {
+    "zh-TW": { name: "毘沙門堂僧兵", title: "破戒兵" },
+    "en": { name: "Bishamondo Warrior Monk", title: "Monk" },
+    "ja": { name: "毘沙門堂の僧兵", title: "破戒僧兵" }
+  },
+  "上杉家旗本鐵騎": {
+    "zh-TW": { name: "上杉家旗本鐵騎", title: "騎馬武士" },
+    "en": { name: "Uesugi Retainer Cavalry", title: "Cavalry" },
+    "ja": { name: "上杉家旗本の鉄騎", title: "騎馬武士" }
+  },
+  "雪將軍・長尾景連": {
+    "zh-TW": { name: "雪將軍・長尾景連", title: "【第四幕 霜雪刀聖】" },
+    "en": { name: "Snow General Nagao Kagetomo", title: "【Act IV Frost Blade Saint】" },
+    "ja": { name: "雪将軍・長尾景連", title: "【第四幕 霜雪の刀聖】" }
+  },
+  "焦黑魔化足輕": {
+    "zh-TW": { name: "焦黑魔化足輕", title: "業火怨偶" },
+    "en": { name: "Charred Demonic Ashigaru", title: "Flame Specter" },
+    "ja": { name: "焦土の魔化足軽", title: "業火の怨霊" }
+  },
+  "紅蓮鐵砲眾": {
+    "zh-TW": { name: "紅蓮鐵砲眾", title: "南蠻火槍" },
+    "en": { name: "Crimson Matchlock Gunner", title: "Arquebusier" },
+    "ja": { name: "紅蓮の鉄砲衆", title: "南蛮火縄銃" }
+  },
+  "侍衛・焦黑蘭丸": {
+    "zh-TW": { name: "侍衛・焦黑蘭丸", title: "忠魂" },
+    "en": { name: "Retainer: Scorched Ranmaru", title: "Loyal Soul" },
+    "ja": { name: "近習・焦熱の蘭丸", title: "忠魂" }
+  },
+  "第六天魔王・信長殘影": {
+    "zh-TW": { name: "第六天魔王・信長殘影", title: "【第五幕 人間五十年】" },
+    "en": { name: "Demon King: Phantom of Nobunaga", title: "【Act V Life of 50 Years】" },
+    "ja": { name: "第六天魔王・信長の残影", title: "【第五幕 人間五十年】" }
+  },
+  "戰死赤備猛將": {
+    "zh-TW": { name: "戰死赤備猛將", title: "修羅亡魂" },
+    "en": { name: "Fallen Akazonae Warrior", title: "Shura Wraith" },
+    "ja": { name: "討死せる赤備えの猛将", title: "修羅の亡霊" }
+  },
+  "影武者怨靈": {
+    "zh-TW": { name: "影武者怨靈", title: "幻魔" },
+    "en": { name: "Kagemusha Vengeful Spirit", title: "Phantom" },
+    "ja": { name: "影武者の怨霊", title: "幻魔" }
+  },
+  "百戰無雙侍魂": {
+    "zh-TW": { name: "百戰無雙侍魂", title: "古代英靈" },
+    "en": { name: "Battle-Hardened Samurai Soul", title: "Heroic Spirit" },
+    "ja": { name: "百戦無双の侍魂", title: "古代英霊" }
+  },
+  "赤鬼修羅・井伊殘念": {
+    "zh-TW": { name: "赤鬼修羅・井伊殘念", title: "【第六幕 戰場鬼神】" },
+    "en": { name: "Red Demon Shura: Ii's Spite", title: "【Act VI War Fiend】" },
+    "ja": { name: "赤鬼修羅・井伊の執念", title: "【第六幕 戦場の鬼神】" }
+  },
+  "將軍禁衛直參旗本": {
+    "zh-TW": { name: "將軍禁衛直參旗本", title: "御前劍術" },
+    "en": { name: "Shogunal Guard: Jikisan Hatamoto", title: "Imperial Blade" },
+    "ja": { name: "将軍禁衛・直参旗本", title: "御前試合の達人" }
+  },
+  "御庭番頭目": {
+    "zh-TW": { name: "御庭番頭目", title: "暗黑忍首" },
+    "en": { name: "Oniwaban Chief", title: "Shadow Headmaster" },
+    "ja": { name: "御庭番の頭領", title: "闇の忍頭" }
+  },
+  "新陰流宗家之影": {
+    "zh-TW": { name: "新陰流宗家之影", title: "活人劍" },
+    "en": { name: "Shadow of the Shinkage Grandmaster", title: "Life-Giving Sword" },
+    "ja": { name: "新陰流宗家の幻影", title: "活人剣" }
+  },
+  "天下無雙・宮本武藏之魂": {
+    "zh-TW": { name: "天下無雙・宮本武藏之魂", title: "【最終章 二天一流極意】" },
+    "en": { name: "Peerless Soul: Miyamoto Musashi", title: "【Finale Niten Ichi-ryu Mystery】" },
+    "ja": { name: "天下無双・宮本武蔵の英霊", title: "【最終章 二天一流の極意】" }
+  }
+};
+
+window.getEnemyText = function(enemy, lang) {
+  if (!enemy) return { name: "", title: "" };
+  lang = lang || window.getLang();
+  const rawName = enemy.rawName || enemy.name;
+  const entry = window.I18N.enemies && window.I18N.enemies[rawName];
+  if (entry && entry[lang]) {
+    return entry[lang];
+  }
+  return { name: enemy.name || "", title: enemy.title || "" };
 };
