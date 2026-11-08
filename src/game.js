@@ -1063,6 +1063,18 @@
       if (expText) {
         expText.innerText = `${this.player.exp} / ${this.player.maxExp}`;
       }
+
+      // 帳號綁定狀態按鈕
+      const authText = document.getElementById('header-auth-text');
+      if (authText) {
+        if (this.player.googleProfile && this.player.googleProfile.name) {
+          authText.innerText = '✔️ ' + this.player.googleProfile.name.slice(0, 5);
+        } else if (this.player.name && this.player.name !== '無雙武士') {
+          authText.innerText = '✔️ ' + this.player.name.slice(0, 5);
+        } else {
+          authText.innerText = '登入綁定';
+        }
+      }
     }
 
     /**
@@ -1356,9 +1368,91 @@
         this.showToast(`🎉 成功以 Google 帳號【${profile.name}】登入！角色已安全綁定`, 'success');
         this.updateHeaderUI();
         this.save();
+        this.closeAuthModal();
       } catch (e) {
         console.error('Google decode failed', e);
       }
+    }
+
+    openAuthModal() {
+      const modal = document.getElementById('auth-modal');
+      const statusDisplay = document.getElementById('auth-status-display');
+      const nameInput = document.getElementById('custom-samurai-name-input');
+      const clientIdInput = document.getElementById('google-client-id-input');
+
+      if (statusDisplay) {
+        if (this.player.googleProfile && this.player.googleProfile.name) {
+          statusDisplay.innerHTML = `
+            <div style="color: #4ade80; font-weight: 700; margin-bottom: 4px;">✔️ 已成功綁定 Google 官方帳號</div>
+            <div style="font-size: 0.9rem;">使用者：<strong>${this.player.googleProfile.name}</strong> (${this.player.googleProfile.email})</div>
+          `;
+        } else {
+          statusDisplay.innerHTML = `
+            <div style="color: var(--gold-accent); font-weight: 700; margin-bottom: 4px;">👤 當前角色稱號：${this.player.name}</div>
+            <div style="font-size: 0.85rem; color: var(--text-muted);">存檔儲存狀態：本機安全儲存 (已自動同步備份)</div>
+          `;
+        }
+      }
+
+      if (nameInput) nameInput.value = this.player.name;
+      if (clientIdInput) clientIdInput.value = (this.player.settings && this.player.settings.googleClientId) || '';
+      if (modal) modal.style.display = 'flex';
+    }
+
+    closeAuthModal() {
+      const modal = document.getElementById('auth-modal');
+      if (modal) modal.style.display = 'none';
+    }
+
+    saveCustomName() {
+      const nameInput = document.getElementById('custom-samurai-name-input');
+      if (!nameInput || !nameInput.value.trim()) {
+        this.showToast('請輸入有效的武士名稱！', 'warning');
+        return;
+      }
+      this.player.name = nameInput.value.trim();
+      this.updateHeaderUI();
+      this.save();
+      this.showToast(`已成功綁定稱號為【${this.player.name}】！`, 'success');
+      this.openAuthModal();
+    }
+
+    startGoogleLoginWithClientId() {
+      const clientIdInput = document.getElementById('google-client-id-input');
+      const clientId = clientIdInput ? clientIdInput.value.trim() : '';
+
+      if (!clientId || clientId.includes('demo-client-id')) {
+        this.showToast('尚未填寫有效的 Google Client ID！建議直接使用【途徑一】快速命名綁定，無須任何設定！', 'warning');
+        return;
+      }
+
+      if (!this.player.settings) this.player.settings = {};
+      this.player.settings.googleClientId = clientId;
+      this.save();
+
+      if (window.google && window.google.accounts && window.google.accounts.id) {
+        try {
+          window.google.accounts.id.initialize({
+            client_id: clientId,
+            callback: (res) => this.handleGoogleLogin(res)
+          });
+          window.google.accounts.id.prompt();
+          this.showToast('已啟動 Google 官方安全登入！', 'info');
+        } catch (e) {
+          console.error('Google init failed', e);
+          this.showToast('Google 登入初始化失敗，請檢查 Client ID 是否正確。', 'error');
+        }
+      } else {
+        this.showToast('正在載入 Google 認證服務，請稍候重試', 'info');
+      }
+    }
+
+    clearAuthBinding() {
+      this.player.googleProfile = null;
+      this.save();
+      this.updateHeaderUI();
+      this.openAuthModal();
+      this.showToast('已解除 Google 帳號綁定', 'info');
     }
 
     /**
