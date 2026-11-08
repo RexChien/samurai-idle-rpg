@@ -17,6 +17,7 @@ loadScript('data/gear.js');
 loadScript('data/classes.js');
 loadScript('data/campaign.js');
 loadScript('data/rewards.js');
+loadScript('data/quests_pvp.js');
 
 test('1. Diablo-Style Gear Database (data/gear.js)', async (t) => {
   await t.test('defines 6 core equipment slots', () => {
@@ -154,3 +155,51 @@ test('4. Rewards, Achievements & Daily Sign-in (data/rewards.js)', async (t) => 
     assert.equal(window.DAILY_SIGNIN_REWARDS[6].title, '天下無雙');
   });
 });
+
+test('5. Progressive Automation, 100h Story Quests, Five Rings Stances & PvP/Abyss (data/quests_pvp.js)', async (t) => {
+  await t.test('defines 5 automation tiers (Tier 0 manual to Tier 4 godspeed)', () => {
+    assert.ok(window.AUTOMATION_TIERS);
+    assert.equal(window.AUTOMATION_TIERS[0].intervalMs, 0);
+    assert.equal(window.AUTOMATION_TIERS[1].intervalMs, 1200);
+    assert.equal(window.AUTOMATION_TIERS[2].intervalMs, 650);
+    assert.equal(window.AUTOMATION_TIERS[3].intervalMs, 500);
+    assert.equal(window.AUTOMATION_TIERS[4].intervalMs, 350);
+  });
+
+  await t.test('defines 30 Main Story Quests across 8 volumes and 20 Side Quests', () => {
+    assert.ok(window.MAIN_QUESTS);
+    assert.equal(window.MAIN_QUESTS.length, 30);
+    assert.equal(window.MAIN_QUESTS[0].reward.unlockAutomationTier, 1);
+    assert.equal(window.MAIN_QUESTS[2].reward.unlockAutomationTier, 2);
+    assert.equal(window.MAIN_QUESTS[4].reward.unlockAutomationTier, 3);
+    assert.equal(window.MAIN_QUESTS[8].reward.unlockAutomationTier, 4);
+
+    assert.ok(window.SIDE_QUESTS);
+    assert.equal(window.SIDE_QUESTS.length, 20);
+  });
+
+  await t.test('defines Miyamoto Musashi Five Rings Stances with tactical counter cycle and 12 Samurai Arts', () => {
+    assert.ok(window.FIVE_RINGS_STANCES);
+    const keys = Object.keys(window.FIVE_RINGS_STANCES);
+    assert.deepEqual(keys, ['earth', 'water', 'fire', 'wind', 'void']);
+    assert.equal(window.FIVE_RINGS_STANCES.earth.counters, 'fire');
+    assert.equal(window.FIVE_RINGS_STANCES.water.counters, 'earth');
+
+    assert.ok(window.SAMURAI_ARTS);
+    assert.equal(window.SAMURAI_ARTS.length, 12);
+  });
+
+  await t.test('simulates tactical PvP duel and generates 1000-floor Abyssal Rift bosses', () => {
+    const p1 = { name: '宮本武藏', stance: 'water', equippedArts: ['art_tsubame'], stats: { atk: 500, def: 200, maxHp: 3000, critRate: 30, critDmg: 100 } };
+    const p2 = { name: '佐佐木小次郎', stance: 'earth', arts: ['art_guren'], stats: { atk: 400, def: 180, maxHp: 2500, critRate: 20, critDmg: 80 } };
+    const res = window.simulateSamuraiDuel(p1, p2);
+    assert.equal(typeof res.isWin, 'boolean');
+    assert.ok(res.log.length >= 2);
+
+    const floor100 = window.getAbyssFloorData(100);
+    assert.equal(floor100.floor, 100);
+    assert.ok(floor100.stats.maxHp > 10000);
+    assert.ok(floor100.recommendedStanceId);
+  });
+});
+

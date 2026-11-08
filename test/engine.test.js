@@ -80,6 +80,7 @@ loadScript('data/gear.js');
 loadScript('data/classes.js');
 loadScript('data/campaign.js');
 loadScript('data/rewards.js');
+loadScript('data/quests_pvp.js');
 loadScript('src/audio.js');
 loadScript('src/market_chat.js');
 loadScript('src/game.js');
@@ -292,8 +293,52 @@ test('7. Core Game Engine (src/game.js)', async (t) => {
     assert.equal(game.player.act, 2);
   });
 
-  await t.test('switches among all 5 core tabs cleanly', () => {
-    const tabs = ['battle', 'gear', 'talents', 'market', 'achievements'];
+  await t.test('starts at Automation Tier 0 (manual slash) and unlocks Tier 1 Auto-Slash via Main Quest M01', () => {
+    assert.equal(game.player.automationTier, 0);
+    assert.equal(game.player.autoSlashEnabled, false);
+
+    // Perform 10 manual slashes and ensure >= 3 kills to satisfy M01 objectives
+    for (let i = 0; i < 10; i++) {
+      game.manualSlash();
+    }
+    game.player.statsTracked.totalKills = Math.max(3, game.player.statsTracked.totalKills);
+    assert.ok(game.player.statsTracked.manualSlashes >= 10);
+
+    const claimed = game.claimMainQuest();
+    assert.equal(claimed, true);
+    assert.equal(game.player.automationTier, 1);
+    assert.equal(game.player.autoSlashEnabled, true);
+    assert.equal(game.player.mainQuestIndex, 1);
+    assert.equal(game.player.unlockedChronicles.length, 1);
+  });
+
+  await t.test('supports Five Rings Stance switching, Samurai Arts loadouts, PvP Arena, Duel Codes, and Abyssal Rift', () => {
+    game.selectStance('fire');
+    assert.equal(game.player.stance, 'fire');
+
+    game.player.level = 30;
+    game.toggleEquipArt('art_raikiri');
+    assert.ok(game.player.equippedArts.includes('art_raikiri'));
+
+    const duelRes = game.challengePvPOpponent(0);
+    assert.ok(duelRes);
+    assert.equal(typeof duelRes.won, 'boolean');
+
+    const code = game.exportPvPDuelCode();
+    assert.ok(code.startsWith('DUEL_'));
+    const codeDuelRes = game.importAndDuelPvPCode(code);
+    assert.ok(codeDuelRes);
+
+    // Boost stats and clear Abyss Floor 1
+    game.player.level = 50;
+    const abyssRes = game.challengeAbyssFloor();
+    assert.ok(abyssRes);
+    assert.equal(abyssRes.won, true);
+    assert.equal(game.player.abyss.floor, 2);
+  });
+
+  await t.test('switches among all 7 core tabs cleanly', () => {
+    const tabs = ['battle', 'quests', 'gear', 'talents', 'pvp', 'market', 'achievements'];
     tabs.forEach(tName => {
       game.switchTab(tName);
       assert.equal(game.activeTab, tName);
@@ -313,3 +358,4 @@ test('7. Core Game Engine (src/game.js)', async (t) => {
 
   game.destroy();
 });
+
