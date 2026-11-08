@@ -1,2812 +1,1472 @@
-// 《無雙劍心：武士之刃》遊戲核心邏輯引擎 (Samurai Blade Game Engine)
+/**
+ * 《武士之刃：無雙斬》（Samurai Blade: Resurrected）核心遊戲引擎 (src/game.js)
+ * 特色：
+ * 1. 暗黑破壞神式 6 大品質掉寶與暗金光柱
+ * 2. 身障友善全自動討伐、一鍵智慧換裝浮動按鈕、自動分解過濾器
+ * 3. 5 大直覺核心分頁、四大武士流派與天賦樹
+ * 4. 暗黑 3 式中下方金邊成就橫幅與歡慶號角
+ * 5. 離線掛機收益結算、Google 一鍵登入與純前端 100% 零帳單保證
+ */
+(function() {
+  'use strict';
 
-class SamuraiGame {
-  constructor() {
-    this.SAVE_KEY = "SAMURAI_BLADE_RPG_SAVE_V1";
-    this.activeTab = "battle"; // battle, forge, dojo, inventory, codex, settings
-    this.audioEnabled = true;
+  class SamuraiGame {
+    constructor() {
+      this.version = '2.0.0-resurrected';
+      this.activeTab = 'battle';
+      this.combatInterval = null;
+      this.currentEnemy = null;
+      this.smartEquipTarget = null;
+      this.achievementQueue = [];
+      this.isShowingAchievement = false;
 
-    // 戰鬥狀態暫存
-    this.combatTimer = null;
-    this.autoSaveTimer = null;
-    this.inBossFight = false;
-    this.bossTimeRemaining = 30;
-    this.bossMaxTime = 30;
-    this.comboCount = 0;
-    this.lastHitTime = 0;
-    this.zoneKillProgress = 0; // 0 to 10
-    this.activeBuffs = {
-      speed: 0,
-      atk: 0,
-      gold: 0
-    };
+      // 初始化音效引擎
+      this.audio = window.SamuraiAudioEngine ? new window.SamuraiAudioEngine() : null;
 
-    // 手動出刀與自律斬擊切換（預設純手動居合模式，體驗刀光劍影手動感）
-    this.autoSlashEnabled = false;
-    this.activeAchFilter = "all";
+      // 初始化玩家數據
+      this.player = this.initDefaultPlayer();
 
-    this.initDefaultState();
-  }
+      // 載入本機存檔
+      this.load();
 
-  // 初始化預設存檔
-  initDefaultState() {
-    this.player = {
-      name: "無名浪人",
-      level: 1,
-      exp: 0,
-      gold: 100,
-      steel: 30,
-      meteorite: 0,
-      skillPoints: 0,
-
-      // 流派天賦 (Dojo Skills)
-      skills: {
-        shinkage: 0,  // 新陰流: +2% 暴擊率 / 級, +5% 暴擊傷害
-        jigen: 0,     // 示現流: +5% 基礎攻擊力 / 級, +3% 破甲
-        rishin: 0     // 天然理心流: +8% 最大體力 / 級, +2% 傷害減免
-      },
-
-      // 裝備位
-      equipped: {
-        weapon: null,
-        head: null,
-        body: null,
-        acc: null
-      },
-
-      // 擁有名刀庫存
-      swordsInventory: [],
-      // 擁有防具庫存
-      armorsInventory: [],
-      // 道具庫存
-      items: {
-        mat_whetstone_rough: 3,
-        mat_whetstone_mid: 1,
-        mat_whetstone_fine: 0,
-        item_onigiri: 5,
-        item_hyourougan: 2,
-        item_sake_onigoroshi: 1,
-        item_matcha: 1
-      },
-
-      // 名刀圖鑑已解鎖 ID
-      codex: ["sword_01"],
-
-      // 統計數據
-      stats: {
-        totalKills: 0,
-        bossKills: 0,
-        swordsForged: 0,
-        totalSharpens: 0,
-        highestZone: 1,
-        currentZone: 1
-      },
-
-      // 榮譽成就系統
-      achievements: {
-        unlocked: [],
-        claimed: [],
-        highestCombo: 0
-      },
-
-      // 命運分歧故事線 (Branching Storyline)
-      story: {
-        currentAct: 1,
-        faction: "unaligned", // unaligned, shogunate, ishin, shura
-        completedActs: [],
-        unlockedEndings: [],
-        history: []
-      },
-
-      // 劍心輪迴與轉生神龕 (Prestige & Permanent Upgrades)
-      prestige: {
-        reincarnationCount: 0,
-        karma: 0, // 輪迴魂火
-        totalKarmaEarned: 0,
-        perks: {
-          perk_atk: 0,
-          perk_hp: 0,
-          perk_speed: 0,
-          perk_crit: 0,
-          perk_forge: 0,
-          perk_wealth: 0,
-          perk_wisdom: 0,
-          perk_boss_slayer: 0
-        }
-      },
-
-      lastTimestamp: Date.now()
-    };
-
-    // 初始配發新手木刀與草帽
-    const starterSword = this.createSwordInstance("sword_01");
-    this.player.swordsInventory.push(starterSword);
-    this.player.equipped.weapon = starterSword;
-
-    const starterHelm = window.ITEMS_DATA.helmets[0];
-    const starterArmor = window.ITEMS_DATA.armors[0];
-    this.player.equipped.head = starterHelm;
-    this.player.equipped.body = starterArmor;
-
-    this.currentEnemy = null;
-    this.playerCurrentHp = 100;
-  }
-
-  // 創建名刀實例（包含強化等級與隨機詞條）
-  createSwordInstance(swordId, refine = 0) {
-    const base = window.SWORDS_DATA.find(s => s.id === swordId);
-    if (!base) return null;
-    return {
-      instanceId: "sw_" + Date.now() + "_" + Math.floor(Math.random() * 10000),
-      id: base.id,
-      name: base.name,
-      romaji: base.romaji,
-      tier: base.tier,
-      tierName: base.tierName,
-      color: base.color,
-      type: base.type,
-      smith: base.smith,
-      era: base.era || "日本古作",
-      master: base.master || "無名武士",
-      hamon: base.hamon || "直刃",
-      svg: base.svg || "",
-      baseAtk: base.atk,
-      refine: refine,
-      crit: base.crit,
-      critDmg: base.critDmg,
-      speed: base.speed,
-      passive: base.passive,
-      passiveDesc: base.passiveDesc,
-      lore: base.lore
-    };
-  }
-
-  // 計算玩家武士位階稱號
-  getRankTitle(level) {
-    if (window.getRankTitle) {
-      return window.getRankTitle(level, window.getLang ? window.getLang() : "zh-TW");
-    }
-    if (level < 10) return "無宿浪士";
-    if (level < 25) return "足輕組頭";
-    if (level < 45) return "直參旗本";
-    if (level < 65) return "精銳劍士";
-    if (level < 85) return "當世劍豪";
-    if (level < 105) return "一代劍聖";
-    return "天下無雙・修羅";
-  }
-
-  // 計算升級所需經驗值
-  getRequiredExp(level) {
-    return Math.floor(60 * Math.pow(1.22, level - 1) + (level - 1) * 35);
-  }
-
-  // 計算角色全屬性（裝備 + 流派 + 增益）
-  getCalculatedStats() {
-    let baseHp = 150 + (this.player.level - 1) * 35;
-    let baseAtk = 20 + (this.player.level - 1) * 8;
-    let baseDef = 5 + (this.player.level - 1) * 3;
-    let crit = 5;
-    let critDmg = 140; // %
-    let speed = 1.0; // 攻速倍率
-    let armorPen = 0; // 破甲 %
-    let lifesteal = 0; // 吸血 %
-
-    // 武器屬性
-    const weapon = this.player.equipped.weapon;
-    if (weapon) {
-      const sharpenAtk = weapon.refine * 15;
-      baseAtk += (weapon.baseAtk + sharpenAtk);
-      crit += weapon.crit;
-      critDmg += (weapon.critDmg - 100);
-      speed *= weapon.speed;
-
-      // 武器專屬被動加成
-      if (weapon.id === "sword_04") baseAtk = Math.floor(baseAtk * 1.1); // 和泉守兼定 +10%
-      if (weapon.id === "sword_05") speed *= 1.1; // 加州清光
-      if (weapon.id === "sword_07") speed *= 1.15; // 堀川國廣
-      if (weapon.id === "sword_08") armorPen += 25; // 同田貫正國破甲
-      if (weapon.id === "sword_12") lifesteal += 15; // 千子村正吸血
-      if (weapon.id === "sword_20") lifesteal += 25; // 妙法村正吸血
-      if (weapon.id === "sword_21") armorPen += 100; // 十拳劍全穿透
-    }
-
-    // 防具屬性
-    const head = this.player.equipped.head;
-    if (head) {
-      baseHp += (head.hp || 0);
-      baseDef += (head.def || 0);
-      crit += (head.crit || 0);
-    }
-    const body = this.player.equipped.body;
-    if (body) {
-      baseHp += (body.hp || 0);
-      baseDef += (body.def || 0);
-    }
-    const acc = this.player.equipped.acc;
-    if (acc) {
-      baseHp += (acc.hp || 0);
-      baseAtk += (acc.atk || 0);
-      critDmg += (acc.critDmg || 0);
-    }
-
-    // 流派天賦加成
-    // 新陰流
-    crit += this.player.skills.shinkage * 2;
-    critDmg += this.player.skills.shinkage * 5;
-    // 示現流
-    baseAtk = Math.floor(baseAtk * (1 + this.player.skills.jigen * 0.05));
-    armorPen += this.player.skills.jigen * 3;
-    // 天然理心流
-    baseHp = Math.floor(baseHp * (1 + this.player.skills.rishin * 0.08));
-    baseDef += this.player.skills.rishin * 5;
-
-    // 料理/藥物 Buff
-    if (this.activeBuffs.atk > 0) baseAtk = Math.floor(baseAtk * 1.5);
-    if (this.activeBuffs.speed > 0) speed *= 1.35;
-
-    // 圖鑑收集羈絆加成
-    const codexCount = this.player.codex.length;
-    baseAtk += codexCount * 5;
-    baseHp += codexCount * 30;
-
-    // 命運陣營專屬被動庇佑 (Story Faction Blessings)
-    if (this.player.story && this.player.story.faction) {
-      const f = this.player.story.faction;
-      if (f === "shogunate") {
-        baseHp = Math.floor(baseHp * 1.35);
-        baseDef = Math.floor(baseDef * 1.30);
-      } else if (f === "ishin") {
-        baseAtk = Math.floor(baseAtk * 1.35);
-        speed *= 1.20;
-      } else if (f === "shura") {
-        critDmg += 75;
-        armorPen += 40;
+      // 初始化拍賣與聊天系統
+      if (window.MarketChatManager) {
+        this.marketChat = new window.MarketChatManager(this);
       }
+
+      // 初始化介面與事件
+      this.initUI();
+      this.setupControls();
+
+      // 檢查離線收益
+      this.processOfflineProgress();
+
+      // 啟動全自動討伐戰鬥迴圈
+      this.startCombatLoop();
+
+      // 定時自動存檔 (每 10 秒)
+      this.autoSaveInterval = setInterval(() => this.save(), 10000);
+      if (typeof this.autoSaveInterval.unref === 'function') this.autoSaveInterval.unref();
     }
 
-    // 輪迴天賦神龕永久加成 (Prestige Altar Perks)
-    if (this.player.prestige && this.player.prestige.perks) {
-      const perks = this.player.prestige.perks;
-      if (perks.perk_atk > 0) baseAtk = Math.floor(baseAtk * (1 + perks.perk_atk * 0.15));
-      if (perks.perk_hp > 0) baseHp = Math.floor(baseHp * (1 + perks.perk_hp * 0.20));
-      if (perks.perk_speed > 0) speed *= (1 + perks.perk_speed * 0.08);
-      if (perks.perk_crit > 0) {
-        crit += perks.perk_crit * 2;
-        critDmg += perks.perk_crit * 15;
-      }
-      if (perks.perk_boss_slayer > 0) armorPen += perks.perk_boss_slayer * 4;
-    }
-
-    return {
-      maxHp: baseHp,
-      atk: baseAtk,
-      def: baseDef,
-      crit: Math.min(85, crit),
-      critDmg: critDmg,
-      speed: Math.max(0.6, Math.min(2.5, speed)),
-      armorPen: Math.min(90, armorPen),
-      lifesteal: lifesteal
-    };
-  }
-
-  // 生成下一位敵人
-  spawnEnemy(forceBoss = false) {
-    const zone = window.ZONES_DATA.find(z => z.id === this.player.stats.currentZone) || window.ZONES_DATA[0];
-
-    if (forceBoss || (this.inBossFight)) {
-      this.inBossFight = true;
-      this.bossTimeRemaining = this.bossMaxTime;
-      const b = zone.boss;
-      this.currentEnemy = {
-        name: b.name,
-        title: b.title,
-        avatar: b.avatar || "👑",
-        rawName: b.name,
-        rawTitle: b.title,
-        maxHp: b.hp,
-        hp: b.hp,
-        atk: b.atk,
-        def: b.def,
-        exp: b.exp,
-        gold: b.gold,
-        steel: b.steel,
-        isBoss: true,
-        dropSword: b.dropSword,
-        dropItem: b.dropItem
-      };
-      if (window.samuraiAudio) window.samuraiAudio.playBossBoom();
-      const lang = window.getLang ? window.getLang() : "zh-TW";
-      const bText = window.getEnemyText ? window.getEnemyText(this.currentEnemy, lang) : { name: b.name, title: b.title };
-      const bossMsg = window.t ? window.t("logBossIncoming", { title: bText.title, name: bText.name, time: this.bossMaxTime }) : `【強敵來襲】${b.title} ${b.name} 現身！限時 ${this.bossMaxTime} 秒！`;
-      this.addCombatLog(`<span style="color:#ef4444;font-weight:bold;">${bossMsg}</span>`);
-    } else {
-      this.inBossFight = false;
-      const tpl = zone.enemies[Math.floor(Math.random() * zone.enemies.length)];
-      // 隨機浮動 10%
-      const variance = 0.9 + Math.random() * 0.2;
-      const hp = Math.floor(tpl.hp * variance);
-      this.currentEnemy = {
-        name: tpl.name,
-        title: tpl.title,
-        avatar: tpl.avatar || "👹",
-        rawName: tpl.name,
-        rawTitle: tpl.title,
-        maxHp: hp,
-        hp: hp,
-        atk: Math.floor(tpl.atk * variance),
-        def: tpl.def,
-        exp: tpl.exp,
-        gold: tpl.gold,
-        steel: tpl.steel,
-        isBoss: false
+    /**
+     * 初始預設玩家資料
+     */
+    initDefaultPlayer() {
+      return {
+        name: '無雙武士',
+        avatar: 'samurai_commander', // 正統日本武士頭像
+        title: '流浪武士',
+        classId: 'kensei', // 劍聖
+        level: 1,
+        exp: 0,
+        maxExp: 100,
+        gold: 1500,
+        iron: 30, // 玉鋼
+        souls: 5,  // 魂玉
+        talentPoints: 0,
+        talents: {
+          kensei_crit: 0,
+          kensei_dual: 0,
+          kensei_iaido: 0,
+          oni_blood: 0,
+          oni_rend: 0,
+          oni_frenzy: 0,
+          onmyo_barrier: 0,
+          onmyo_fire: 0,
+          onmyo_thunder: 0,
+          daimyo_iron: 0,
+          daimyo_thorns: 0,
+          daimyo_recovery: 0
+        },
+        equipped: {
+          weapon: window.generateGear ? window.generateGear('weapon', 'common', 1) : null,
+          offhand: window.generateGear ? window.generateGear('offhand', 'common', 1) : null,
+          helm: null,
+          armor: window.generateGear ? window.generateGear('armor', 'common', 1) : null,
+          accessory: null,
+          boots: null
+        },
+        inventory: [],
+        act: 1,
+        actProgress: 0,
+        actBossUnlocked: false,
+        cosmetics: {
+          avatar: 'samurai_general',
+          bladeTrail: 'cherry',
+          haoriColor: 'black_gold',
+          title: '流浪武士'
+        },
+        settings: {
+          autoDecomposeCommon: true,
+          autoDecomposeMagic: true,
+          autoDecomposeRare: false,
+          soundEnabled: true
+        },
+        dailySignIn: {
+          lastClaimDate: '',
+          claimedDays: 0
+        },
+        achievements: {},
+        statsTracked: {
+          totalKills: 0,
+          bossKills: 0,
+          gearLooted: 0,
+          legendaryLooted: 0,
+          ancientLooted: 0,
+          marketSales: 0,
+          marketPurchases: 0,
+          upgradesSuccess: 0,
+          highestPower: 0
+        },
+        googleProfile: null,
+        lastSaveTime: Date.now()
       };
     }
 
-    this.updateBattleUI();
-  }
+    /**
+     * 計算玩家綜合戰力與各項戰鬥屬性
+     */
+    getCalculatedStats() {
+      // 基礎數值
+      let baseAtk = 20 + (this.player.level - 1) * 6;
+      let baseDef = 10 + (this.player.level - 1) * 4;
+      let baseHP = 150 + (this.player.level - 1) * 35;
+      let baseSpd = 10;
+      let critRate = 5;
+      let critDmg = 50; // 基礎 150% 暴擊傷害
+      let lifeSteal = 0;
+      let armorPen = 0;
+      let dmgRed = 0;
+      let magicFind = 0;
+      let goldBonus = 0;
 
-  // 玩家普通揮刀／點擊斬擊
-  attack(isManual = false) {
-    if (!this.currentEnemy || this.currentEnemy.hp <= 0) return;
+      // 裝備數值疊加
+      for (const slotKey of Object.keys(this.player.equipped)) {
+        const gear = this.player.equipped[slotKey];
+        if (gear) {
+          const upMul = 1 + (gear.upgradeLevel || 0) * 0.08;
+          baseAtk += (gear.baseAtk || 0) * upMul;
+          baseDef += (gear.baseDef || 0) * upMul;
+          baseHP += (gear.baseHP || 0) * upMul;
+          baseSpd += (gear.baseSpd || 0) * upMul;
 
-    const stats = this.getCalculatedStats();
-
-    // 判斷暴擊
-    const isCrit = Math.random() * 100 < stats.crit;
-    let damage = stats.atk;
-
-    // 防禦減免與破甲計算
-    const effectiveDef = Math.max(0, this.currentEnemy.def * (1 - stats.armorPen / 100));
-    damage = Math.max(1, damage - effectiveDef * 0.5);
-
-    if (isCrit) {
-      damage = Math.floor(damage * (stats.critDmg / 100));
-    } else {
-      // 輕微傷害浮動 ±10%
-      damage = Math.floor(damage * (0.92 + Math.random() * 0.16));
-    }
-
-    // 手動出刀連擊與威力加成 (Tactical Manual Strike Bonus)
-    if (isManual) {
-      const comboBonus = Math.min(2.0, 1 + (this.comboCount * 0.02));
-      damage = Math.floor(damage * comboBonus);
-
-      // 手動斬擊獎勵金小判
-      const manualGold = Math.max(1, Math.floor(2 + (this.player.level || 1)));
-      this.player.gold += manualGold;
-    }
-
-    // 扣除敵人體力
-    this.currentEnemy.hp = Math.max(0, this.currentEnemy.hp - damage);
-
-    // 吸血效果
-    if (stats.lifesteal > 0) {
-      const heal = Math.floor(damage * (stats.lifesteal / 100));
-      this.playerCurrentHp = Math.min(stats.maxHp, this.playerCurrentHp + heal);
-    }
-
-    // 連擊計數
-    const now = Date.now();
-    if (now - this.lastHitTime < 2500) {
-      this.comboCount++;
-    } else {
-      this.comboCount = 1;
-    }
-    this.lastHitTime = now;
-    if (this.player.achievements) {
-      if (this.comboCount > (this.player.achievements.highestCombo || 0)) {
-        this.player.achievements.highestCombo = this.comboCount;
-        this.checkAchievements();
-      }
-    }
-
-    // 音效
-    if (window.samuraiAudio) {
-      if (isCrit) {
-        window.samuraiAudio.playCrit();
-      } else {
-        window.samuraiAudio.playSlash();
-      }
-    }
-
-    // 觸發視覺特效（刀光粒子與飄字）
-    if (window.renderSlashEffect) {
-      window.renderSlashEffect(isCrit);
-    }
-    this.showDamagePopup(damage, isCrit);
-
-    // 戰鬥記錄
-    const lang = window.getLang ? window.getLang() : "zh-TW";
-    const weapon = this.player.equipped.weapon;
-    const weaponName = weapon ? (window.getSwordText ? window.getSwordText(weapon, lang).name : weapon.name) : (lang === "en" ? "Fists" : (lang === "ja" ? "拳脚" : "拳腳"));
-    const enemyText = window.getEnemyText ? window.getEnemyText(this.currentEnemy, lang) : this.currentEnemy;
-    const enemyName = enemyText.name || this.currentEnemy.name;
-
-    if (isCrit) {
-      const critMsg = window.t ? window.t("logCritStrike", { weapon: weaponName, enemy: enemyName, damage: damage }) : `💥 刀芒如電！出刀【${weaponName}】會心一閃，重創「${enemyName}」造成 <b style="color:#ef4444">${damage}</b> 點巨額破甲傷害！`;
-      this.addCombatLog(critMsg);
-    } else if (isManual) {
-      const manualMsg = window.t ? window.t("logManualStrike", { weapon: weaponName, enemy: enemyName, damage: damage }) : `⚡ 玩家疾風拔刀！【${weaponName}】斬中「${enemyName}」造成 ${damage} 點傷害！`;
-      this.addCombatLog(manualMsg);
-    }
-
-    // 檢查敵人是否被擊破
-    if (this.currentEnemy.hp <= 0) {
-      this.handleEnemyDefeated();
-    }
-
-    this.updateBattleUI();
-  }
-
-  // 敵人反擊玩家
-  enemyAttack() {
-    if (!this.currentEnemy || this.currentEnemy.hp <= 0) return;
-
-    const stats = this.getCalculatedStats();
-    let enemyDmg = this.currentEnemy.atk;
-
-    // 玩家防禦減傷公式
-    const defReduction = stats.def / (stats.def + 300);
-    enemyDmg = Math.max(1, Math.floor(enemyDmg * (1 - defReduction)));
-
-    this.playerCurrentHp = Math.max(0, this.playerCurrentHp - enemyDmg);
-
-    if (Math.random() < 0.2 && window.samuraiAudio) {
-      window.samuraiAudio.playClash();
-    }
-
-    if (this.playerCurrentHp <= 0) {
-      this.handlePlayerDefeated();
-    }
-
-    this.updateBattleUI();
-  }
-
-  // 擊破敵人結算
-  handleEnemyDefeated() {
-    const e = this.currentEnemy;
-    this.player.stats.totalKills++;
-
-    // 收益加成
-    let goldGain = e.gold;
-    let expGain = e.exp;
-    let steelGain = e.steel;
-
-    if (this.activeBuffs.gold > 0) goldGain *= 2;
-    if (this.player.equipped.weapon && this.player.equipped.weapon.id === "sword_06") {
-      goldGain = Math.floor(goldGain * 1.15); // 陸奧守吉行加成
-    }
-
-    // 尊皇維新陣營金小判加成 35%
-    if (this.player.story && this.player.story.faction === "ishin") {
-      goldGain = Math.floor(goldGain * 1.35);
-    }
-
-    // 輪迴天賦神龕：大黑天招財加成
-    if (this.player.prestige && this.player.prestige.perks && this.player.prestige.perks.perk_wealth > 0) {
-      const wealthBonus = 1 + this.player.prestige.perks.perk_wealth * 0.25;
-      goldGain = Math.floor(goldGain * wealthBonus);
-      steelGain = Math.floor(steelGain * wealthBonus);
-    }
-
-    this.player.gold += goldGain;
-    this.player.steel += steelGain;
-    this.gainExp(expGain);
-
-    const lang = window.getLang ? window.getLang() : "zh-TW";
-    const eText = window.getEnemyText ? window.getEnemyText(e, lang) : e;
-    const defeatMsg = window.t 
-      ? window.t("logDefeatEnemy", { title: eText.title, name: eText.name, gold: goldGain, steel: steelGain, exp: expGain })
-      : `⚔️ 成功斬殺「${e.title} ${e.name}」！獲得 <b>${goldGain} 金小判</b>、<b>${steelGain} 玉鋼</b>、<b>${expGain} 經驗</b>！`;
-    this.addCombatLog(defeatMsg);
-
-    // 首領擊破
-    if (e.isBoss) {
-      const currentDefeatedZone = this.player.stats.currentZone;
-      this.player.stats.bossKills++;
-      this.inBossFight = false;
-      this.zoneKillProgress = 0;
-
-      // 首領掉落專屬名刀
-      const sourceBoss = window.t ? window.t("sourceBossLoot") : "首領戰利品";
-      if (e.dropSword) {
-        this.acquireSword(e.dropSword, sourceBoss);
-      }
-      if (e.dropItem) {
-        this.acquireItem(e.dropItem, 1);
-      }
-
-      // 如果當前關卡是最高關卡，解鎖下一關
-      if (this.player.stats.currentZone === this.player.stats.highestZone && this.player.stats.highestZone < 7) {
-        this.player.stats.highestZone++;
-        this.player.stats.currentZone++;
-        const unlockMsg = window.t ? window.t("logZoneUnlock", { zone: this.player.stats.currentZone }) : `🏆 突破當前疆界！已解鎖新戰役關卡：第 ${this.player.stats.currentZone} 幕！`;
-        this.addCombatLog(`<span style="color:#f59e0b;font-weight:bold;">${unlockMsg}</span>`);
-      }
-
-      if (window.samuraiAudio) window.samuraiAudio.playLevelUp();
-
-      // 推進歷史章節與大結局判定
-      this.completeAct(currentDefeatedZone);
-    } else {
-      // 普通怪進度增加
-      if (this.zoneKillProgress < 10) {
-        this.zoneKillProgress++;
-        if (this.zoneKillProgress === 5) {
-          this.advanceStoryMilestone(this.player.stats.currentZone);
+          // 詞綴計算
+          if (gear.affixes && Array.isArray(gear.affixes)) {
+            gear.affixes.forEach(aff => {
+              if (aff.stat === 'atkPct') baseAtk *= (1 + aff.val / 100);
+              else if (aff.stat === 'defPct') baseDef *= (1 + aff.val / 100);
+              else if (aff.stat === 'hpPct') baseHP *= (1 + aff.val / 100);
+              else if (aff.stat === 'critRate') critRate += aff.val;
+              else if (aff.stat === 'critDmg') critDmg += aff.val;
+              else if (aff.stat === 'atkSpd') baseSpd += aff.val;
+              else if (aff.stat === 'lifeSteal') lifeSteal += aff.val;
+              else if (aff.stat === 'armorPen') armorPen += aff.val;
+              else if (aff.stat === 'dmgRed') dmgRed += aff.val;
+              else if (aff.stat === 'magicFind') magicFind += aff.val;
+              else if (aff.stat === 'goldBonus') goldBonus += aff.val;
+            });
+          }
         }
       }
 
-      // 一般怪物掉落判定 (15% 磨刀石或飯糰)
-      const dropRoll = Math.random();
-      if (dropRoll < 0.08) {
-        this.acquireItem("mat_whetstone_rough", 1);
-        const itemName = window.getItemText ? window.getItemText("mat_whetstone_rough", lang).name : "荒砥石";
-        const msg = window.t ? window.t("logLootItem", { item: itemName, count: 1 }) : `🎁 搜獲戰利品：獲得【荒砥石】x1`;
-        this.addCombatLog(msg);
-      } else if (dropRoll < 0.16) {
-        this.acquireItem("item_onigiri", 1);
-        const itemName = window.getItemText ? window.getItemText("item_onigiri", lang).name : "梅干飯糰";
-        const msg = window.t ? window.t("logLootFood", { item: itemName, count: 1 }) : `🍙 拾得乾糧：獲得【梅干飯糰】x1`;
-        this.addCombatLog(msg);
-      } else if (dropRoll < 0.19) {
-        this.acquireItem("mat_whetstone_mid", 1);
-        const itemName = window.getItemText ? window.getItemText("mat_whetstone_mid", lang).name : "中砥石";
-        const msg = window.t ? window.t("logLootItem", { item: itemName, count: 1 }) : `🎁 搜獲戰利品：獲得【中砥石】x1`;
-        this.addCombatLog(msg);
+      // 職業與天賦加成
+      if (window.calculateClassBonuses) {
+        const classBonuses = window.calculateClassBonuses(this.player.classId, this.player.talents);
+        baseAtk *= (1 + (classBonuses.atkPct || 0) / 100);
+        baseDef *= (1 + (classBonuses.defPct || 0) / 100);
+        baseHP *= (1 + (classBonuses.hpPct || 0) / 100);
+        critRate += (classBonuses.critRate || 0);
+        critDmg += (classBonuses.critDmg || 0);
+        baseSpd += (classBonuses.atkSpd || 0);
+        lifeSteal += (classBonuses.lifeSteal || 0);
+        armorPen += (classBonuses.armorPen || 0);
+        dmgRed += (classBonuses.dmgRed || 0);
+        magicFind += (classBonuses.magicFind || 0);
+        goldBonus += (classBonuses.goldBonus || 0);
+      }
+
+      const finalAtk = Math.round(baseAtk);
+      const finalDef = Math.round(baseDef);
+      const finalMaxHP = Math.round(baseHP);
+      const finalPower = Math.round(finalAtk * 3.5 + finalDef * 2.8 + finalMaxHP * 0.6 + baseSpd * 5);
+
+      if (finalPower > this.player.statsTracked.highestPower) {
+        this.player.statsTracked.highestPower = finalPower;
+      }
+
+      return {
+        atk: finalAtk,
+        def: finalDef,
+        hp: finalMaxHP,
+        maxHp: finalMaxHP,
+        spd: baseSpd,
+        critRate: Math.min(85, critRate),
+        critDmg: critDmg,
+        lifeSteal: Math.min(50, lifeSteal),
+        armorPen: armorPen,
+        dmgRed: Math.min(65, dmgRed),
+        magicFind: magicFind,
+        goldBonus: goldBonus,
+        power: finalPower
+      };
+    }
+
+    /**
+     * 啟動全自動討伐戰鬥迴圈 (身障友善：完全自動運作)
+     */
+    startCombatLoop() {
+      if (this.combatInterval) clearInterval(this.combatInterval);
+      this.spawnNextEnemy();
+
+      this.combatInterval = setInterval(() => {
+        this.autoCombatTick();
+      }, 700);
+      if (typeof this.combatInterval.unref === 'function') this.combatInterval.unref();
+    }
+
+    trackStat(statName, delta = 1) {
+      if (!this.player.statsTracked) this.player.statsTracked = {};
+      this.player.statsTracked[statName] = (this.player.statsTracked[statName] || 0) + delta;
+    }
+
+    destroy() {
+      if (this.combatInterval) clearInterval(this.combatInterval);
+      if (this.autoSaveInterval) clearInterval(this.autoSaveInterval);
+      if (this.marketChat && typeof this.marketChat.destroy === 'function') {
+        this.marketChat.destroy();
       }
     }
 
-    // 成就檢測
-    this.checkAchievements();
-
-    // 自動生成下一位敵人
-    setTimeout(() => {
-      this.spawnEnemy();
-    }, 600);
-  }
-
-  // 玩家戰敗處理
-  handlePlayerDefeated() {
-    const msg = window.t ? window.t("logPlayerDefeated") : "⚠️ 氣力耗盡！你暫時退回道場調養生息，體力已完全恢復。";
-    this.addCombatLog(`<span style="color:#ef4444;font-weight:bold;">${msg}</span>`);
-    const stats = this.getCalculatedStats();
-    this.playerCurrentHp = stats.maxHp;
-    this.inBossFight = false;
-    this.comboCount = 0;
-    setTimeout(() => {
-      this.spawnEnemy();
-    }, 1200);
-  }
-
-  // 獲得經驗與升級
-  gainExp(amount) {
-    this.player.exp += amount;
-    let req = this.getRequiredExp(this.player.level);
-    while (this.player.exp >= req) {
-      this.player.exp -= req;
-      this.player.level++;
-      this.player.skillPoints += 2;
-      const stats = this.getCalculatedStats();
-      this.playerCurrentHp = stats.maxHp; // 升級回滿血
-
-      const rank = this.getRankTitle(this.player.level);
-      const lvlMsg = window.t 
-        ? window.t("logLevelUp", { level: this.player.level, rank: rank })
-        : `⛩️ 頓悟突破！境界提升至等級 ${this.player.level}（${rank}）！獲得 2 點天賦點！`;
-      this.addCombatLog(`<span style="color:#eab308;font-size:1.1em;font-weight:bold;">${lvlMsg}</span>`);
-      if (window.samuraiAudio) window.samuraiAudio.playLevelUp();
-      req = this.getRequiredExp(this.player.level);
-    }
-    this.checkAchievements();
-    this.updateCharacterUI();
-  }
-
-  // 獲得新名刀
-  acquireSword(swordId, source = "鍛造獲得") {
-    const instance = this.createSwordInstance(swordId);
-    if (!instance) return;
-
-    this.player.swordsInventory.push(instance);
-    this.checkAchievements();
-
-    const lang = window.getLang ? window.getLang() : "zh-TW";
-    const swText = window.getSwordText ? window.getSwordText(instance, lang) : instance;
-
-    // 加入圖鑑
-    if (!this.player.codex.includes(swordId)) {
-      this.player.codex.push(swordId);
-      const codexMsg = window.t 
-        ? window.t("logCodexAdd", { tier: swText.tierName, name: swText.name })
-        : `📖 【名刀鑑賞錄】收錄新名刀：【${instance.tierName}】${instance.name}！全屬性永久提昇！`;
-      this.addCombatLog(`<span style="color:#38bdf8;font-weight:bold;">${codexMsg}</span>`);
-    }
-
-    const acqMsg = window.t
-      ? window.t("logAcquireSword", { source: source, tier: swText.tierName, name: swText.name, type: swText.type, smith: swText.smith })
-      : `🗡️ ${source}：獲得名刀【${instance.tierName}】${instance.name}（${instance.type}・${instance.smith}）！`;
-    this.addCombatLog(`<span style="color:${instance.color};font-weight:bold;">${acqMsg}</span>`);
-    return instance;
-  }
-
-  // 獲得道具
-  acquireItem(itemId, qty = 1) {
-    if (!this.player.items[itemId]) {
-      this.player.items[itemId] = 0;
-    }
-    this.player.items[itemId] += qty;
-    this.updateInventoryUI();
-  }
-
-  // 使用消耗品
-  useItem(itemId) {
-    if (!this.player.items[itemId] || this.player.items[itemId] <= 0) return;
-
-    const consumable = window.ITEMS_DATA.consumables.find(c => c.id === itemId);
-    if (!consumable) return;
-
-    this.player.items[itemId]--;
-    const stats = this.getCalculatedStats();
-
-    const lang = window.getLang ? window.getLang() : "zh-TW";
-    const cText = window.getItemText ? window.getItemText(consumable, lang) : consumable;
-    const cName = cText.name || consumable.name;
-
-    if (consumable.type === "heal") {
-      const healAmount = Math.floor(stats.maxHp * (consumable.healPercent / 100));
-      this.playerCurrentHp = Math.min(stats.maxHp, this.playerCurrentHp + healAmount);
-      const msg = window.t ? window.t("logConsumeItem", { item: cName, amount: healAmount }) : `🍙 食用了【${consumable.name}】，瞬間回復了 ${healAmount} 點體力！`;
-      this.addCombatLog(msg);
-    } else if (consumable.type === "buff_speed") {
-      this.activeBuffs.speed = consumable.duration;
-      const msg = window.t ? window.t("logBuffSpeed", { item: cName, duration: consumable.duration }) : `💊 服下了【${consumable.name}】，出刀神速提升 35%（持續 ${consumable.duration} 秒）！`;
-      this.addCombatLog(msg);
-    } else if (consumable.type === "buff_berserk") {
-      this.activeBuffs.atk = consumable.duration;
-      const msg = window.t ? window.t("logBuffAtk", { item: cName, duration: consumable.duration }) : `🍶 豪飲【${consumable.name}】，狂暴殺氣提升 50% 攻擊力（持續 ${consumable.duration} 秒）！`;
-      this.addCombatLog(msg);
-    } else if (consumable.type === "buff_gold") {
-      this.activeBuffs.gold = consumable.duration;
-      const msg = window.t ? window.t("logBuffGold", { item: cName, duration: consumable.duration }) : `🍵 品味【${consumable.name}】，擊敵收穫金小判翻倍（持續 ${consumable.duration} 秒）！`;
-      this.addCombatLog(msg);
-    }
-
-    if (window.samuraiAudio) window.samuraiAudio.playSharpen();
-    this.updateInventoryUI();
-    this.updateBattleUI();
-  }
-
-  // 磨刀石研磨強化
-  sharpenWeapon(whetstoneId) {
-    const weapon = this.player.equipped.weapon;
-    if (!weapon) {
-      alert(window.t ? window.t("msgWeaponNeeded") : "請先配備名刀！");
-      return;
-    }
-    if (!this.player.items[whetstoneId] || this.player.items[whetstoneId] <= 0) {
-      alert(window.t ? window.t("msgWhetstoneNeeded") : "磨刀石不足！");
-      return;
-    }
-
-    this.player.items[whetstoneId]--;
-    weapon.refine = (weapon.refine || 0) + 1;
-    this.player.stats.totalSharpens = (this.player.stats.totalSharpens || 0) + 1;
-    this.player.gold += 0; // 磨刀微量花費或免費
-    this.checkAchievements();
-
-    if (window.samuraiAudio) window.samuraiAudio.playSharpen();
-    const lang = window.getLang ? window.getLang() : "zh-TW";
-    const swText = window.getSwordText ? window.getSwordText(weapon, lang) : weapon;
-    const sharpenMsg = window.t ? window.t("logSharpenSword", { sword: swText.name, refine: weapon.refine }) : `✨ 使用砥石細心研磨！佩刀【${weapon.name}】磨礪至 +${weapon.refine}！鋒利度大幅提昇！`;
-    this.addCombatLog(sharpenMsg);
-
-    this.updateForgeUI();
-    this.updateCharacterUI();
-    this.updateInventoryUI();
-  }
-
-  // 鍛造新名刀 (Blacksmith Gacha)
-  forgeSword(type = "standard") {
-    let costSteel = (type === "master") ? 80 : 25;
-    let costGold = (type === "master") ? 500 : 100;
-
-    if (this.player.steel < costSteel || this.player.gold < costGold) {
-      alert(window.t ? window.t("msgForgeLackRes", { steel: costSteel, gold: costGold }) : `鍛造資源不足！需要 ${costSteel} 玉鋼與 ${costGold} 金小判。`);
-      return;
-    }
-
-    this.player.steel -= costSteel;
-    this.player.gold -= costGold;
-    this.player.stats.swordsForged++;
-
-    if (window.samuraiAudio) window.samuraiAudio.playHammer();
-
-    // 抽卡機率計算
-    const roll = Math.random() * 100;
-    let targetTier = 1;
-
-    if (type === "master") {
-      // 名匠大鍛：保底良業物(3)，高機率大業物(4)，有機會最上大業物(5)甚至神具(6)
-      if (roll < 3) targetTier = 6;      // 3% 妖刀・神具
-      else if (roll < 20) targetTier = 5; // 17% 最上大業物 (天下五劍)
-      else if (roll < 55) targetTier = 4; // 35% 大業物
-      else targetTier = 3;               // 45% 良業物
-    } else {
-      // 標準踏鞴鍛造
-      if (roll < 2) targetTier = 5;      // 2% 最上大業物
-      else if (roll < 12) targetTier = 4; // 10% 大業物
-      else if (roll < 35) targetTier = 3; // 23% 良業物
-      else if (roll < 70) targetTier = 2; // 35% 業物
-      else targetTier = 1;               // 30% 凡鐵
-    }
-
-    const candidateSwords = window.SWORDS_DATA.filter(s => s.tier === targetTier);
-    const chosen = candidateSwords[Math.floor(Math.random() * candidateSwords.length)];
-
-    const sword = this.acquireSword(chosen.id, (type === "master" ? "🔥【名匠淬火秘鍛】" : "⚒️【傳統踏鞴鍛打】"));
-    this.checkAchievements();
-
-    // 彈出鍛造獲得提示動畫
-    this.showForgeResultModal(sword);
-    this.updateForgeUI();
-    this.updateCharacterUI();
-  }
-
-  // 熔煉分解多餘刀刃換取玉鋼
-  smeltSword(instanceId) {
-    const idx = this.player.swordsInventory.findIndex(s => s.instanceId === instanceId);
-    if (idx === -1) return;
-
-    const sword = this.player.swordsInventory[idx];
-    if (this.player.equipped.weapon && this.player.equipped.weapon.instanceId === instanceId) {
-      alert(window.t ? window.t("msgEquippedCantSmelt") : "無法熔煉當前裝備中的佩刀！請先更換其他刀刃。");
-      return;
-    }
-
-    // 依品階返還玉鋼與金小判
-    const steelRefund = sword.tier * 15 + (sword.refine || 0) * 8;
-    const goldRefund = sword.tier * 40;
-
-    this.player.swordsInventory.splice(idx, 1);
-    this.player.steel += steelRefund;
-    this.player.gold += goldRefund;
-
-    if (window.samuraiAudio) window.samuraiAudio.playHammer();
-    const lang = window.getLang ? window.getLang() : "zh-TW";
-    const swText = window.getSwordText ? window.getSwordText(sword, lang) : sword;
-    const smeltMsg = window.t ? window.t("logDismantleSword", { tier: swText.tierName, sword: swText.name, steel: steelRefund, gold: goldRefund }) : `🔥 投入熔爐！將【${sword.tierName}】${sword.name} 分解回融，獲得 ${steelRefund} 玉鋼、${goldRefund} 金小判！`;
-    this.addCombatLog(smeltMsg);
-
-    this.updateForgeUI();
-    this.updateInventoryUI();
-  }
-
-  // 裝備刀劍
-  equipSword(instanceId) {
-    const sword = this.player.swordsInventory.find(s => s.instanceId === instanceId);
-    if (!sword) return;
-    this.player.equipped.weapon = sword;
-    if (window.samuraiAudio) window.samuraiAudio.playSharpen();
-    const lang = window.getLang ? window.getLang() : "zh-TW";
-    const swText = window.getSwordText ? window.getSwordText(sword, lang) : sword;
-    const equipMsg = window.t ? window.t("logEquipSword", { sword: swText.name }) : `🗡️ 帶刀一新！拔出日本名刃【${sword.name}】，殺氣大盛！`;
-    this.addCombatLog(equipMsg);
-    this.updateCharacterUI();
-    this.updateInventoryUI();
-    this.updateBattleUI();
-  }
-
-  // 流派升級加點
-  investSkill(skillName) {
-    if (this.player.skillPoints <= 0) {
-      alert(window.t ? window.t("msgSkillPointsLack") : "天賦點數不足！請通過歷練提升角色等級獲取點數。");
-      return;
-    }
-    this.player.skillPoints--;
-    this.player.skills[skillName] = (this.player.skills[skillName] || 0) + 1;
-    this.checkAchievements();
-    if (window.samuraiAudio) window.samuraiAudio.playLevelUp();
-    this.updateDojoUI();
-    this.updateCharacterUI();
-  }
-
-  // 重置流派天賦
-  resetSkills() {
-    const totalSpent = this.player.skills.shinkage + this.player.skills.jigen + this.player.skills.rishin;
-    if (totalSpent === 0) return;
-    const confirmPrompt = window.t ? window.t("msgResetSkillConfirm") : "是否花費 100 金小判洗鍊重置所有流派天賦點？";
-    if (confirm(confirmPrompt)) {
-      if (this.player.gold < 100) {
-        alert(window.t ? window.t("msgGoldLack100") : "金小判不足 100！");
+    /**
+     * 自動戰鬥每拍推進
+     */
+    autoCombatTick() {
+      if (!this.currentEnemy || this.currentEnemy.hp <= 0) {
+        this.spawnNextEnemy();
         return;
       }
-      this.player.gold -= 100;
-      this.player.skillPoints += totalSpent;
-      this.player.skills.shinkage = 0;
-      this.player.skills.jigen = 0;
-      this.player.skills.rishin = 0;
-      this.updateDojoUI();
-      this.updateCharacterUI();
-    }
-  }
 
-  // 切換戰役關卡
-  changeZone(zoneId) {
-    if (zoneId > this.player.stats.highestZone) {
-      alert(window.t ? window.t("msgZoneLocked") : "該戰役區域尚未解鎖！請先擊破前一區域的守關頭目。");
-      return;
-    }
-    this.player.stats.currentZone = zoneId;
-    this.inBossFight = false;
-    this.zoneKillProgress = 0;
-    this.spawnEnemy();
-    this.updateBattleUI();
-  }
-
-  // 打開天下地圖 (World Map)
-  openWorldMap() {
-    const modal = document.getElementById("world-map-modal");
-    if (!modal) return;
-    const container = document.getElementById("world-map-nodes-container");
-    if (!container) return;
-
-    const lang = window.getLang ? window.getLang() : "zh-TW";
-    const highestZone = this.player.stats.highestZone || 1;
-    const currentZone = this.player.stats.currentZone || 1;
-
-    container.innerHTML = (window.ZONES_DATA || []).map(z => {
-      const isUnlocked = z.id <= highestZone;
-      const isCurrent = z.id === currentZone;
-      const isCleared = z.id < highestZone;
-
-      const zText = window.getZoneText ? window.getZoneText(z.id, lang) : z;
-      const zoneName = zText.name || z.name;
-      const zoneSub = zText.sub || z.subtitle;
-      const bossName = (zText.boss) ? zText.boss : (z.boss ? z.boss.name : "???");
-      const bossAvatar = (z.boss && z.boss.avatar) ? z.boss.avatar : "👹";
-
-      // 掉落物預覽
-      let dropsText = "—";
-      if (z.boss) {
-        const dropSw = z.boss.dropSword ? (window.SWORDS_DATA ? window.SWORDS_DATA.find(s => s.id === z.boss.dropSword) : null) : null;
-        const dropItem = z.boss.dropItem ? (window.ITEMS_DATA && window.ITEMS_DATA.consumables ? window.ITEMS_DATA.consumables.find(i => i.id === z.boss.dropItem) : null) : null;
-        const swName = dropSw ? (window.getSwordText ? window.getSwordText(dropSw, lang).name : dropSw.name) : "";
-        const itName = dropItem ? (window.getItemText ? window.getItemText(dropItem, lang).name : dropItem.name) : (z.boss.dropItem || "");
-        dropsText = [swName, itName].filter(Boolean).join(" / ") || "—";
-      }
-
-      let cardClass = "wm-node-card";
-      if (isCurrent) cardClass += " current";
-      else if (isCleared) cardClass += " cleared";
-      else if (!isUnlocked) cardClass += " locked";
-
-      let statusBadge = "";
-      if (isCurrent) statusBadge = `<span class="wm-node-badge">${window.t ? window.t("mapLegendCurrent") : "📍 當前征戰"}</span>`;
-      else if (isCleared) statusBadge = `<span class="wm-node-badge">${window.t ? window.t("mapLegendCleared") : "✅ 已踏破"}</span>`;
-      else if (!isUnlocked) statusBadge = `<span class="wm-node-badge">${window.t ? window.t("mapLegendLocked") : "🔒 妖霧封鎖"}</span>`;
-
-      let actionBtn = "";
-      if (isCurrent) {
-        actionBtn = `<button class="wm-travel-btn current" disabled>${window.t ? window.t("worldMapCurrent") : "📍 當前駐足"}</button>`;
-      } else if (isUnlocked) {
-        actionBtn = `<button class="wm-travel-btn active" onclick="window.game.travelToZone(${z.id})">${window.t ? window.t("worldMapTravel") : "🏇 策馬遷往"}</button>`;
-      } else {
-        const reqLvl = window.t ? window.t("worldMapReqLevel", { level: z.requiredLevel || 1 }) : `需等級 Lv.${z.requiredLevel || 1}`;
-        actionBtn = `<button class="wm-travel-btn locked" disabled>${window.t ? window.t("worldMapLocked") : "🔒 封鎖中"} (${reqLvl})</button>`;
-      }
-
-      const bossLabel = window.t ? window.t("worldMapBoss", { boss: `${bossAvatar} ${bossName}` }) : `守關首領：${bossAvatar} ${bossName}`;
-      const dropsLabel = window.t ? window.t("worldMapDrops", { drops: dropsText }) : `掉落遺珍：${dropsText}`;
-
-      return `
-        <div class="${cardClass}">
-          <div>
-            <div class="wm-node-top">
-              <span style="font-size:0.8rem;color:#e2e8f0;font-weight:bold;">${lang === 'en' ? `Act ${z.id}` : `第 ${z.id} 幕`}</span>
-              ${statusBadge}
-            </div>
-            <div class="wm-node-name">${zoneName}</div>
-            <div class="wm-node-sub">${zoneSub}</div>
-            <div class="wm-node-info-row">
-              <span class="wm-node-boss-tag">${bossLabel}</span>
-            </div>
-            <div class="wm-node-info-row">
-              <span class="wm-node-drops-tag">${dropsLabel}</span>
-            </div>
-          </div>
-          <div class="wm-node-actions">
-            ${actionBtn}
-          </div>
-        </div>
-      `;
-    }).join("");
-
-    modal.classList.add("active");
-  }
-
-  // 策馬移動前往指定區域
-  travelToZone(zoneId) {
-    if (zoneId > (this.player.stats.highestZone || 1)) {
-      const lockAlert = window.t ? window.t("msgZoneLocked") : "該戰役區域尚未解鎖！請先擊破前一區域的守關頭目。";
-      alert(lockAlert);
-      return;
-    }
-
-    this.player.stats.currentZone = zoneId;
-    this.inBossFight = false;
-    this.zoneKillProgress = 0;
-    this.spawnEnemy();
-    this.updateBattleUI();
-
-    const zoneSelect = document.getElementById("zone-select");
-    if (zoneSelect) zoneSelect.value = zoneId;
-
-    if (window.samuraiAudio && typeof window.samuraiAudio.playClick === "function") {
-      window.samuraiAudio.playClick();
-    } else if (window.samuraiAudio && typeof window.samuraiAudio.playSharpen === "function") {
-      window.samuraiAudio.playSharpen();
-    }
-
-    const lang = window.getLang ? window.getLang() : "zh-TW";
-    const zText = window.getZoneText ? window.getZoneText(zoneId, lang) : { name: `第 ${zoneId} 幕` };
-    const travelMsg = window.t ? window.t("logTravel", { zone: zText.name || `第 ${zoneId} 幕` }) : `🏇 策馬奔馳！你跨過崇山峻嶺，抵達了【${zText.name}】！`;
-    this.addCombatLog(travelMsg);
-
-    const modal = document.getElementById("world-map-modal");
-    if (modal) modal.classList.remove("active");
-  }
-
-  // 手動挑戰首領
-  challengeBoss() {
-    if (this.inBossFight) return;
-    this.spawnEnemy(true);
-  }
-
-  // 切換神速自律斬擊（無障礙放置模式）
-  toggleAutoSlash() {
-    this.autoSlashEnabled = !this.autoSlashEnabled;
-    const btn = document.getElementById("btn-toggle-autoslash");
-    if (btn) {
-      if (this.autoSlashEnabled) {
-        btn.classList.add("active");
-        btn.innerHTML = "⚡ 神速自律斬：開啟中";
-        btn.title = "已開啟全自動高速出刀，完全無需點擊滑鼠！";
-      } else {
-        btn.classList.remove("active");
-        btn.innerHTML = "💤 神速自律斬：已暫停";
-        btn.title = "點擊可開啟自動高速出刀";
-      }
-    }
-    if (window.samuraiAudio) window.samuraiAudio.playSharpen();
-  }
-
-  // 戰鬥計時器 Tick
-  startCombatLoop() {
-    if (this.combatTimer) clearInterval(this.combatTimer);
-
-    let tickAccumulator = 0;
-    let autoSlashAccumulator = 0;
-
-    this.combatTimer = setInterval(() => {
-      tickAccumulator += 0.2; // 每 200ms 一次 tick
-      autoSlashAccumulator += 0.2;
-
-      // 倒數增益效果時間
-      if (this.activeBuffs.speed > 0) this.activeBuffs.speed = Math.max(0, this.activeBuffs.speed - 0.2);
-      if (this.activeBuffs.atk > 0) this.activeBuffs.atk = Math.max(0, this.activeBuffs.atk - 0.2);
-      if (this.activeBuffs.gold > 0) this.activeBuffs.gold = Math.max(0, this.activeBuffs.gold - 0.2);
-
-      // BOSS 狂暴倒數
-      if (this.inBossFight) {
-        this.bossTimeRemaining = Math.max(0, this.bossTimeRemaining - 0.2);
-        if (this.bossTimeRemaining <= 0) {
-          const timeoutMsg = window.t ? window.t("logBossTimeout") : "⏳ 首領狂暴！時限已過，挑戰失敗！";
-          this.addCombatLog(`<span style="color:#ef4444;font-weight:bold;">${timeoutMsg}</span>`);
-          this.inBossFight = false;
-          this.spawnEnemy();
-        }
-      }
-
-      // 自動出刀攻擊頻率計算
       const stats = this.getCalculatedStats();
-      const attackInterval = 1.0 / stats.speed; // 秒
+      const isCrit = Math.random() * 100 < stats.critRate;
+      let dmg = stats.atk * (0.85 + Math.random() * 0.3);
 
-      // 1. 一般基礎自動攻擊
-      if (tickAccumulator >= attackInterval) {
-        tickAccumulator = 0;
-        this.attack(false); // 自動揮刀
+      // 破甲與防禦減免
+      const enemyDef = Math.max(0, (this.currentEnemy.def || 0) - stats.armorPen);
+      const reduction = enemyDef / (enemyDef + 100);
+      dmg = Math.max(1, dmg * (1 - reduction));
 
-        // 敵人反擊頻率（普通怪每 2.5 秒反擊一次，BOSS 每 1.8 秒）
-        if (Math.random() < (this.inBossFight ? 0.35 : 0.22)) {
-          this.enemyAttack();
-        }
+      if (isCrit) {
+        dmg *= (1 + stats.critDmg / 100);
       }
 
-      // 2. 神速自律極意：無障礙自律斬擊（完全免去手指重複點擊負擔）
-      if (this.autoSlashEnabled && this.currentEnemy && this.currentEnemy.hp > 0) {
-        if (autoSlashAccumulator >= 0.25) {
-          autoSlashAccumulator = 0;
-          this.attack(true); // 高頻拔刀斬擊
-        }
+      dmg = Math.round(dmg);
+      this.currentEnemy.hp -= dmg;
+
+      // 播放揮刀音效
+      if (this.audio) this.audio.playSlashSound(isCrit);
+
+      // 顯示傷害浮動字體
+      this.showDamageText(dmg, isCrit, false);
+
+      // 吸血回饋 (如果有吸血)
+      if (stats.lifeSteal > 0) {
+        const heal = Math.round(dmg * (stats.lifeSteal / 100));
+        if (heal > 0) this.showDamageText(`+${heal} 汲血`, false, true);
       }
 
-      // 自動自然體力回調
-      if (this.playerCurrentHp < stats.maxHp) {
-        this.playerCurrentHp = Math.min(stats.maxHp, this.playerCurrentHp + Math.max(1, Math.floor(stats.maxHp * 0.005)));
-        this.updateBattleUI();
+      // 更新戰鬥血條
+      this.updateEnemyHealthBar();
+
+      // 怪物擊敗判定
+      if (this.currentEnemy.hp <= 0) {
+        this.onEnemyDefeated();
       }
-    }, 200);
-  }
+    }
 
-  // 離線收益結算 (Offline Progression)
-  checkOfflineGains() {
-    const now = Date.now();
-    const last = this.player.lastTimestamp || now;
-    const diffSec = Math.floor((now - last) / 1000);
+    /**
+     * 手動點擊揮刀（身障輔助：支援點擊畫面任意戰鬥區域額外補刀，絕不強制）
+     */
+    manualSlash() {
+      if (!this.currentEnemy) return;
+      this.autoCombatTick();
+    }
 
-    // 如果離線超過 30 秒
-    if (diffSec >= 30) {
-      // 最長結算 12 小時 (43200 秒)
-      const effectiveSec = Math.min(43200, diffSec);
-      const zone = window.ZONES_DATA.find(z => z.id === this.player.stats.currentZone) || window.ZONES_DATA[0];
+    /**
+     * 生成下一隻怪物或首領
+     */
+    spawnNextEnemy() {
+      const actIndex = Math.max(0, Math.min(6, (this.player.act || 1) - 1));
+      const actData = window.CAMPAIGN_ACTS ? window.CAMPAIGN_ACTS[actIndex] : null;
+      if (!actData) return;
+
+      // 判斷是否討伐章節首領
+      if (this.player.actBossUnlocked) {
+        this.currentEnemy = {
+          ...actData.boss,
+          maxHp: actData.boss.hp,
+          hp: actData.boss.hp,
+          isBoss: true
+        };
+        this.showToast(`⚠️ 章節首領【${actData.boss.name}】降臨！`, 'warning');
+      } else {
+        const enemyProto = actData.enemies[Math.floor(Math.random() * actData.enemies.length)];
+        this.currentEnemy = {
+          ...enemyProto,
+          maxHp: enemyProto.hp,
+          hp: enemyProto.hp,
+          isBoss: false
+        };
+      }
+
+      this.updateBattleUI();
+    }
+
+    /**
+     * 擊敗怪物處理：經驗、金幣、暗黑裝備掉落與光柱
+     */
+    onEnemyDefeated() {
+      const enemy = this.currentEnemy;
       const stats = this.getCalculatedStats();
+      this.player.statsTracked.totalKills++;
 
-      // 平均擊敵耗時（秒）
-      const avgKillTime = Math.max(2.5, 6.0 / stats.speed);
-      const estimatedKills = Math.floor(effectiveSec / avgKillTime);
+      // 獲得金幣與經驗
+      const goldEarned = Math.round((enemy.gold || 10) * (1 + stats.goldBonus / 100));
+      const expEarned = enemy.exp || 15;
 
-      const tpl = zone.enemies[0];
-      const expGain = Math.floor(estimatedKills * tpl.exp * 0.65);
-      const goldGain = Math.floor(estimatedKills * tpl.gold * 0.65);
-      const steelGain = Math.floor(estimatedKills * tpl.steel * 0.5);
+      this.player.gold += goldEarned;
+      this.addExp(expEarned);
 
-      this.player.gold += goldGain;
-      this.player.steel += steelGain;
-      this.player.stats.totalKills += estimatedKills;
-      this.gainExp(expGain);
+      // 掉落裝備判定
+      this.rollGearDrop(enemy);
 
-      // 彈出離線結算卷軸
-      this.showOfflineModal(effectiveSec, estimatedKills, goldGain, steelGain, expGain);
+      // 章節推進判定
+      const actIndex = Math.max(0, Math.min(6, (this.player.act || 1) - 1));
+      const actData = window.CAMPAIGN_ACTS[actIndex];
+
+      if (enemy.isBoss) {
+        this.player.statsTracked.bossKills++;
+        this.player.actBossUnlocked = false;
+        this.player.actProgress = 0;
+
+        this.showToast(`🎉 恭喜平定【${actData.name}】首領！`, 'success');
+        if (this.marketChat) {
+          this.marketChat.addChatMessage('全服公告', `🎊 恭喜玩家【${this.player.name}】斬殺了【${enemy.name}】，武威震懾天下！`, true);
+        }
+
+        // 開啟下一章
+        if (this.player.act < 7) {
+          this.player.act++;
+          this.showToast(`🗺️ 已解鎖全新章節【${window.CAMPAIGN_ACTS[this.player.act - 1].name}】！`, 'success');
+        }
+      } else {
+        this.player.actProgress++;
+        if (this.player.actProgress >= actData.bossKillsRequired) {
+          this.player.actBossUnlocked = true;
+          this.showToast(`🔥 討伐進度已滿！首領即將現身！`, 'warning');
+        }
+      }
+
+      // 檢查成就
+      this.checkAchievements();
+
+      // 生成下一隻
+      setTimeout(() => this.spawnNextEnemy(), 300);
+      this.updateHeaderUI();
     }
 
-    this.player.lastTimestamp = now;
-  }
+    /**
+     * 暗黑式隨機掉寶與光柱特效
+     */
+    rollGearDrop(enemy) {
+      if (!window.generateGear) return;
+      const dropChance = enemy.isBoss ? 0.95 : 0.35;
+      if (Math.random() > dropChance) return;
 
-  // 戰鬥記錄追加
-  addCombatLog(msg) {
-    const box = document.getElementById("combat-log-container");
-    if (!box) return;
-    const timeStr = new Date().toTimeString().split(" ")[0];
-    const line = document.createElement("div");
-    line.className = "log-line";
-    line.innerHTML = `<span class="log-time">[${timeStr}]</span> ${msg}`;
-    box.appendChild(line);
+      const stats = this.getCalculatedStats();
+      // 依尋寶值 (Magic Find) 提升高品質機率
+      const mfBonus = stats.magicFind || 0;
+      const roll = Math.random() * 100;
 
-    // 最多保留 40 條日誌
-    while (box.children.length > 40) {
-      box.removeChild(box.firstChild);
+      let quality = 'common';
+      if (enemy.isBoss) {
+        if (roll < 20 + mfBonus * 0.1) quality = 'ancient';
+        else if (roll < 55 + mfBonus * 0.2) quality = 'legendary';
+        else quality = 'epic';
+      } else {
+        if (roll < 1 + mfBonus * 0.05) quality = 'ancient';
+        else if (roll < 4 + mfBonus * 0.1) quality = 'legendary';
+        else if (roll < 15 + mfBonus * 0.15) quality = 'epic';
+        else if (roll < 40 + mfBonus * 0.2) quality = 'rare';
+        else if (roll < 75) quality = 'magic';
+        else quality = 'common';
+      }
+
+      const gear = window.generateGear(null, quality, this.player.level);
+      this.player.statsTracked.gearLooted++;
+      if (quality === 'legendary') this.player.statsTracked.legendaryLooted++;
+      if (quality === 'ancient') this.player.statsTracked.ancientLooted++;
+
+      // 播放暗黑經典掉落音效（傳奇與遠古觸發經典 Ding!）
+      if (this.audio) this.audio.playDropSound(quality);
+
+      // 傳奇與遠古觸發全服聊天室廣播與暗金光柱
+      if (quality === 'legendary' || quality === 'ancient') {
+        this.triggerLootBeam(gear);
+        if (this.marketChat) this.marketChat.broadcastLoot(this.player.name, gear);
+      }
+
+      // 自動分解過濾器判定 (身障無障礙優化：保持行囊清潔)
+      if (this.shouldAutoDecompose(quality)) {
+        const mats = window.decomposeGear(gear);
+        this.player.iron += mats.iron;
+        this.player.souls += mats.souls;
+        this.player.gold += mats.gold;
+        this.showToast(`♻️ 自動分解 [${gear.qualityName}]【${gear.name}】獲得玉鋼 x${mats.iron}`, 'info');
+        return;
+      }
+
+      // 存入背包
+      this.addGearToInventory(gear);
     }
-    box.scrollTop = box.scrollHeight;
-  }
 
-  // 飄字傷害浮動動畫
-  showDamagePopup(dmg, isCrit) {
-    const arena = document.getElementById("battle-stage-arena");
-    if (!arena) return;
-
-    const popup = document.createElement("div");
-    popup.className = `dmg-popup ${isCrit ? "crit-hit" : "normal-hit"}`;
-    popup.textContent = (isCrit ? "會心！ " : "") + `-${dmg}`;
-
-    // 隨機在敵人身辺位置
-    const randomX = 45 + (Math.random() * 20 - 10);
-    const randomY = 40 + (Math.random() * 15 - 7);
-    popup.style.left = `${randomX}%`;
-    popup.style.top = `${randomY}%`;
-
-    arena.appendChild(popup);
-    setTimeout(() => {
-      popup.remove();
-    }, 900);
-  }
-
-  // 彈出鍛造獲得名刀 Modal
-  showForgeResultModal(sword) {
-    const modal = document.getElementById("forge-result-modal");
-    if (!modal) return;
-    const lang = window.getLang ? window.getLang() : "zh-TW";
-    const swText = window.getSwordText ? window.getSwordText(sword, lang) : sword;
-    document.getElementById("modal-sword-name").textContent = swText.name || sword.name;
-    document.getElementById("modal-sword-name").style.color = sword.color;
-    document.getElementById("modal-sword-tier").textContent = `【${swText.tierName || sword.tierName}】${swText.type || sword.type}（${swText.era || sword.era || "日本名刀"}）`;
-    document.getElementById("modal-sword-tier").style.color = sword.color;
-    const modalVisual = document.getElementById("modal-sword-visual");
-    if (modalVisual) modalVisual.innerHTML = sword.svg || "";
-    const smithLabel = window.t ? window.t("forgeModalSmith") : "名匠：";
-    const hamonLabel = window.t ? window.t("forgeModalHamon") : "刃文：";
-    document.getElementById("modal-sword-smith").textContent = `${smithLabel}${swText.smith || sword.smith} | ${hamonLabel}${swText.hamon || sword.hamon || "直刃"}`;
-    const atkLabel = window.t ? window.t("forgeModalAtk") : "基礎攻擊：";
-    const critLabel = window.t ? window.t("forgeModalCrit") : "會心率：";
-    document.getElementById("modal-sword-atk").textContent = `${atkLabel}+${sword.baseAtk}`;
-    document.getElementById("modal-sword-crit").textContent = `${critLabel}+${sword.crit}%`;
-    document.getElementById("modal-sword-passive").textContent = swText.passive || sword.passive;
-    document.getElementById("modal-sword-lore").textContent = swText.lore || sword.lore;
-
-    modal.classList.add("active");
-  }
-
-  // 離線歷練收益 Modal
-  showOfflineModal(sec, kills, gold, steel, exp) {
-    const modal = document.getElementById("offline-modal");
-    if (!modal) return;
-    const mins = Math.floor(sec / 60);
-    const timeStr = window.t ? window.t("offlineUnitMins", { time: mins }) : `${mins} 分鐘`;
-    document.getElementById("offline-time").textContent = timeStr;
-    document.getElementById("offline-kills").textContent = kills;
-    document.getElementById("offline-gold").textContent = gold;
-    document.getElementById("offline-steel").textContent = steel;
-    document.getElementById("offline-exp").textContent = exp;
-
-    modal.classList.add("active");
-  }
-
-  // 存檔與讀檔
-  save() {
-    this.player.lastTimestamp = Date.now();
-    try {
-      localStorage.setItem(this.SAVE_KEY, JSON.stringify(this.player));
-      return true;
-    } catch (e) {
-      console.error("Save failed:", e);
+    /**
+     * 檢查是否自動分解
+     */
+    shouldAutoDecompose(quality) {
+      if (quality === 'common' && this.player.settings.autoDecomposeCommon) return true;
+      if (quality === 'magic' && this.player.settings.autoDecomposeMagic) return true;
+      if (quality === 'rare' && this.player.settings.autoDecomposeRare) return true;
       return false;
     }
-  }
 
-  manualSave() {
-    this.save();
-    const msg = window.t ? window.t("alertManualSaveOk") : "💾 修業進度已完好保存於本地卷軸！";
-    alert(msg);
-  }
-
-  load() {
-    try {
-      const data = localStorage.getItem(this.SAVE_KEY);
-      if (data) {
-        const parsed = JSON.parse(data);
-        this.player = Object.assign(this.player, parsed);
-        if (this.player.swordsInventory && window.SWORDS_DATA) {
-          this.player.swordsInventory.forEach(s => {
-            const base = window.SWORDS_DATA.find(b => b.id === s.id);
-            if (base) {
-              s.svg = base.svg || "";
-              s.era = base.era || "日本古作";
-              s.master = base.master || "無名武士";
-              s.hamon = base.hamon || "直刃";
-              s.lore = base.lore;
-              s.passive = base.passive;
-              s.passiveDesc = base.passiveDesc;
-            }
-          });
-        }
-        if (this.player.equipped && this.player.equipped.weapon && window.SWORDS_DATA) {
-          const base = window.SWORDS_DATA.find(b => b.id === this.player.equipped.weapon.id);
-          if (base) {
-            this.player.equipped.weapon.svg = base.svg || "";
-            this.player.equipped.weapon.era = base.era || "日本古作";
-            this.player.equipped.weapon.master = base.master || "無名武士";
-            this.player.equipped.weapon.hamon = base.hamon || "直刃";
-            this.player.equipped.weapon.lore = base.lore;
-          }
-        }
-
-        // 兼容舊存檔自動補充故事與轉生結構
-        if (!this.player.story) {
-          this.player.story = {
-            currentAct: this.player.stats.currentZone || 1,
-            faction: "unaligned",
-            completedActs: [],
-            unlockedEndings: [],
-            history: []
-          };
-        }
-        if (!this.player.achievements) {
-          this.player.achievements = { unlocked: [], claimed: [], highestCombo: 0 };
-        } else {
-          if (!Array.isArray(this.player.achievements.unlocked)) {
-            this.player.achievements.unlocked = Array.isArray(this.player.achievements.claimed)
-              ? [...this.player.achievements.claimed]
-              : [];
-          }
-          if (!Array.isArray(this.player.achievements.claimed)) {
-            this.player.achievements.claimed = [];
-          }
-        }
-        if (!this.player.stats.totalSharpens) {
-          this.player.stats.totalSharpens = 0;
-        }
-        if (!this.player.prestige) {
-          this.player.prestige = {
-            reincarnationCount: 0,
-            karma: 0,
-            totalKarmaEarned: 0,
-            perks: {
-              perk_atk: 0,
-              perk_hp: 0,
-              perk_speed: 0,
-              perk_crit: 0,
-              perk_forge: 0,
-              perk_wealth: 0,
-              perk_wisdom: 0,
-              perk_boss_slayer: 0
-            }
-          };
-        }
-        return true;
-      }
-    } catch (e) {
-      console.error("Load failed:", e);
-    }
-    return false;
-  }
-
-  exportSave() {
-    this.save();
-    const jsonStr = btoa(encodeURIComponent(JSON.stringify(this.player)));
-    navigator.clipboard.writeText(jsonStr).then(() => {
-      alert(window.t ? window.t("msgSaveCopied") : "✅ 存檔代碼已成功複製至剪貼簿！可妥善保管。");
-    }).catch(() => {
-      prompt(window.t ? window.t("promptCopySave") : "請手動複製存檔代碼：", jsonStr);
-    });
-  }
-
-  importSave() {
-    const input = prompt(window.t ? window.t("promptPasteSave") : "請貼上存檔代碼：");
-    if (!input) return;
-    try {
-      const jsonStr = decodeURIComponent(atob(input.trim()));
-      const parsed = JSON.parse(jsonStr);
-      if (parsed && parsed.level) {
-        this.player = parsed;
-        this.save();
-        alert(window.t ? window.t("msgSaveLoaded") : "✅ 存檔匯入成功！即將重新載入遊戲。");
-        window.location.reload();
-      } else {
-        alert(window.t ? window.t("msgSaveInvalid") : "❌ 存檔格式不正確！");
-      }
-    } catch (e) {
-      alert(window.t ? window.t("msgSaveInvalid") : "❌ 存檔代碼無效，解析失敗！");
-    }
-  }
-
-  resetGame() {
-    const warn1 = window.t ? window.t("msgResetGameWarning") : "⚠️ 警告：確定要重置所有遊戲進度嗎？所有刀劍、劍理與玉鋼將重歸虛無！";
-    const warn2 = window.t ? window.t("msgResetGameFinal") : "最後確認：真的要重新開始修行？";
-    if (confirm(warn1)) {
-      if (confirm(warn2)) {
-        localStorage.removeItem(this.SAVE_KEY);
-        window.location.reload();
-      }
-    }
-  }
-
-  // 切換分頁 UI
-  switchTab(tabName) {
-    this.activeTab = tabName;
-    document.querySelectorAll(".tab-btn").forEach(btn => {
-      const isActive = btn.dataset && btn.dataset.tab === tabName;
-      btn.classList.toggle("active", isActive);
-      if (isActive && typeof btn.scrollIntoView === "function") {
-        try {
-          btn.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
-        } catch (e) {}
-      }
-    });
-    document.querySelectorAll(".tab-pane").forEach(pane => {
-      pane.classList.toggle("active", pane.id === `tab-${tabName}`);
-    });
-
-    if (tabName === "story") this.updateStoryUI();
-    if (tabName === "prestige") this.updatePrestigeUI();
-    if (tabName === "achievements") this.updateAchievementsUI();
-    if (tabName === "forge") this.updateForgeUI();
-    if (tabName === "dojo") this.updateDojoUI();
-    if (tabName === "inventory") this.updateInventoryUI();
-    if (tabName === "codex") this.updateCodexUI();
-
-    window.dispatchEvent(new Event('resize'));
-    setTimeout(() => {
-      if (this.updateTabNavArrows) this.updateTabNavArrows();
-    }, 350);
-  }
-
-  // UI 渲染更新整合
-  updateCharacterUI() {
-    const lang = window.getLang ? window.getLang() : "zh-TW";
-    const stats = this.getCalculatedStats();
-
-    // 預設浪人名稱在地化
-    let displayName = this.player.name;
-    if (!displayName || displayName === "無名浪人" || displayName === "Nameless Ronin" || displayName === "無名の浪人") {
-      displayName = lang === "ja" ? "無名の浪人" : (lang === "en" ? "Nameless Ronin" : "無名浪人");
-    }
-    document.getElementById("player-name").textContent = displayName;
-    document.getElementById("player-title").textContent = this.getRankTitle(this.player.level);
-    document.getElementById("player-level").textContent = `Lv.${this.player.level}`;
-
-    const reqExp = this.getRequiredExp(this.player.level);
-    const expPercent = Math.min(100, Math.floor((this.player.exp / reqExp) * 100));
-    document.getElementById("player-exp-bar").style.width = `${expPercent}%`;
-    document.getElementById("player-exp-text").textContent = `${this.player.exp} / ${reqExp} (${expPercent}%)`;
-
-    // 資源（金幣、玉鋼、輪迴魂火）
-    document.getElementById("res-gold").textContent = this.player.gold.toLocaleString();
-    document.getElementById("res-steel").textContent = this.player.steel.toLocaleString();
-    const karmaEl = document.getElementById("res-karma");
-    if (karmaEl) {
-      karmaEl.textContent = (this.player.prestige ? this.player.prestige.karma : 0).toLocaleString();
-    }
-
-    // 命運陣營標籤
-    const factionBadge = document.getElementById("player-faction-badge");
-    if (factionBadge && window.STORY_DATA && this.player.story) {
-      const fid = this.player.story.faction || "unaligned";
-      const f = window.STORY_DATA.factions[fid] || window.STORY_DATA.factions.unaligned;
-      const fText = window.getFactionText ? window.getFactionText(fid, lang) : f;
-      factionBadge.textContent = `${f.icon} ${fText.name || f.name}`;
-      factionBadge.style.background = f.color + "22";
-      factionBadge.style.borderColor = f.color;
-      factionBadge.style.color = f.color;
-    }
-
-    // 戰鬥屬性面板
-    document.getElementById("stat-atk").textContent = stats.atk.toLocaleString();
-    document.getElementById("stat-def").textContent = stats.def.toLocaleString();
-    document.getElementById("stat-crit").textContent = `${stats.crit}%`;
-    document.getElementById("stat-critdmg").textContent = `${stats.critDmg}%`;
-    const speedUnit = window.t ? window.t("statPerSec") : "次/秒";
-    document.getElementById("stat-speed").textContent = `${stats.speed.toFixed(2)} ${speedUnit}`;
-    document.getElementById("stat-pen").textContent = `${stats.armorPen}%`;
-
-    // 武器展示
-    const weapon = this.player.equipped.weapon;
-    const weaponEl = document.getElementById("equip-weapon-display");
-    if (weapon) {
-      const wText = window.getSwordText ? window.getSwordText(weapon, lang) : weapon;
-      weaponEl.innerHTML = `
-        <div class="equip-card" style="border-color:${weapon.color}">
-          <span class="equip-tier" style="background:${weapon.color}">${wText.tierName}</span>
-          <div class="equip-name" style="color:${weapon.color}">
-            ${wText.name} ${weapon.refine > 0 ? `+${weapon.refine}` : ""}
-          </div>
-          <div class="equip-sword-visual">
-            ${weapon.svg || ""}
-          </div>
-          <div class="equip-sub">${wText.type}・${wText.smith}（${wText.era || "日本古作"}）</div>
-          <div class="equip-stat">攻 +${weapon.baseAtk + (weapon.refine * 15)} | 會心 +${weapon.crit}%</div>
-          <div class="equip-passive">${wText.passive}</div>
-        </div>
-      `;
-    }
-  }
-
-  updateBattleUI() {
-    const stats = this.getCalculatedStats();
-
-    // 玩家體力條
-    const hpPercent = Math.max(0, Math.min(100, Math.floor((this.playerCurrentHp / stats.maxHp) * 100)));
-    const playerBar = document.getElementById("player-hp-bar");
-    if (playerBar) {
-      playerBar.style.width = `${hpPercent}%`;
-      document.getElementById("player-hp-text").textContent = `${this.playerCurrentHp} / ${stats.maxHp}`;
-    }
-
-    // 敵人體力條與資訊
-    if (this.currentEnemy) {
-      const e = this.currentEnemy;
-      const lang = window.getLang ? window.getLang() : "zh-TW";
-      const eText = window.getEnemyText ? window.getEnemyText(e, lang) : e;
-      const enemyNameEl = document.getElementById("enemy-name");
-      if (enemyNameEl) enemyNameEl.textContent = eText.name || e.name;
-      const enemyTitleEl = document.getElementById("enemy-title");
-      if (enemyTitleEl) enemyTitleEl.textContent = `【${eText.title || e.title}】`;
-
-      const enemyAvatarEl = document.getElementById("enemy-avatar");
-      if (enemyAvatarEl) {
-        enemyAvatarEl.textContent = e.avatar || (e.isBoss ? "👑" : "👹");
-        if (e.isBoss) {
-          enemyAvatarEl.classList.add("boss-glow");
-        } else {
-          enemyAvatarEl.classList.remove("boss-glow");
-        }
-      }
-
-      const enemyHpPercent = Math.max(0, Math.min(100, Math.floor((e.hp / e.maxHp) * 100)));
-      const enemyBar = document.getElementById("enemy-hp-fill") || document.getElementById("enemy-hp-bar");
-      if (enemyBar) {
-        enemyBar.style.width = `${enemyHpPercent}%`;
-      }
-      const enemyHpText = document.getElementById("enemy-hp-text");
-      if (enemyHpText) {
-        enemyHpText.textContent = `${e.hp} / ${e.maxHp}`;
-      }
-
-      // 首領倒數時鐘
-      const bossClock = document.getElementById("boss-timer-box");
-      if (this.inBossFight) {
-        bossClock.style.display = "block";
-        document.getElementById("boss-timer-num").textContent = Math.ceil(this.bossTimeRemaining);
-        document.getElementById("boss-timer-fill").style.width = `${(this.bossTimeRemaining / this.bossMaxTime) * 100}%`;
-      } else {
-        bossClock.style.display = "none";
-      }
-
-      // 首領按鈕狀態
-      const challengeBtn = document.getElementById("btn-challenge-boss");
-      if (challengeBtn) {
-        challengeBtn.disabled = this.inBossFight;
-        if (this.inBossFight) {
-          challengeBtn.textContent = window.t ? window.t("bossBattleFighting") : "⚔️ 首領決戰激鬥中...";
-        } else if (this.zoneKillProgress >= 10) {
-          challengeBtn.textContent = window.t ? window.t("bossBattleReady") : "⚡ 首領挑戰已解鎖！點擊拔刀！";
-          challengeBtn.classList.add("pulse-glow");
-        } else {
-          challengeBtn.textContent = window.t ? window.t("bossBattleProgress", { current: this.zoneKillProgress, total: 10 }) : `討伐小怪召喚首領 (${this.zoneKillProgress}/10)`;
-          challengeBtn.classList.remove("pulse-glow");
-        }
-      }
-    }
-
-    // 當前戰役地圖名稱
-    const lang = window.getLang ? window.getLang() : "zh-TW";
-    const zone = window.ZONES_DATA.find(z => z.id === this.player.stats.currentZone) || window.ZONES_DATA[0];
-    const zText = window.getZoneText ? window.getZoneText(zone.id, lang) : zone;
-    const actPrefix = lang === 'en' ? `Act ${zone.id}: ` : `第 ${zone.id} 幕・`;
-    document.getElementById("current-zone-name").textContent = `${actPrefix}${zText.name || zone.name}`;
-    document.getElementById("current-zone-sub").textContent = zText.sub || zone.subtitle;
-
-    const zoneSelect = document.getElementById("zone-select");
-    if (zoneSelect && zoneSelect.options) {
-      Array.from(zoneSelect.options).forEach(opt => {
-        const zid = parseInt(opt.value);
-        const zt = window.getZoneText ? window.getZoneText(zid, lang) : null;
-        if (zt && zt.name) {
-          opt.textContent = `${lang === 'en' ? `Act ${zid}: ` : `第 ${zid} 幕・`}${zt.name}`;
-        }
-      });
-    }
-
-    // 連擊計數
-    const comboEl = document.getElementById("combo-counter");
-    if (comboEl) {
-      if (this.comboCount > 1) {
-        comboEl.style.display = "block";
-        comboEl.textContent = window.t ? window.t("comboText", { combo: this.comboCount }) : `${this.comboCount} 連斬！`;
-      } else {
-        comboEl.style.display = "none";
-      }
-    }
-
-    // 自律斬開關按鈕更新
-    const btnAuto = document.getElementById("btn-toggle-autoslash");
-    if (btnAuto) {
-      if (this.autoSlashEnabled) {
-        btnAuto.classList.add("active");
-        btnAuto.innerHTML = window.t ? (window.t("autoSlashOn") || "⚡ 神速自律斬：開啟中") : "⚡ 神速自律斬：開啟中";
-      } else {
-        btnAuto.classList.remove("active");
-        btnAuto.innerHTML = window.t ? (window.t("autoSlashOff") || "💤 手動出刀模式（點擊開啟自律斬）") : "💤 手動出刀模式（點擊開啟自律斬）";
-      }
-    }
-  }
-
-  updateForgeUI() {
-    const fSteel = document.getElementById("forge-steel");
-    if (fSteel) fSteel.textContent = this.player.steel.toLocaleString();
-    const fGold = document.getElementById("forge-gold");
-    if (fGold) fGold.textContent = this.player.gold.toLocaleString();
-
-    // 磨刀石庫存
-    document.getElementById("count-whetstone-rough").textContent = this.player.items.mat_whetstone_rough || 0;
-    document.getElementById("count-whetstone-mid").textContent = this.player.items.mat_whetstone_mid || 0;
-    document.getElementById("count-whetstone-fine").textContent = this.player.items.mat_whetstone_fine || 0;
-
-    // 當前武器磨刀預覽
-    const lang = window.getLang ? window.getLang() : "zh-TW";
-    const weapon = this.player.equipped.weapon;
-    const sharpenBox = document.getElementById("sharpen-weapon-target");
-    if (weapon) {
-      const swText = window.getSwordText ? window.getSwordText(weapon, lang) : weapon;
-      const curAtkLabel = window.t ? window.t("sharpenCurrentAtk") : "當前攻擊力：";
-      const nextAtkLabel = window.t ? window.t("sharpenNextAtk") : "研磨後：";
-      sharpenBox.innerHTML = `
-        <div style="color:${weapon.color};font-weight:bold;font-size:1.15em;">
-          【${swText.tierName || weapon.tierName}】${swText.name || weapon.name} ${weapon.refine > 0 ? `+${weapon.refine}` : ""}
-        </div>
-        <div style="font-size:0.9em;color:#a8a29e;margin-top:4px;">
-          ${curAtkLabel}+${weapon.baseAtk + weapon.refine * 15}
-          <span style="color:#4ade80;">➡️ ${nextAtkLabel}+${weapon.baseAtk + (weapon.refine + 1) * 15} (+15)</span>
-        </div>
-      `;
-    }
-
-    // 熔煉列表渲染（可分解之名刀）
-    const smeltList = document.getElementById("smelt-swords-list");
-    if (smeltList) {
-      const redundantSwords = this.player.swordsInventory.filter(s =>
-        !this.player.equipped.weapon || s.instanceId !== this.player.equipped.weapon.instanceId
-      );
-
-      if (redundantSwords.length === 0) {
-        const emptyHint = window.t ? window.t("smeltEmptyHint") : "暫無可熔煉之多餘名刀";
-        smeltList.innerHTML = `<div class="empty-hint">${emptyHint}</div>`;
-      } else {
-        smeltList.innerHTML = redundantSwords.map(s => {
-          const sText = window.getSwordText ? window.getSwordText(s, lang) : s;
-          const smeltBtnLabel = window.t ? window.t("smeltBtnText", { steel: s.tier * 15, gold: s.tier * 40 }) : `熔煉 (+${s.tier * 15} 玉鋼)`;
-          return `
-            <div class="smelt-card">
-              <div>
-                <span style="color:${s.color};font-weight:bold;">【${sText.tierName || s.tierName}】${sText.name || s.name} ${s.refine > 0 ? `+${s.refine}` : ""}</span>
-                <span style="font-size:0.85em;color:#78716c;margin-left:8px;">${sText.type || s.type}</span>
-              </div>
-              <button class="btn-smelt" onclick="window.game.smeltSword('${s.instanceId}')">
-                ${smeltBtnLabel}
-              </button>
-            </div>
-          `;
-        }).join("");
-      }
-    }
-  }
-
-  updateDojoUI() {
-    document.getElementById("dojo-skill-points").textContent = this.player.skillPoints;
-    document.getElementById("skill-shinkage-level").textContent = `Lv.${this.player.skills.shinkage}`;
-    document.getElementById("skill-jigen-level").textContent = `Lv.${this.player.skills.jigen}`;
-    document.getElementById("skill-rishin-level").textContent = `Lv.${this.player.skills.rishin}`;
-  }
-
-  updateInventoryUI() {
-    const lang = window.getLang ? window.getLang() : "zh-TW";
-    // 渲染背包內名刀列表
-    const swordsGrid = document.getElementById("inventory-swords-grid");
-    if (swordsGrid) {
-      swordsGrid.innerHTML = this.player.swordsInventory.map(s => {
-        const isEquipped = this.player.equipped.weapon && this.player.equipped.weapon.instanceId === s.instanceId;
-        const sText = window.getSwordText ? window.getSwordText(s, lang) : s;
-        const atkLabel = window.t ? window.t("invAtkLabel") : "攻 ";
-        const critLabel = window.t ? window.t("invCritLabel") : "會心 ";
-        const speedLabel = window.t ? window.t("invSpeedLabel") : "速 ";
-        return `
-          <div class="inv-item-card ${isEquipped ? 'equipped' : ''}" style="border-left: 4px solid ${s.color}">
-            <div style="display:flex;justify-content:space-between;align-items:center;">
-              <span class="inv-item-name" style="color:${s.color}">
-                ${sText.name} ${s.refine > 0 ? `+${s.refine}` : ""}
-              </span>
-              <span class="inv-item-tier" style="background:${s.color}">${sText.tierName}</span>
-            </div>
-            <div class="inv-sword-visual">
-              ${s.svg || ""}
-            </div>
-            <div class="inv-item-details">
-              <span>${atkLabel}+${s.baseAtk + s.refine * 15}</span>
-              <span>${critLabel}+${s.crit}%</span>
-              <span>${speedLabel}x${s.speed.toFixed(2)}</span>
-            </div>
-            <div class="inv-item-meta" style="font-size:0.8rem;color:#a8a29e;margin:4px 0;">
-              <span>${sText.type}・${sText.smith}</span> | <span>${sText.era || "日本古作"}</span>
-            </div>
-            <div class="inv-item-passive">${sText.passive}</div>
-            <div class="inv-item-actions">
-              ${isEquipped ?
-                `<button class="btn-equip active" disabled>${window.t ? window.t("btnEquipped") : "已裝著"}</button>` :
-                `<button class="btn-equip" onclick="window.game.equipSword('${s.instanceId}')">${window.t ? window.t("btnEquip") : "帶刀（裝備）"}</button>`
-              }
-            </div>
-          </div>
-        `;
-      }).join("");
-    }
-
-    // 渲染消耗品
-    const consumablesBox = document.getElementById("inventory-consumables-grid");
-    if (consumablesBox) {
-      consumablesBox.innerHTML = window.ITEMS_DATA.consumables.map(c => {
-        const count = this.player.items[c.id] || 0;
-        const cText = window.getItemText ? window.getItemText(c, lang) : c;
-        return `
-          <div class="consumable-card">
-            <div class="con-icon">${c.icon}</div>
-            <div class="con-info">
-              <div class="con-name">${cText.name} <span class="con-qty">x${count}</span></div>
-              <div class="con-desc">${cText.desc}</div>
-            </div>
-            <button class="btn-use" ${count <= 0 ? "disabled" : ""} onclick="window.game.useItem('${c.id}')">
-              ${window.t ? window.t("btnUse") : "使用"}
-            </button>
-          </div>
-        `;
-      }).join("");
-    }
-  }
-
-  updateCodexUI() {
-    const list = document.getElementById("codex-swords-list");
-    if (!list) return;
-
-    const lang = window.getLang ? window.getLang() : "zh-TW";
-    const totalSwords = window.SWORDS_DATA.length;
-    const unlockedCount = this.player.codex.length;
-    document.getElementById("codex-progress").textContent = `${unlockedCount} / ${totalSwords} (${Math.floor((unlockedCount / totalSwords) * 100)}%)`;
-
-    list.innerHTML = window.SWORDS_DATA.map(s => {
-      const isUnlocked = this.player.codex.includes(s.id);
-      const sText = window.getSwordText ? window.getSwordText(s, lang) : s;
-      const lockedName = window.t ? window.t("codexLockedName") : "？？？？（未解鎖）";
-      const lockedTip = window.t ? window.t("codexLockedTip") : "討伐戰國頭目或於鍛冶屋行淬火秘鍛，以解鎖此名刃銘鑑傳承。";
-      const smithLabel = window.t ? window.t("codexSmith") : "刀工：";
-      const eraLabel = window.t ? window.t("codexEra") : "時代：";
-      const masterLabel = window.t ? window.t("codexMaster") : "傳承名將：";
-      const hamonLabel = window.t ? window.t("codexHamon") : "刃文樣式：";
-      const bonusText = window.t ? window.t("codexBonus") : "✨ 銘鑑之證：全武士體力 +30，攻擊力 +5";
-
-      return `
-        <div class="codex-item-card ${isUnlocked ? 'unlocked' : 'locked'}">
-          <div class="codex-header">
-            <span class="codex-name" style="color: ${isUnlocked ? s.color : '#78716c'}">
-              ${isUnlocked ? sText.name : lockedName}
-            </span>
-            <span class="codex-tier" style="border-color:${isUnlocked ? s.color : '#444'}; color:${isUnlocked ? s.color : '#777'}">
-              ${sText.tierName}
-            </span>
-          </div>
-          ${isUnlocked && s.svg ? `<div class="codex-sword-visual">${s.svg}</div>` : ""}
-          <div class="codex-meta">
-            <span>${isUnlocked ? s.romaji : "---"}</span>
-            <span>${smithLabel}${isUnlocked ? sText.smith : "？？？"}</span>
-            <span>${eraLabel}${isUnlocked ? (sText.era || "古傳") : "？？？"}</span>
-          </div>
-          ${isUnlocked && s.master ? `<div class="codex-extra-info"><b>${masterLabel}</b>${sText.master}</div>` : ""}
-          ${isUnlocked && s.hamon ? `<div class="codex-extra-info"><b>${hamonLabel}</b>${sText.hamon}</div>` : ""}
-          <div class="codex-lore">
-            ${isUnlocked ? sText.lore : lockedTip}
-          </div>
-          ${isUnlocked ? `<div class="codex-bonus">${bonusText}</div>` : ""}
-        </div>
-      `;
-    }).join("");
-  }
-
-  // 設置無障礙操作：支援長按連斬、按住空白鍵、Z鍵或Enter，大幅減輕手指負擔
-  setupAccessibilityControls() {
-    let isHolding = false;
-    let holdInterval = null;
-    let lastPointerAttack = 0;
-
-    const startHolding = (e) => {
-      if (isHolding) return;
-      isHolding = true;
-      lastPointerAttack = Date.now();
-      this.attack(true);
-      if (holdInterval) clearInterval(holdInterval);
-      holdInterval = setInterval(() => {
-        if (isHolding) {
-          this.attack(true);
-        }
-      }, 180);
-    };
-
-    const stopHolding = () => {
-      isHolding = false;
-      if (holdInterval) {
-        clearInterval(holdInterval);
-        holdInterval = null;
-      }
-    };
-
-    const arena = document.getElementById("battle-stage-arena");
-    if (arena) {
-      // Modern unified pointer events for Mobile Touch, S-Pen, and Mouse
-      arena.addEventListener("pointerdown", startHolding);
-      window.addEventListener("pointerup", stopHolding);
-      window.addEventListener("pointercancel", stopHolding);
-      arena.addEventListener("pointerleave", stopHolding);
-
-      // Filter out duplicate synthetic click event right after pointerdown on mobile
-      arena.addEventListener("click", (e) => {
-        if (Date.now() - lastPointerAttack < 350) {
-          return;
-        }
-        this.attack(true);
-      });
-    }
-
-    // 鍵盤無障礙支援：按住空白鍵、Z 或 Enter
-    window.addEventListener("keydown", (e) => {
-      if (["INPUT", "TEXTAREA", "SELECT"].includes(document.activeElement.tagName)) return;
-      if (e.code === "Space" || e.key === " " || e.code === "KeyZ" || e.code === "Enter") {
-        e.preventDefault();
-        startHolding();
-      }
-    });
-
-    window.addEventListener("keyup", (e) => {
-      if (e.code === "Space" || e.key === " " || e.code === "KeyZ" || e.code === "Enter") {
-        stopHolding();
-      }
-    });
-  }
-
-  // 左右平滑滾動分頁選單
-  scrollTabNav(direction) {
-    const tabNav = document.querySelector(".tab-nav");
-    if (!tabNav) return;
-    const scrollAmount = Math.max(220, (tabNav.clientWidth || 300) * 0.55);
-    if (typeof tabNav.scrollBy === "function") {
-      tabNav.scrollBy({ left: direction * scrollAmount, behavior: "smooth" });
-    } else {
-      tabNav.scrollLeft = (tabNav.scrollLeft || 0) + direction * scrollAmount;
-    }
-    setTimeout(() => this.updateTabNavArrows(), 280);
-  }
-
-  // 更新左右箭頭按鈕的可見性與透明度
-  updateTabNavArrows() {
-    const tabNav = document.querySelector(".tab-nav");
-    const prevBtn = document.getElementById("tab-nav-prev");
-    const nextBtn = document.getElementById("tab-nav-next");
-    if (!tabNav || !prevBtn || !nextBtn) return;
-
-    const scrollLeft = tabNav.scrollLeft || 0;
-    const clientWidth = tabNav.clientWidth || 0;
-    const scrollWidth = tabNav.scrollWidth || 0;
-
-    const canScrollLeft = scrollLeft > 5;
-    const canScrollRight = scrollLeft + clientWidth < scrollWidth - 5;
-
-    prevBtn.style.opacity = canScrollLeft ? "1" : "0.3";
-    prevBtn.style.pointerEvents = canScrollLeft ? "auto" : "none";
-    nextBtn.style.opacity = canScrollRight ? "1" : "0.3";
-    nextBtn.style.pointerEvents = canScrollRight ? "auto" : "none";
-  }
-
-  // 設置電腦版選單滑鼠拖曳、滾輪橫向滾動與箭頭互動
-  setupTabNavControls() {
-    const tabNav = document.querySelector(".tab-nav");
-    if (!tabNav) return;
-
-    // 1. 滑鼠滾輪直接橫向滾動 (Vertical wheel to horizontal scroll)
-    tabNav.addEventListener("wheel", (e) => {
-      if (Math.abs(e.deltaY) > Math.abs(e.deltaX) && e.deltaY !== 0) {
-        e.preventDefault();
-        tabNav.scrollLeft += e.deltaY * 1.2;
-        this.updateTabNavArrows();
-      }
-    }, { passive: false });
-
-    // 2. 電腦版滑鼠按住拖曳移動 (Mouse drag-to-scroll / grab to pan)
-    let isMouseDown = false;
-    let startX = 0;
-    let startY = 0;
-    let startScrollLeft = 0;
-    let hasDragged = false;
-    let mouseDownTime = 0;
-
-    tabNav.addEventListener("mousedown", (e) => {
-      if (e.button !== 0) return; // 僅響應滑鼠左鍵
-      isMouseDown = true;
-      startX = e.pageX;
-      startY = e.pageY;
-      startScrollLeft = tabNav.scrollLeft || 0;
-      hasDragged = false;
-      mouseDownTime = Date.now();
-    });
-
-    if (typeof window !== "undefined" && window.addEventListener) {
-      window.addEventListener("mousemove", (e) => {
-        if (!isMouseDown) return;
-        const dx = e.pageX - startX;
-        const dy = e.pageY - startY;
-        // 必須有顯著水平位移（大於 20px 且橫向明顯大於縱向）才進入拖曳狀態
-        if (!hasDragged && Math.abs(dx) > 20 && Math.abs(dx) > Math.abs(dy)) {
-          hasDragged = true;
-          tabNav.classList.add("is-dragging");
-        }
-        if (hasDragged) {
-          if (e.preventDefault) e.preventDefault();
-          tabNav.scrollLeft = startScrollLeft - dx;
-          this.updateTabNavArrows();
-        }
-      });
-
-      const endDrag = () => {
-        if (!isMouseDown) return;
-        isMouseDown = false;
-        tabNav.classList.remove("is-dragging");
-        // 點擊判定：按下至放開時間小於 250ms 一律視為純點擊
-        if (Date.now() - mouseDownTime < 250) {
-          hasDragged = false;
-        }
-        if (hasDragged) {
-          setTimeout(() => {
-            hasDragged = false;
-          }, 100);
-        }
-        this.updateTabNavArrows();
-      };
-
-      window.addEventListener("mouseup", endDrag);
-      window.addEventListener("resize", () => {
-        this.updateTabNavArrows();
-      });
-    }
-
-    // 點擊事件代理：確保點擊分頁按鈕時能 100% 觸發切換
-    tabNav.addEventListener("click", (e) => {
-      if (hasDragged) {
-        if (e.preventDefault) e.preventDefault();
-        if (e.stopPropagation) e.stopPropagation();
+    /**
+     * 存入背包並觸發「一鍵智慧換裝」偵測
+     */
+    addGearToInventory(gear) {
+      if (this.player.inventory.length >= 50) {
+        this.showToast(`⚠️ 行囊已滿 (50/50)，請分解多餘裝備！`, 'warning');
         return;
       }
-      const btn = e.target && e.target.closest ? e.target.closest(".tab-btn") : null;
-      if (btn && btn.dataset && btn.dataset.tab) {
-        this.switchTab(btn.dataset.tab);
-      }
-    });
+      this.player.inventory.push(gear);
+      this.renderGearUI();
 
-    // 3. 滾動與視窗改變大小時即時更新箭頭按鈕狀態
-    tabNav.addEventListener("scroll", () => {
-      this.updateTabNavArrows();
-    }, { passive: true });
+      // 智慧換裝比對
+      this.checkSmartEquip();
+    }
 
-    // 初始狀態檢測
-    setTimeout(() => this.updateTabNavArrows(), 200);
-  }
+    /**
+     * 一鍵智慧換裝比對邏輯 (Smart Equip floating banner)
+     */
+    checkSmartEquip() {
+      let bestUpgrade = null;
+      let maxScoreDiff = 0;
 
-  // 初始化啟動
-  start() {
-    this.load();
-    this.checkOfflineGains();
-    // 啟動時靜默檢測並記錄所有已達成之成就，防止每次進遊戲時全部彈出通知
-    this.checkAchievements(true);
-    this.spawnEnemy();
-    this.startCombatLoop();
-    this.setupAccessibilityControls();
-    this.setupTabNavControls();
+      for (const gear of this.player.inventory) {
+        const curGear = this.player.equipped[gear.slot];
+        const curScore = curGear ? curGear.gearScore : 0;
+        const diff = gear.gearScore - curScore;
 
-    // 每 10 秒自動存檔
-    this.autoSaveTimer = setInterval(() => {
-      this.save();
-    }, 10000);
-
-    // 行動裝置切換分頁與鎖定螢幕喚醒支援 (Visibility Lifecycle for vivo, Sharp, Pixel, Samsung, Sony)
-    document.addEventListener("visibilitychange", () => {
-      if (document.hidden) {
-        this.save();
-      } else {
-        this.checkOfflineGains();
-        this.updateCharacterUI();
-        this.updateBattleUI();
-        if (window.samuraiAudio) {
-          window.samuraiAudio.ensureContext();
+        if (diff > 0 && diff > maxScoreDiff) {
+          maxScoreDiff = diff;
+          bestUpgrade = gear;
         }
-        window.dispatchEvent(new Event("resize"));
-      }
-    });
-
-    // 初始 UI 渲染
-    this.updateCharacterUI();
-    this.updateBattleUI();
-    this.updateInventoryUI();
-    this.updateForgeUI();
-    this.updateDojoUI();
-    this.updateCodexUI();
-    this.updateStoryUI();
-    this.updatePrestigeUI();
-    this.updateAchievementsUI();
-  }
-
-  // ==========================================================
-  // 命運繪卷與分歧故事線引擎 (Story & Branching Choices)
-  // ==========================================================
-
-  // 選擇命運陣營
-  chooseFaction(factionId) {
-    if (!window.STORY_DATA || !window.STORY_DATA.factions[factionId]) return;
-    const f = window.STORY_DATA.factions[factionId];
-    this.player.story.faction = factionId;
-    this.checkAchievements();
-    this.player.story.history.push({
-      timestamp: Date.now(),
-      act: 3,
-      event: `選擇投身【${f.name}】`
-    });
-
-    if (window.samuraiAudio) window.samuraiAudio.playLevelUp();
-    const lang = window.getLang ? window.getLang() : "zh-TW";
-    const fText = window.getFactionText ? window.getFactionText(factionId, lang) : f;
-    const vowMsg = window.t
-      ? window.t("logVowFaction", { faction: fText.name, desc: fText.passiveDesc })
-      : `⚔️ 【天命抉擇】你立下誓言，正式投身【${f.name}】！獲得專屬陣營庇佑：${f.passiveDesc}！`;
-    this.addCombatLog(`<span style="color:${f.color};font-weight:bold;">${vowMsg}</span>`);
-
-    alert(window.t ? window.t("msgFactionChosen", { name: fText.name, sub: fText.sub, passive: fText.passiveDesc }) : `📜 【天命立誓】\n你已投身【${f.name}】！\n\n信念：${f.sub}\n專屬庇佑：${f.passiveDesc}`);
-    this.updateCharacterUI();
-    this.updateStoryUI();
-    this.updateBattleUI();
-    this.save();
-  }
-
-  // 推進故事對白里程碑
-  advanceStoryMilestone(zoneId) {
-    if (!window.STORY_DATA) return;
-    const lang = window.getLang ? window.getLang() : "zh-TW";
-    const chText = window.getStoryChapterText ? window.getStoryChapterText(zoneId, lang) : (window.STORY_DATA.chapters.find(c => c.act === zoneId) || window.STORY_DATA.chapters[0]);
-    if (chText && chText.milestoneDialogue && chText.milestoneDialogue.length > 0) {
-      const line = chText.milestoneDialogue[0];
-      const speaker = window.getSpeakerText ? window.getSpeakerText(line.speaker, lang) : line.speaker;
-      const milestoneMsg = window.t
-        ? window.t("logStoryMilestone", { speaker: speaker, text: line.text })
-        : `📜 【劇情推進】${speaker}：「${line.text}」`;
-      this.addCombatLog(`<span style="color:#38bdf8;">${milestoneMsg}</span>`);
-      this.updateStoryUI();
-    }
-  }
-
-  // 擊破當幕首領，完成章節推進
-  completeAct(actNum) {
-    if (!this.player.story) return;
-    if (!this.player.story.completedActs.includes(actNum)) {
-      this.player.story.completedActs.push(actNum);
-      this.checkAchievements();
-      const actCompleteMsg = window.t
-        ? window.t("logStoryActComplete", { act: actNum })
-        : `📜 【命運繪卷】突破第 ${actNum} 幕歷史篇章！`;
-      this.addCombatLog(`<span style="color:#fbbf24;font-weight:bold;">${actCompleteMsg}</span>`);
-    }
-
-    if (actNum === 7) {
-      // 最終第 7 幕擊破：迎向歷史大結局！
-      this.triggerEnding();
-    } else {
-      if (this.player.story.currentAct <= actNum) {
-        this.player.story.currentAct = actNum + 1;
-      }
-    }
-    this.updateStoryUI();
-    this.save();
-  }
-
-  // 觸發歷史大結局
-  triggerEnding() {
-    let endingId = "ending_hermit";
-    if (this.player.story.faction === "shogunate") endingId = "ending_shogunate";
-    else if (this.player.story.faction === "ishin") endingId = "ending_ishin";
-    else if (this.player.story.faction === "shura") endingId = "ending_shura";
-
-    const ending = window.STORY_DATA.endings[endingId];
-    if (!ending) return;
-
-    if (!this.player.story.unlockedEndings.includes(endingId)) {
-      this.player.story.unlockedEndings.push(endingId);
-      this.player.prestige.karma += ending.karmaReward;
-      this.player.prestige.totalKarmaEarned += ending.karmaReward;
-    }
-
-    if (window.samuraiAudio) window.samuraiAudio.playLevelUp();
-    const lang = window.getLang ? window.getLang() : "zh-TW";
-    const endText = window.getEndingText ? window.getEndingText(endingId, lang) : ending;
-    const endMsg = window.t
-      ? window.t("logGrandEnding", { title: endText.title, karma: ending.karmaReward })
-      : `🏆 【歷史大結局達成】${ending.title}！獲得 ${ending.karmaReward} 輪迴魂火獎勵！`;
-    this.addCombatLog(`<span style="color:${ending.color};font-size:1.15em;font-weight:bold;">${endMsg}</span>`);
-
-    this.showEndingModal(ending);
-    this.updateCharacterUI();
-    this.updateStoryUI();
-    this.updatePrestigeUI();
-    this.save();
-  }
-
-  // 顯示結局 Modal
-  showEndingModal(ending) {
-    const modal = document.getElementById("ending-modal");
-    if (!modal) return;
-    const lang = window.getLang ? window.getLang() : "zh-TW";
-    const ed = window.getStoryEndingText ? window.getStoryEndingText(ending.id, lang) : ending;
-    document.getElementById("ending-modal-icon").textContent = ed.icon;
-    document.getElementById("ending-modal-title").textContent = ed.title;
-    document.getElementById("ending-modal-title").style.color = ed.color;
-    document.getElementById("ending-modal-tagline").textContent = ed.tagline;
-    document.getElementById("ending-modal-epilogue").textContent = ed.epilogue;
-    const karmaName = window.t ? window.t("endingRewardKarma") : "輪迴魂火";
-    document.getElementById("ending-modal-reward").textContent = `${ed.rewardTitle}（+${ed.karmaReward} ${karmaName}）`;
-    modal.classList.add("active");
-  }
-
-  // 故事線 UI 渲染
-  updateStoryUI() {
-    if (!window.STORY_DATA || !this.player.story) return;
-
-    // 1. 當前陣營英雄旗幟
-    const lang = window.getLang ? window.getLang() : "zh-TW";
-    const factionId = this.player.story.faction || "unaligned";
-    const f = window.STORY_DATA.factions[factionId] || window.STORY_DATA.factions.unaligned;
-    const fText = window.getFactionText ? window.getFactionText(factionId, lang) : f;
-    const bannerEl = document.getElementById("story-faction-banner");
-    if (bannerEl) {
-      bannerEl.innerHTML = `
-        <div class="faction-badge-big" style="border-color:${f.color};color:${f.color};box-shadow:0 0 15px ${f.color}44;">
-          ${f.icon}
-        </div>
-        <div class="faction-banner-info">
-          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
-            <h3 style="color:${f.color};font-size:1.35rem;margin:0;">${fText.name || f.name}</h3>
-            <span style="font-size:0.75rem;padding:2px 8px;border-radius:4px;background:${f.color}22;border:1px solid ${f.color};color:${f.color};">${fText.sub || f.sub}</span>
-          </div>
-          <p style="font-size:0.85rem;color:#cbd5e1;margin:4px 0;">${fText.desc || f.desc}</p>
-          <div class="faction-passive-pill" style="border-left:3px solid ${f.color};background:rgba(0,0,0,0.4);padding:4px 8px;border-radius:4px;font-size:0.82rem;color:#fbbf24;">
-            ✨ <b>${lang === 'en' ? 'Faction Blessing' : (lang === 'ja' ? '陣営加護' : '陣營天賦庇佑')}</b>：${fText.passiveDesc || f.passiveDesc}
-          </div>
-        </div>
-      `;
-    }
-
-    // 2. 當前章節情報
-    const currentActNum = Math.min(7, Math.max(1, this.player.stats.currentZone || 1));
-    const chText = window.getStoryChapterText ? window.getStoryChapterText(currentActNum, lang) : (window.STORY_DATA.chapters.find(c => c.act === currentActNum) || window.STORY_DATA.chapters[0]);
-
-    const actWord = lang === 'en' ? `Act ${currentActNum}` : (lang === 'ja' ? `第 ${currentActNum} 幕` : `第 ${currentActNum} 幕`);
-    const progressWord = this.inBossFight 
-      ? (lang === 'en' ? 'Boss Encounter' : (lang === 'ja' ? '頭目決戦中' : '決戰頭目中'))
-      : (lang === 'en' ? `Progress: ${this.zoneKillProgress}/10` : (lang === 'ja' ? `進捗: ${this.zoneKillProgress}/10` : `進度: ${this.zoneKillProgress}/10`));
-
-    const tagEl = document.getElementById("story-act-tag");
-    if (tagEl) tagEl.textContent = `${actWord}（${progressWord}）`;
-    const titleEl = document.getElementById("story-act-title");
-    if (titleEl) titleEl.textContent = chText.title;
-    const summaryEl = document.getElementById("story-act-summary");
-    if (summaryEl) {
-      let flavor = chText.summary;
-      if (chText.branchFlavor && chText.branchFlavor[factionId]) {
-        const clueLabel = window.t ? window.t("endingHeaderHistoryClue", { name: fText.name || f.name }) : `🏮 【${fText.name || f.name}專屬歷史線索】`;
-        flavor += `<br><span style="color:${f.color};font-size:0.88rem;display:inline-block;margin-top:6px;">${clueLabel}：${chText.branchFlavor[factionId]}</span>`;
-      }
-      summaryEl.innerHTML = flavor;
-    }
-
-    // 3. 歷練劇幕對白 Stream
-    const dialogueStream = document.getElementById("story-dialogue-stream");
-    if (dialogueStream) {
-      let dialogues = [...(chText.introDialogue || [])];
-      if (this.zoneKillProgress >= 5 && chText.milestoneDialogue) {
-        dialogues = dialogues.concat(chText.milestoneDialogue);
-      }
-      if (this.inBossFight && chText.bossDialogue) {
-        dialogues = dialogues.concat(chText.bossDialogue);
-      }
-      if (this.player.story.completedActs.includes(currentActNum) && chText.clearDialogue) {
-        dialogues = dialogues.concat(chText.clearDialogue);
       }
 
-      dialogueStream.innerHTML = dialogues.map(d => {
-        const speaker = window.getSpeakerText ? window.getSpeakerText(d.speaker, lang) : d.speaker;
-        const isPlayer = d.speaker === "你" || d.speaker === "浪人";
-        return `
-          <div class="dialogue-line ${isPlayer ? 'player' : 'npc'}">
-            <span class="dialogue-speaker">${speaker}:</span>
-            <span class="dialogue-text">${d.text}</span>
-          </div>
-        `;
-      }).join("");
-    }
+      const banner = document.getElementById('smart-equip-banner');
+      if (!banner) return;
 
-    // 4. 分歧天命決斷區域 (在第 3 幕，且陣營仍為 unaligned 時出現)
-    const choiceSection = document.getElementById("story-choice-section");
-    const choicesGrid = document.getElementById("story-choices-grid");
-    if (choiceSection && choicesGrid) {
-      if (currentActNum >= 3 && this.player.story.faction === "unaligned") {
-        choiceSection.style.display = "block";
-        const chapter3 = window.getStoryChapterText ? window.getStoryChapterText(3, lang) : window.STORY_DATA.chapters[2];
-        const vowBtnText = window.t ? window.t("btnVowFaction") : "立誓投身此道";
-        choicesGrid.innerHTML = (chapter3.choices || []).map(c => {
-          const choiceName = (c.translations && c.translations[lang]) ? c.translations[lang].name : c.name;
-          const choiceDesc = (c.translations && c.translations[lang]) ? c.translations[lang].desc : c.desc;
-          return `
-            <div class="story-choice-card faction-${c.faction}">
-              <h4 style="margin-bottom:6px;color:${window.STORY_DATA.factions[c.faction].color};">${choiceName}</h4>
-              <p style="font-size:0.83rem;color:#cbd5e1;line-height:1.5;margin-bottom:12px;">${choiceDesc}</p>
-              <button class="btn-choose-faction btn-${c.faction}" onclick="window.game.chooseFaction('${c.faction}')">
-                ${vowBtnText}
-              </button>
+      if (bestUpgrade) {
+        this.smartEquipTarget = bestUpgrade;
+        const q = window.GEAR_QUALITIES[bestUpgrade.quality] || window.GEAR_QUALITIES.common;
+        banner.style.display = 'flex';
+        banner.innerHTML = `
+          <div class="smart-equip-content">
+            <span class="smart-equip-icon">${bestUpgrade.icon}</span>
+            <div class="smart-equip-text">
+              <div class="smart-equip-title">⬆️ 發現更高戰力裝備！</div>
+              <div class="smart-equip-name" style="color: ${q.color};">${bestUpgrade.name} (${bestUpgrade.slotName})</div>
             </div>
-          `;
-        }).join("");
-      } else {
-        choiceSection.style.display = "none";
-      }
-    }
-
-    // 5. 七大幕天命全記錄時間軸 (Timeline)
-    const timelineEl = document.getElementById("story-acts-timeline");
-    if (timelineEl) {
-      timelineEl.innerHTML = window.STORY_DATA.chapters.map(c => {
-        const isCompleted = this.player.story.completedActs.includes(c.act);
-        const isCurrent = this.player.stats.currentZone === c.act;
-        let statusTag = isCompleted ? (window.t ? window.t("storyStatusCompleted") : "✅ 已突破") 
-          : (isCurrent ? (window.t ? window.t("storyStatusCurrent") : "⚔️ 討伐中") 
-          : (window.t ? window.t("storyStatusLocked") : "🔒 未開闢"));
-        let statusClass = isCompleted ? "completed" : (isCurrent ? "current" : "locked");
-        const actChText = window.getStoryChapterText ? window.getStoryChapterText(c.act, lang) : c;
-        const actLabel = lang === 'en' ? `Act ${c.act}` : (lang === 'ja' ? `第 ${c.act} 幕` : `第 ${c.act} 幕`);
-        return `
-          <div class="timeline-act-cell ${statusClass}">
-            <div class="act-cell-top">
-              <span class="act-badge">${actLabel}</span>
-              <span class="act-status">${statusTag}</span>
-            </div>
-            <div class="act-name">${actChText.title}</div>
-          </div>
-        `;
-      }).join("");
-    }
-
-    // 6. 四大歷史終章大結局錄
-    const endingsGrid = document.getElementById("story-endings-grid");
-    if (endingsGrid) {
-      endingsGrid.innerHTML = Object.keys(window.STORY_DATA.endings).map(eid => {
-        const ed = window.getStoryEndingText ? window.getStoryEndingText(eid, lang) : window.STORY_DATA.endings[eid];
-        const isUnlocked = this.player.story.unlockedEndings.includes(ed.id);
-        const lockedTitle = window.t ? window.t("endingLockedTitle") : "【未勘破之歷史迷霧】";
-        const lockedTag = window.t ? window.t("endingLockedTag") : "達成第 7 幕特定陣營終局解鎖";
-        const lockedDesc = window.t ? window.t("endingLockedDesc") : "需於本幕或轉生後選擇相應命運路線，並在江戶天守閣擊破天下無雙。";
-        const karmaLabel = window.t ? window.t("endingRewardKarma") : "輪迴魂火";
-        return `
-          <div class="ending-archive-card ${isUnlocked ? 'unlocked' : 'locked'}" style="${isUnlocked ? `border-color:${ed.color}` : ''}">
-            <div class="ending-archive-header">
-              <span style="font-size:1.8rem;">${isUnlocked ? ed.icon : '🔒'}</span>
-              <div>
-                <h4 style="color:${isUnlocked ? ed.color : '#6b7280'};font-size:1rem;margin:0;">${isUnlocked ? ed.title : lockedTitle}</h4>
-                <span style="font-size:0.75rem;color:#9ca3af;">${isUnlocked ? ed.tagline : lockedTag}</span>
-              </div>
-            </div>
-            ${isUnlocked ? `
-              <div class="ending-archive-body">${ed.epilogue}</div>
-              <div class="ending-reward-badge" style="color:${ed.color};border:1px solid ${ed.color}44;">
-                🏆 ${ed.rewardTitle} | ${karmaLabel} +${ed.karmaReward}
-              </div>
-            ` : `
-              <div style="font-size:0.8rem;color:#6b7280;margin-top:8px;">${lockedDesc}</div>
-            `}
-          </div>
-        `;
-      }).join("");
-    }
-  }
-
-  // ==========================================================
-  // 劍心輪迴與轉生神龕引擎 (Prestige & Reincarnation System)
-  // ==========================================================
-
-  // 發動劍心輪迴轉生
-  reincarnate() {
-    if (this.player.level < window.PRESTIGE_DATA.unlockLevel && (this.player.stats.highestZone || 1) < window.PRESTIGE_DATA.unlockZone) {
-      alert(window.t ? window.t("msgPrestigeLocked") : `🌀 劍心尚未歷練圓滿！需要達到等級 ${window.PRESTIGE_DATA.unlockLevel} 或通過第 ${window.PRESTIGE_DATA.unlockZone} 幕（京都三條）方可發動劍心輪迴。`);
-      return;
-    }
-
-    const karmaEarned = window.PRESTIGE_DATA.calculateKarmaEarned(this.player);
-    const confirmMsg = window.t ? window.t("msgPrestigeConfirm", { karma: karmaEarned }) : `🌀 確定要進行劍心輪迴轉生嗎？\n\n・本次將獲得：${karmaEarned} 點輪迴魂火\n・等級與關卡將重置，可重新選擇陣營分歧\n・所有名刀、圖鑑與神龕天賦將完整保留！`;
-
-    if (!confirm(confirmMsg)) return;
-
-    // 發放魂火
-    this.player.prestige.karma += karmaEarned;
-    this.player.prestige.totalKarmaEarned += karmaEarned;
-    this.player.prestige.reincarnationCount++;
-    this.checkAchievements();
-
-    // 計算初始起步等級（受 perk_wisdom 影響）
-    const wisdomLevel = (this.player.prestige.perks && this.player.prestige.perks.perk_wisdom) || 0;
-    const startLevel = 1 + wisdomLevel * 2;
-    const wealthLevel = (this.player.prestige.perks && this.player.prestige.perks.perk_wealth) || 0;
-    const startGold = 100 + wealthLevel * 50;
-    const startSteel = 30 + wealthLevel * 15;
-
-    // 執行重置
-    this.player.level = startLevel;
-    this.player.exp = 0;
-    this.player.gold = startGold;
-    this.player.steel = startSteel;
-    this.player.skillPoints = (startLevel - 1) * 2;
-    this.player.skills = { shinkage: 0, jigen: 0, rishin: 0 };
-    this.player.stats.currentZone = 1;
-    this.zoneKillProgress = 0;
-    this.inBossFight = false;
-
-    // 重置故事線以便體驗其他分歧
-    this.player.story.currentAct = 1;
-    this.player.story.faction = "unaligned";
-
-    const stats = this.getCalculatedStats();
-    this.playerCurrentHp = stats.maxHp;
-
-    if (window.samuraiAudio) window.samuraiAudio.playLevelUp();
-    const lang = window.getLang ? window.getLang() : "zh-TW";
-    const reinMsg = window.t
-      ? window.t("logReincarnate", { karma: karmaEarned })
-      : `🌀 【劍心輪迴完成】轉生重生！獲得 ${karmaEarned} 輪迴魂火！天賦點數與屬性已大幅強化！`;
-    this.addCombatLog(`<span style="color:#f59e0b;font-size:1.15em;font-weight:bold;">${reinMsg}</span>`);
-
-    this.spawnEnemy();
-    this.updateCharacterUI();
-    this.updateBattleUI();
-    this.updateDojoUI();
-    this.updateForgeUI();
-    this.updateInventoryUI();
-    this.updateStoryUI();
-    this.updatePrestigeUI();
-    this.save();
-
-    alert(window.t ? window.t("msgPrestigeSuccess", { karma: karmaEarned }) : `✨ 轉生成功！\n已獲得 ${karmaEarned} 點輪迴魂火！\n您現在可以在【劍心轉生】分頁點選強大的永久天賦神龕！`);
-  }
-
-  // 升級輪迴天賦神龕
-  upgradePrestigePerk(perkId) {
-    const perk = window.PRESTIGE_DATA.perks.find(p => p.id === perkId);
-    if (!perk) return;
-
-    const currentLevel = this.player.prestige.perks[perkId] || 0;
-    if (currentLevel >= perk.maxLevel) {
-      alert(window.t ? window.t("msgPerkMax") : "此輪迴天賦已修煉至至高大圓滿階級！");
-      return;
-    }
-
-    const cost = window.PRESTIGE_DATA.getPerkCost(perkId, currentLevel);
-    if (this.player.prestige.karma < cost) {
-      alert(window.t ? window.t("msgKarmaLack", { cost, owned: this.player.prestige.karma }) : `輪迴魂火不足！需要 ${cost} 點魂火，當前持有 ${this.player.prestige.karma} 點。`);
-      return;
-    }
-
-    this.player.prestige.karma -= cost;
-    this.player.prestige.perks[perkId] = currentLevel + 1;
-    this.checkAchievements();
-
-    if (window.samuraiAudio) window.samuraiAudio.playHammer();
-    const lang = window.getLang ? window.getLang() : "zh-TW";
-    const pText = window.getPerkText ? window.getPerkText(perkId, lang) : perk;
-    const perkMsg = window.t
-      ? window.t("logUpgradePerk", { perk: pText.name, level: this.player.prestige.perks[perkId] })
-      : `🔥 點亮輪迴神龕【${perk.name}】至 Lv.${this.player.prestige.perks[perkId]}！獲得永久神力加護！`;
-    this.addCombatLog(perkMsg);
-
-    this.updateCharacterUI();
-    this.updateBattleUI();
-    this.updatePrestigeUI();
-    this.save();
-  }
-
-  // 輪迴天賦 UI 渲染
-  updatePrestigeUI() {
-    if (!window.PRESTIGE_DATA || !this.player.prestige) return;
-
-    const karma = this.player.prestige.karma || 0;
-    const count = this.player.prestige.reincarnationCount || 0;
-    const gainPreview = window.PRESTIGE_DATA.calculateKarmaEarned(this.player);
-
-    const countEl = document.getElementById("prestige-count");
-    if (countEl) countEl.textContent = count;
-    const karmaEl = document.getElementById("prestige-karma");
-    if (karmaEl) karmaEl.textContent = karma.toLocaleString();
-    const previewEl = document.getElementById("prestige-gain-preview");
-    if (previewEl) previewEl.textContent = `+${gainPreview.toLocaleString()}`;
-
-    // 判斷轉生按鈕可用性
-    const btnReincarnate = document.getElementById("btn-do-reincarnate");
-    if (btnReincarnate) {
-      const canReincarnate = (this.player.level >= window.PRESTIGE_DATA.unlockLevel || (this.player.stats.highestZone || 1) >= window.PRESTIGE_DATA.unlockZone);
-      if (canReincarnate) {
-        btnReincarnate.disabled = false;
-        btnReincarnate.style.opacity = "1";
-        btnReincarnate.style.cursor = "pointer";
-        const rebText = window.t ? window.t("prestigeRebirthBtn") : "🌀 斬斷因果・發動劍心輪迴";
-        btnReincarnate.innerHTML = `${rebText} (+${gainPreview})`;
-      } else {
-        btnReincarnate.disabled = true;
-        btnReincarnate.style.opacity = "0.5";
-        btnReincarnate.style.cursor = "not-allowed";
-        btnReincarnate.innerHTML = `🔒 Lv.${window.PRESTIGE_DATA.unlockLevel} / Act ${window.PRESTIGE_DATA.unlockZone}`;
-      }
-    }
-
-    // 8 大輪迴天賦神龕渲染
-    const perksGrid = document.getElementById("prestige-perks-grid");
-    if (perksGrid) {
-      perksGrid.innerHTML = window.PRESTIGE_DATA.perks.map(p => {
-        const curLvl = this.player.prestige.perks[p.id] || 0;
-        const isMax = curLvl >= p.maxLevel;
-        const cost = window.PRESTIGE_DATA.getPerkCost(p.id, curLvl);
-        const canAfford = karma >= cost && !isMax;
-
-        let bonusText = "";
-        if (p.id === "perk_atk") bonusText = `基礎攻擊力 +${curLvl * 15}%`;
-        else if (p.id === "perk_hp") bonusText = `最大體力上限 +${curLvl * 20}%`;
-        else if (p.id === "perk_speed") bonusText = `拔刀與自律斬頻率 +${curLvl * 8}%`;
-        else if (p.id === "perk_crit") bonusText = `會心率 +${curLvl * 2}% | 會心傷 +${curLvl * 15}%`;
-        else if (p.id === "perk_forge") bonusText = `高品質名刀機率 +${curLvl * 4}%`;
-        else if (p.id === "perk_wealth") bonusText = `金小判與玉鋼獲取 +${curLvl * 25}%`;
-        else if (p.id === "perk_wisdom") bonusText = `轉生初始等級保留 Lv.${1 + curLvl * 2}`;
-        else if (p.id === "perk_boss_slayer") bonusText = `首領增傷 +${curLvl * 20}% | 破甲 +${curLvl * 4}%`;
-
-        return `
-          <div class="prestige-perk-card ${isMax ? 'maxed' : ''}">
-            <div class="perk-card-header">
-              <span class="perk-icon">${p.icon}</span>
-              <div class="perk-title-box">
-                <div class="perk-name">${p.name}</div>
-                <div class="perk-level ${isMax ? 'max' : ''}">Lv.${curLvl} / ${p.maxLevel}</div>
-              </div>
-            </div>
-            <div class="perk-desc">${p.desc}</div>
-            <div class="perk-current-bonus">當前加護：<b>${curLvl > 0 ? bonusText : '尚未領悟'}</b></div>
-            <button class="btn-upgrade-perk ${canAfford ? 'can-afford' : ''}" 
-                    ${(!canAfford || isMax) ? 'disabled' : ''} 
-                    onclick="window.game.upgradePrestigePerk('${p.id}')">
-              ${isMax ? '✨ 至高圓滿' : `🔥 領悟強化 (${cost} 魂火)`}
+            <div class="smart-equip-diff">戰力 +${maxScoreDiff}</div>
+            <button class="btn btn-smart-equip btn-gold" onclick="window.game.equipSmartTarget()">
+              ⚡ 一鍵穿戴 (空白鍵)
             </button>
           </div>
         `;
-      }).join("");
-    }
-  }
-
-
-  // ==========================================================
-  // 榮譽成就系統方法 (Achievements System API)
-  // ==========================================================
-
-  getAchievementProgress(ach) {
-    if (!ach) return { current: 0, target: 1, isCompleted: false, isClaimed: false };
-    const p = this.player;
-    let current = 0;
-
-    switch (ach.id) {
-      case "ach_kill_1":
-      case "ach_kill_50":
-      case "ach_kill_200":
-      case "ach_kill_1000":
-      case "ach_kill_5000":
-        current = (p.stats && p.stats.totalKills) || 0;
-        break;
-      case "ach_boss_1":
-      case "ach_boss_10":
-      case "ach_boss_50":
-        current = (p.stats && p.stats.bossKills) || 0;
-        break;
-      case "ach_combo_50":
-        current = Math.max((p.achievements && p.achievements.highestCombo) || 0, this.comboCount || 0);
-        break;
-      case "ach_forge_1":
-      case "ach_forge_10":
-      case "ach_forge_50":
-        current = (p.stats && p.stats.swordsForged) || 0;
-        break;
-      case "ach_sharpen_5":
-      case "ach_sharpen_20":
-        current = (p.stats && p.stats.totalSharpens) || 0;
-        break;
-      case "ach_tier_wazamono":
-        current = (p.codex && window.SWORDS_DATA) ? (p.codex.some(id => {
-          const s = window.SWORDS_DATA.find(x => x.id === id);
-          return s && s.tier >= 2;
-        }) ? 1 : 0) : 0;
-        break;
-      case "ach_tier_owazamono":
-        current = (p.codex && window.SWORDS_DATA) ? (p.codex.some(id => {
-          const s = window.SWORDS_DATA.find(x => x.id === id);
-          return s && s.tier >= 4;
-        }) ? 1 : 0) : 0;
-        break;
-      case "ach_tier_five_swords":
-        current = (p.codex && window.SWORDS_DATA) ? (p.codex.some(id => {
-          const s = window.SWORDS_DATA.find(x => x.id === id);
-          return s && (s.tierName === "天下五劍" || (s.tierName && s.tierName.includes("五劍")) || s.tier === 5);
-        }) ? 1 : 0) : 0;
-        break;
-      case "ach_tier_mythic":
-        current = (p.codex && window.SWORDS_DATA) ? (p.codex.some(id => {
-          const s = window.SWORDS_DATA.find(x => x.id === id);
-          return s && (s.tierName === "神話妖刀" || (s.tierName && s.tierName.includes("妖刀")) || s.tier >= 6);
-        }) ? 1 : 0) : 0;
-        break;
-      case "ach_level_10":
-      case "ach_level_30":
-      case "ach_level_60":
-      case "ach_level_100":
-        current = p.level || 1;
-        break;
-      case "ach_dojo_5":
-      case "ach_dojo_15":
-        current = Math.max((p.skills && p.skills.shinkage) || 0, (p.skills && p.skills.jigen) || 0, (p.skills && p.skills.rishin) || 0);
-        break;
-      case "ach_faction_vow":
-        current = (p.story && p.story.faction && p.story.faction !== "unaligned") ? 1 : 0;
-        break;
-      case "ach_clear_act7":
-        current = (p.story && p.story.completedActs && p.story.completedActs.includes(7)) ? 7 : ((p.stats && p.stats.highestZone >= 7 && p.stats.bossKills > 0) ? 7 : 0);
-        break;
-      case "ach_all_endings":
-        current = (p.story && p.story.unlockedEndings) ? p.story.unlockedEndings.length : 0;
-        break;
-      case "ach_prestige_1":
-      case "ach_prestige_3":
-        current = (p.prestige ? p.prestige.reincarnationCount : 0);
-        break;
-      case "ach_karma_500":
-        current = (p.prestige ? Math.max(p.prestige.totalKarmaEarned || 0, p.prestige.karma || 0) : 0);
-        break;
-      case "ach_perk_max":
-        current = (p.prestige && p.prestige.perks && window.PRESTIGE_DATA ? (Object.keys(p.prestige.perks).some(k => {
-          const perk = window.PRESTIGE_DATA.perks.find(x => x.id === k);
-          return perk && p.prestige.perks[k] >= perk.maxLevel;
-        }) ? 1 : 0) : 0);
-        break;
-      default:
-        current = 0;
+      } else {
+        this.smartEquipTarget = null;
+        banner.style.display = 'none';
+      }
     }
 
-    const isClaimed = !!(p.achievements && p.achievements.claimed && p.achievements.claimed.includes(ach.id));
-    const isUnlocked = !!(p.achievements && p.achievements.unlocked && p.achievements.unlocked.includes(ach.id));
-    const isCompleted = isClaimed || isUnlocked || current >= ach.target;
-    return {
-      current: Math.min(ach.target, Math.max(current, isCompleted ? ach.target : 0)),
-      target: ach.target,
-      isCompleted,
-      isClaimed
-    };
-  }
-
-  checkAchievements(suppressToast = false) {
-    if (!window.ACHIEVEMENTS_DATA || !this.player || !this.player.achievements) return;
-    if (!Array.isArray(this.player.achievements.unlocked)) {
-      this.player.achievements.unlocked = [];
-    }
-    if (!Array.isArray(this.player.achievements.claimed)) {
-      this.player.achievements.claimed = [];
+    /**
+     * 執行一鍵換裝
+     */
+    equipSmartTarget() {
+      if (!this.smartEquipTarget) return;
+      this.equipGear(this.smartEquipTarget.uid);
+      const banner = document.getElementById('smart-equip-banner');
+      if (banner) banner.style.display = 'none';
+      this.smartEquipTarget = null;
+      this.checkSmartEquip();
     }
 
-    let newlyUnlocked = false;
+    /**
+     * 裝備特定裝備
+     */
+    equipGear(gearUid) {
+      const idx = this.player.inventory.findIndex(g => g.uid === gearUid);
+      if (idx === -1) return;
 
-    for (const ach of window.ACHIEVEMENTS_DATA) {
-      // 只要該成就已經解鎖或已領取，就絕不重複觸發彈窗
-      const isAlreadyUnlocked = this.player.achievements.unlocked.includes(ach.id) ||
-                                this.player.achievements.claimed.includes(ach.id);
+      const newGear = this.player.inventory[idx];
+      const slot = newGear.slot;
+      const oldGear = this.player.equipped[slot];
 
-      const prog = this.getAchievementProgress(ach);
-      if (prog.isCompleted) {
-        if (!isAlreadyUnlocked) {
-          this.player.achievements.unlocked.push(ach.id);
-          newlyUnlocked = true;
-          if (!suppressToast && typeof window !== "undefined" && !window.__TESTING__) {
-            this.showAchievementToast(ach);
-          }
+      this.player.inventory.splice(idx, 1);
+      if (oldGear) {
+        this.player.inventory.push(oldGear);
+      }
+      this.player.equipped[slot] = newGear;
+
+      if (this.audio) this.audio.playEquipSound();
+      this.showToast(`已穿戴【${newGear.name}】！`, 'success');
+
+      this.renderGearUI();
+      this.updateHeaderUI();
+      this.checkAchievements();
+    }
+
+    /**
+     * 卸下裝備
+     */
+    unequipGear(slot) {
+      const oldGear = this.player.equipped[slot];
+      if (!oldGear) return;
+      if (this.player.inventory.length >= 50) {
+        this.showToast(`行囊空間不足，無法卸下裝備！`, 'warning');
+        return;
+      }
+      this.player.equipped[slot] = null;
+      this.player.inventory.push(oldGear);
+      if (this.audio) this.audio.playEquipSound();
+      this.renderGearUI();
+      this.updateHeaderUI();
+    }
+
+    /**
+     * 一鍵分解背包內所有普通與魔法裝備
+     */
+    decomposeAllJunk() {
+      const toDecompose = this.player.inventory.filter(g => g.quality === 'common' || g.quality === 'magic');
+      if (toDecompose.length === 0) {
+        this.showToast(`行囊內無可分解的普通或魔法裝備！`, 'info');
+        return;
+      }
+
+      let totalIron = 0;
+      let totalSouls = 0;
+      let totalGold = 0;
+
+      toDecompose.forEach(g => {
+        const mats = window.decomposeGear(g);
+        totalIron += mats.iron;
+        totalSouls += mats.souls;
+        totalGold += mats.gold;
+      });
+
+      this.player.inventory = this.player.inventory.filter(g => g.quality !== 'common' && g.quality !== 'magic');
+      this.player.iron += totalIron;
+      this.player.souls += totalSouls;
+      this.player.gold += totalGold;
+
+      this.showToast(`♻️ 成功分解 ${toDecompose.length} 件裝備！獲得玉鋼 x${totalIron}、魂玉 x${totalSouls}、金幣 x${totalGold.toLocaleString()}`, 'success');
+      this.renderGearUI();
+      this.updateHeaderUI();
+    }
+
+    /**
+     * 強化裝備
+     */
+    upgradeGear(gearUid) {
+      let gear = null;
+      for (const slotKey of Object.keys(this.player.equipped)) {
+        if (this.player.equipped[slotKey] && this.player.equipped[slotKey].uid === gearUid) {
+          gear = this.player.equipped[slotKey];
+          break;
         }
       }
-    }
-
-    if (newlyUnlocked) {
-      this.save();
-      this.updateAchievementsUI();
-    }
-  }
-
-  claimAchievement(achId) {
-    if (!window.ACHIEVEMENTS_DATA || !this.player || !this.player.achievements) return;
-    const ach = window.ACHIEVEMENTS_DATA.find(a => a.id === achId);
-    if (!ach) return;
-
-    const prog = this.getAchievementProgress(ach);
-    if (!prog.isCompleted || prog.isClaimed) return;
-
-    if (!this.player.achievements.claimed.includes(achId)) {
-      this.player.achievements.claimed.push(achId);
-    }
-    if (!this.player.achievements.unlocked.includes(achId)) {
-      this.player.achievements.unlocked.push(achId);
-    }
-
-    const goldReward = ach.reward.gold || 0;
-    const steelReward = ach.reward.steel || 0;
-    const karmaReward = ach.reward.karma || 0;
-
-    this.player.gold += goldReward;
-    this.player.steel += steelReward;
-    if (this.player.prestige && karmaReward > 0) {
-      this.player.prestige.karma += karmaReward;
-      this.player.prestige.totalKarmaEarned = (this.player.prestige.totalKarmaEarned || 0) + karmaReward;
-    }
-
-    if (window.samuraiAudio) window.samuraiAudio.playLevelUp();
-
-    const lang = window.getLang ? window.getLang() : "zh-TW";
-    const achText = window.getAchievementText ? window.getAchievementText(ach, lang) : ach;
-    const karmaStr = karmaReward > 0 ? (lang === "en" ? `, 🌀 +${karmaReward}` : `、🌀 +${karmaReward}`) : "";
-    const claimMsg = window.t
-      ? window.t("logClaimAchievement", { name: achText.name, gold: goldReward, steel: steelReward, karma: karmaStr })
-      : `🏆 【成就達成】領取【${achText.name}】！獲得 🪙 +${goldReward}、💎 +${steelReward}${karmaStr}！`;
-    this.addCombatLog(`<span style="color:#fbbf24;font-weight:bold;">${claimMsg}</span>`);
-
-    this.updateCharacterUI();
-    this.updateAchievementsUI();
-    this.save();
-  }
-
-  claimAllAchievements() {
-    if (!window.ACHIEVEMENTS_DATA || !this.player || !this.player.achievements) return;
-
-    const claimable = window.ACHIEVEMENTS_DATA.filter(a => {
-      const prog = this.getAchievementProgress(a);
-      return prog.isCompleted && !prog.isClaimed;
-    });
-
-    if (claimable.length === 0) {
-      alert(window.t ? window.t("achNoClaimable") : "目前暫無可領取的成就獎勵！");
-      return;
-    }
-
-    let totalGold = 0;
-    let totalSteel = 0;
-    let totalKarma = 0;
-
-    for (const ach of claimable) {
-      if (!this.player.achievements.claimed.includes(ach.id)) {
-        this.player.achievements.claimed.push(ach.id);
+      if (!gear) {
+        gear = this.player.inventory.find(g => g.uid === gearUid);
       }
-      if (!this.player.achievements.unlocked.includes(ach.id)) {
-        this.player.achievements.unlocked.push(ach.id);
+      if (!gear) return;
+
+      const curLvl = gear.upgradeLevel || 0;
+      const ironReq = (curLvl + 1) * 8;
+      const goldReq = (curLvl + 1) * 500;
+
+      if (this.player.iron < ironReq || this.player.gold < goldReq) {
+        this.showToast(`強化材料不足！需要玉鋼 x${ironReq}、金幣 ${goldReq.toLocaleString()}`, 'error');
+        return;
       }
-      totalGold += (ach.reward.gold || 0);
-      totalSteel += (ach.reward.steel || 0);
-      totalKarma += (ach.reward.karma || 0);
+
+      this.player.iron -= ironReq;
+      this.player.gold -= goldReq;
+      gear.upgradeLevel = curLvl + 1;
+      gear.gearScore = window.calculateGearScore(gear);
+      this.player.statsTracked.upgradesSuccess++;
+
+      if (this.audio) this.audio.playCoinSound();
+      this.showToast(`✨ 鍛造成功！【${gear.name}】已強化至 +${gear.upgradeLevel}！`, 'success');
+
+      this.renderGearUI();
+      this.updateHeaderUI();
+      this.checkAchievements();
     }
 
-    this.player.gold += totalGold;
-    this.player.steel += totalSteel;
-    if (this.player.prestige && totalKarma > 0) {
-      this.player.prestige.karma += totalKarma;
-      this.player.prestige.totalKarmaEarned = (this.player.prestige.totalKarmaEarned || 0) + totalKarma;
+    /**
+     * 升級與天賦獲得
+     */
+    addExp(amount) {
+      this.player.exp += amount;
+      while (this.player.exp >= this.player.maxExp) {
+        this.player.exp -= this.player.maxExp;
+        this.player.level++;
+        this.player.maxExp = Math.round(this.player.maxExp * 1.25);
+        this.player.talentPoints++;
+
+        this.showToast(`🎊 境界突破！等級提升至 ${this.player.level} 級！獲得 1 點天賦點數`, 'success');
+        if (this.audio) this.audio.playAchievementFanfare();
+      }
     }
 
-    if (window.samuraiAudio) window.samuraiAudio.playLevelUp();
+    /**
+     * 升級指定天賦
+     */
+    addTalentPoint(talentId) {
+      if (this.player.talentPoints <= 0) {
+        this.showToast(`天賦點數不足！請先升級獲得點數`, 'warning');
+        return;
+      }
 
-    const lang = window.getLang ? window.getLang() : "zh-TW";
-    const msg = window.t ? window.t("achClaimAllSuccess", { count: claimable.length, gold: totalGold, steel: totalSteel, karma: totalKarma }) : `領取了 ${claimable.length} 項成就！`;
-    alert(msg);
-    const allMsg = window.t
-      ? window.t("logClaimAllAchievements", { count: claimable.length, gold: totalGold, steel: totalSteel, karma: totalKarma })
-      : `🎁 【成就總領】一口氣領取 ${claimable.length} 項成就！獲得 🪙 +${totalGold}、💎 +${totalSteel}、🌀 +${totalKarma}！`;
-    this.addCombatLog(`<span style="color:#fbbf24;font-weight:bold;">${allMsg}</span>`);
+      const curRank = this.player.talents[talentId] || 0;
+      if (curRank >= 10) {
+        this.showToast(`該天賦已達最高等級 (10/10)！`, 'warning');
+        return;
+      }
 
-    this.updateCharacterUI();
-    this.updateAchievementsUI();
-    this.save();
-  }
+      this.player.talents[talentId] = curRank + 1;
+      this.player.talentPoints--;
 
-  filterAchievements(category) {
-    this.activeAchFilter = category;
-    if (typeof document !== "undefined") {
-      document.querySelectorAll(".ach-filter-btn").forEach(btn => {
-        if (btn.getAttribute("data-filter") === category) {
-          btn.classList.add("active");
-        } else {
-          btn.classList.remove("active");
+      if (this.audio) this.audio.playCoinSound();
+      this.renderTalentsUI();
+      this.updateHeaderUI();
+      this.checkAchievements();
+    }
+
+    /**
+     * 免費重置天賦 (身障與零壓力體驗：100% 免費無上限隨時洗點)
+     */
+    resetTalents() {
+      let refunded = 0;
+      for (const tKey of Object.keys(this.player.talents)) {
+        refunded += this.player.talents[tKey] || 0;
+        this.player.talents[tKey] = 0;
+      }
+      this.player.talentPoints += refunded;
+
+      this.showToast(`已重置所有天賦，返還 ${refunded} 點天賦點數！`, 'info');
+      this.renderTalentsUI();
+      this.updateHeaderUI();
+    }
+
+    /**
+     * 切換職業流派
+     */
+    switchClass(classId) {
+      if (!window.SAMURAI_CLASSES[classId]) return;
+      this.player.classId = classId;
+      const cls = window.SAMURAI_CLASSES[classId];
+      this.showToast(`已切換為【${cls.name}】流派！`, 'success');
+      this.renderTalentsUI();
+      this.updateHeaderUI();
+    }
+
+    /**
+     * 暗黑 3 式中下方金邊成就橫幅觸發 (Diablo 3 Banner)
+     */
+    triggerAchievementBanner(ach) {
+      this.achievementQueue.push(ach);
+      if (!this.isShowingAchievement) {
+        this.displayNextAchievementBanner();
+      }
+    }
+
+    displayNextAchievementBanner() {
+      if (this.achievementQueue.length === 0) {
+        this.isShowingAchievement = false;
+        return;
+      }
+
+      this.isShowingAchievement = true;
+      const ach = this.achievementQueue.shift();
+      const banner = document.getElementById('diablo-achievement-banner');
+      if (!banner) return;
+
+      banner.innerHTML = `
+        <div class="diablo-banner-crest">
+          <span class="crest-icon">${ach.icon}</span>
+        </div>
+        <div class="diablo-banner-body">
+          <div class="diablo-banner-header">🏆 成就達成！</div>
+          <div class="diablo-banner-title">${ach.name}</div>
+          <div class="diablo-banner-desc">${ach.desc}</div>
+        </div>
+        <div class="diablo-banner-points">+${ach.points}</div>
+      `;
+
+      banner.classList.add('banner-visible');
+      if (this.audio) this.audio.playAchievementFanfare();
+
+      setTimeout(() => {
+        banner.classList.remove('banner-visible');
+        setTimeout(() => this.displayNextAchievementBanner(), 500);
+      }, 4000);
+    }
+
+    /**
+     * 檢查成就解鎖
+     */
+    checkAchievements() {
+      if (!window.ACHIEVEMENTS_DB) return;
+      const stats = this.getCalculatedStats();
+
+      window.ACHIEVEMENTS_DB.forEach(ach => {
+        if (this.player.achievements[ach.id] && this.player.achievements[ach.id].unlocked) {
+          return;
+        }
+
+        let isMet = false;
+        if (ach.id.startsWith('kill_')) isMet = this.player.statsTracked.totalKills >= ach.target;
+        else if (ach.id.startsWith('boss_')) isMet = this.player.statsTracked.bossKills >= ach.target;
+        else if (ach.id === 'loot_magic') isMet = this.player.statsTracked.gearLooted >= 1;
+        else if (ach.id === 'loot_rare') isMet = this.player.inventory.some(g => g.quality === 'rare') || Object.values(this.player.equipped).some(g => g && g.quality === 'rare');
+        else if (ach.id === 'loot_epic') isMet = this.player.inventory.some(g => g.quality === 'epic') || Object.values(this.player.equipped).some(g => g && g.quality === 'epic');
+        else if (ach.id === 'loot_legendary') isMet = this.player.statsTracked.legendaryLooted >= 1;
+        else if (ach.id === 'loot_ancient') isMet = this.player.statsTracked.ancientLooted >= 1;
+        else if (ach.id === 'loot_full_epic') {
+          const eqList = Object.values(this.player.equipped).filter(Boolean);
+          isMet = eqList.length === 6 && eqList.every(g => ['epic', 'legendary', 'ancient'].includes(g.quality));
+        }
+        else if (ach.id === 'upgrade_1') isMet = this.player.statsTracked.upgradesSuccess >= 1;
+        else if (ach.id === 'upgrade_5') isMet = Object.values(this.player.equipped).some(g => g && g.upgradeLevel >= 5);
+        else if (ach.id === 'upgrade_10') isMet = Object.values(this.player.equipped).some(g => g && g.upgradeLevel >= 10);
+        else if (ach.id.startsWith('level_')) isMet = this.player.level >= ach.target;
+        else if (ach.id.startsWith('power_')) isMet = stats.power >= ach.target;
+        else if (ach.id.startsWith('gold_')) isMet = this.player.gold >= ach.target;
+        else if (ach.id === 'market_buy_1') isMet = this.player.statsTracked.marketPurchases >= 1;
+        else if (ach.id === 'market_sell_1') isMet = this.player.statsTracked.marketSales >= 1;
+
+        if (isMet) {
+          this.player.achievements[ach.id] = { unlocked: true, claimed: false, date: new Date().toLocaleDateString() };
+          this.triggerAchievementBanner(ach);
+          this.renderAchievementsUI();
         }
       });
     }
-    this.updateAchievementsUI();
-  }
 
-  updateAchievementsUI() {
-    if (!window.ACHIEVEMENTS_DATA || !this.player || !this.player.achievements) return;
-    if (typeof document === "undefined") return;
+    /**
+     * 領取成就獎勵
+     */
+    claimAchievement(achId) {
+      const ach = window.ACHIEVEMENTS_DB.find(a => a.id === achId);
+      if (!ach || !this.player.achievements[achId] || this.player.achievements[achId].claimed) return;
 
-    const lang = window.getLang ? window.getLang() : "zh-TW";
-    const allAchs = window.ACHIEVEMENTS_DATA;
-    let completedCount = 0;
-    let claimableCount = 0;
+      this.player.achievements[achId].claimed = true;
+      if (ach.reward) {
+        if (ach.reward.gold) this.player.gold += ach.reward.gold;
+        if (ach.reward.iron) this.player.iron += ach.reward.iron;
+        if (ach.reward.souls) this.player.souls += ach.reward.souls;
+        if (ach.reward.title) {
+          this.player.cosmetics.title = ach.reward.title;
+          this.showToast(`🎖️ 獲得專屬限定稱號【${ach.reward.title}】！`, 'success');
+        }
+        if (ach.reward.gearQuality && window.generateGear) {
+          const freeGear = window.generateGear(null, ach.reward.gearQuality, this.player.level);
+          this.addGearToInventory(freeGear);
+          this.showToast(`🎁 領取成就獎勵【${freeGear.name}】！`, 'success');
+        }
+      }
 
-    const catCounts = { all: allAchs.length, combat: 0, swords: 0, growth: 0, destiny: 0 };
+      if (this.audio) this.audio.playCoinSound();
+      this.renderAchievementsUI();
+      this.updateHeaderUI();
+    }
 
-    allAchs.forEach(a => {
-      if (catCounts[a.category] !== undefined) catCounts[a.category]++;
-      const prog = this.getAchievementProgress(a);
-      if (prog.isCompleted) completedCount++;
-      if (prog.isCompleted && !prog.isClaimed) claimableCount++;
-    });
-
-    const ratioEl = document.getElementById("ach-progress-ratio");
-    if (ratioEl) ratioEl.textContent = `${completedCount} / ${allAchs.length}`;
-    const barEl = document.getElementById("ach-total-bar");
-    const percent = Math.floor((completedCount / allAchs.length) * 100);
-    if (barEl) barEl.style.width = `${percent}%`;
-    const percentText = document.getElementById("ach-percent-text");
-    if (percentText) percentText.textContent = `${percent}%`;
-
-    ["all", "combat", "swords", "growth", "destiny"].forEach(cat => {
-      const el = document.getElementById(`ach-cnt-${cat}`);
-      if (el) el.textContent = catCounts[cat];
-    });
-
-    const badgeEl = document.getElementById("ach-claimable-badge");
-    const claimAllBtn = document.getElementById("btn-claim-all-ach");
-    if (badgeEl && claimAllBtn) {
-      if (claimableCount > 0) {
-        badgeEl.textContent = claimableCount;
-        badgeEl.style.display = "inline-block";
-        claimAllBtn.disabled = false;
+    /**
+     * 一鍵領取所有已達成成就
+     */
+    claimAllAchievements() {
+      let claimedCount = 0;
+      window.ACHIEVEMENTS_DB.forEach(ach => {
+        if (this.player.achievements[ach.id] && this.player.achievements[ach.id].unlocked && !this.player.achievements[ach.id].claimed) {
+          this.claimAchievement(ach.id);
+          claimedCount++;
+        }
+      });
+      if (claimedCount > 0) {
+        this.showToast(`已一鍵領取 ${claimedCount} 項成就獎勵！`, 'success');
       } else {
-        badgeEl.style.display = "none";
-        claimAllBtn.disabled = true;
+        this.showToast(`目前沒有可領取的成就獎勵`, 'info');
       }
     }
 
-    const cardsGrid = document.getElementById("achievements-cards-grid");
-    if (!cardsGrid) return;
-
-    const filtered = (this.activeAchFilter === "all") ? allAchs : allAchs.filter(a => a.category === this.activeAchFilter);
-
-    cardsGrid.innerHTML = filtered.map(ach => {
-      const prog = this.getAchievementProgress(ach);
-      const achText = window.getAchievementText ? window.getAchievementText(ach, lang) : ach;
-      const percentVal = Math.min(100, Math.floor((prog.current / prog.target) * 100));
-
-      let cardClass = "";
-      let btnHtml = "";
-
-      if (prog.isClaimed) {
-        cardClass = "claimed";
-        btnHtml = `<button class="btn-claim-ach claimed" disabled>${window.t ? window.t("achClaimed") : "✅ 已領取"}</button>`;
-      } else if (prog.isCompleted) {
-        cardClass = "completed";
-        btnHtml = `<button class="btn-claim-ach claimable" onclick="window.game.claimAchievement('${ach.id}')">${window.t ? window.t("achClaimBtn") : "✨ 領取獎勵"}</button>`;
-      } else {
-        btnHtml = `<button class="btn-claim-ach locked" disabled>${window.t ? window.t("achInProgress") : "進行中"} (${prog.current}/${prog.target})</button>`;
+    /**
+     * 每日登入簽到領取 (7日循環)
+     */
+    claimDailyReward() {
+      const today = new Date().toISOString().slice(0, 10);
+      if (this.player.dailySignIn.lastClaimDate === today) {
+        this.showToast(`今日簽到獎勵已領取，明日再來！`, 'info');
+        return;
       }
 
-      const rewardParts = [];
-      if (ach.reward.gold) rewardParts.push(`🪙 ${ach.reward.gold}`);
-      if (ach.reward.steel) rewardParts.push(`💎 ${ach.reward.steel}`);
-      if (ach.reward.karma) rewardParts.push(`🌀 ${ach.reward.karma}`);
+      let nextDay = (this.player.dailySignIn.claimedDays % 7) + 1;
+      const reward = window.DAILY_SIGNIN_REWARDS.find(r => r.day === nextDay);
+      if (!reward) return;
 
-      return `
-        <div class="achievement-card ${cardClass}">
-          <div class="ach-icon-box">${ach.icon}</div>
-          <div class="ach-info-box">
-            <div class="ach-header-row">
-              <span class="ach-name">${achText.name}</span>
-            </div>
-            <div class="ach-desc">${achText.desc}</div>
-            <div class="ach-progress-track">
-              <div class="ach-progress-fill" style="width: ${percentVal}%;"></div>
-            </div>
-            <div class="ach-bottom-row">
-              <div class="ach-reward-badge">${rewardParts.join(" ")}</div>
-              <span class="ach-progress-num">${prog.current} / ${prog.target} (${percentVal}%)</span>
-              ${btnHtml}
-            </div>
+      this.player.dailySignIn.claimedDays++;
+      this.player.dailySignIn.lastClaimDate = today;
+
+      if (reward.gold) this.player.gold += reward.gold;
+      if (reward.iron) this.player.iron += reward.iron;
+      if (reward.souls) this.player.souls += reward.souls;
+      if (reward.title) this.player.cosmetics.title = reward.title;
+      if (reward.gearQuality && window.generateGear) {
+        const freeGear = window.generateGear(null, reward.gearQuality, this.player.level);
+        this.addGearToInventory(freeGear);
+      }
+
+      if (this.audio) this.audio.playAchievementFanfare();
+      this.showToast(`🎉 成功簽到第 ${nextDay} 天！獲得：${reward.desc}`, 'success');
+
+      this.renderDailySignInUI();
+      this.updateHeaderUI();
+    }
+
+    /**
+     * 離線收益結算 (身障與休閒放置體驗：上線即領)
+     */
+    processOfflineProgress() {
+      const now = Date.now();
+      const last = this.player.lastSaveTime || now;
+      const elapsedSeconds = Math.floor((now - last) / 1000);
+
+      // 超過 60 秒才算離線收益，最多計算 12 小時 (43,200 秒)
+      if (elapsedSeconds < 60) return;
+
+      const calcSeconds = Math.min(43200, elapsedSeconds);
+      const stats = this.getCalculatedStats();
+      const killsPerMin = Math.max(10, Math.min(60, Math.round(stats.power / 80)));
+      const totalOfflineKills = Math.round((calcSeconds / 60) * killsPerMin);
+
+      const expGain = totalOfflineKills * 12;
+      const goldGain = totalOfflineKills * 8;
+      const ironGain = Math.round(totalOfflineKills * 0.4);
+
+      // 累計
+      this.player.gold += goldGain;
+      this.player.iron += ironGain;
+      this.addExp(expGain);
+      this.player.statsTracked.totalKills += totalOfflineKills;
+
+      // 隨機贈送 1~3 件高品質裝備
+      const bonusGears = [];
+      const bonusCount = Math.min(3, Math.max(1, Math.floor(calcSeconds / 3600)));
+      if (window.generateGear) {
+        for (let i = 0; i < bonusCount; i++) {
+          const g = window.generateGear(null, 'epic', this.player.level);
+          this.addGearToInventory(g);
+          bonusGears.push(g.name);
+        }
+      }
+
+      // 彈出離線結算彈窗
+      const modal = document.getElementById('offline-modal');
+      const body = document.getElementById('offline-modal-body');
+      if (modal && body) {
+        const hrs = Math.floor(calcSeconds / 3600);
+        const mins = Math.floor((calcSeconds % 3600) / 60);
+        body.innerHTML = `
+          <div style="font-size: 1.1rem; margin-bottom: 15px;">
+            您已離線修煉了 <strong>${hrs} 小時 ${mins} 分鐘</strong>！<br>
+            您的武士在常世狹縫中自動斬妖除魔，累積了豐厚戰果：
           </div>
-        </div>
-      `;
-    }).join("");
-  }
-
-  showAchievementToast(ach) {
-    if (!ach || typeof document === "undefined") return;
-    if (!this.achievementToastQueue) this.achievementToastQueue = [];
-    this.achievementToastQueue.push(ach);
-
-    if (!this.isShowingAchievementToast) {
-      this.processAchievementToastQueue();
-    }
-  }
-
-  processAchievementToastQueue() {
-    if (!this.achievementToastQueue || this.achievementToastQueue.length === 0) {
-      this.isShowingAchievementToast = false;
-      return;
-    }
-
-    const container = document.getElementById("achievement-toast-container");
-    if (!container) {
-      this.isShowingAchievementToast = false;
-      return;
-    }
-
-    this.isShowingAchievementToast = true;
-    const ach = this.achievementToastQueue.shift();
-
-    // 播放暗黑破壞神風格史詩凱旋號角與金鐘音效
-    if (window.samuraiAudio && typeof window.samuraiAudio.playAchievementFanfare === "function") {
-      window.samuraiAudio.playAchievementFanfare();
-    }
-
-    const lang = window.getLang ? window.getLang() : "zh-TW";
-    const achText = window.getAchievementText ? window.getAchievementText(ach, lang) : ach;
-
-    // 獎勵預覽
-    const rewardParts = [];
-    if (ach.reward.gold) rewardParts.push(`🪙 +${ach.reward.gold}`);
-    if (ach.reward.steel) rewardParts.push(`💎 +${ach.reward.steel}`);
-    if (ach.reward.karma) rewardParts.push(`🌀 +${ach.reward.karma}`);
-
-    const banner = document.createElement("div");
-    banner.className = "d3-achievement-banner";
-    banner.innerHTML = `
-      <div class="d3-ach-flare"></div>
-      <div class="d3-ach-frame">
-        <div class="d3-ach-sheen"></div>
-        <div class="d3-ach-crest-wrap">
-          <div class="d3-ach-crest-glow"></div>
-          <div class="d3-ach-crest-icon">${ach.icon}</div>
-        </div>
-        <div class="d3-ach-body">
-          <div class="d3-ach-header-ribbon">
-            <span class="d3-ach-ribbon-wing left">✦</span>
-            <span class="d3-ach-ribbon-title">${window.t ? window.t("achToastUnlocked") : "榮譽成就達成"}</span>
-            <span class="d3-ach-ribbon-wing right">✦</span>
+          <div class="offline-stat-grid">
+            <div class="offline-stat-box">⚔️ 討伐妖怪: <strong>${totalOfflineKills.toLocaleString()}</strong> 隻</div>
+            <div class="offline-stat-box">📈 獲得修為: <strong>+${expGain.toLocaleString()}</strong> EXP</div>
+            <div class="offline-stat-box">💰 獲得金幣: <strong>+${goldGain.toLocaleString()}</strong> 兩</div>
+            <div class="offline-stat-box">🪨 採集玉鋼: <strong>+${ironGain}</strong> 塊</div>
           </div>
-          <div class="d3-ach-title">${achText.name}</div>
-          <div class="d3-ach-desc">${achText.desc}</div>
-          ${rewardParts.length > 0 ? `<div class="d3-ach-rewards"><span class="d3-ach-reward-tag">${rewardParts.join(" ")}</span></div>` : ""}
-        </div>
-      </div>
-    `;
+          ${bonusGears.length > 0 ? `
+            <div style="margin-top: 15px; color: var(--gold-accent);">
+              🎁 額外尋得史詩神兵：${bonusGears.map(n => `【${n}】`).join('、')}
+            </div>
+          ` : ''}
+        `;
+        modal.style.display = 'flex';
+      }
+    }
 
-    container.innerHTML = "";
-    container.appendChild(banner);
+    closeOfflineModal() {
+      const modal = document.getElementById('offline-modal');
+      if (modal) modal.style.display = 'none';
+      if (this.audio) this.audio.playCoinSound();
+    }
 
-    // 停留 4 秒後流暢向上縮小淡出，並繼續處理後續成就隊列
-    setTimeout(() => {
-      banner.classList.add("fade-out");
+    /**
+     * 暗金光柱特效
+     */
+    triggerLootBeam(gear) {
+      const beamEl = document.getElementById('loot-beam-overlay');
+      if (!beamEl) return;
+      beamEl.style.display = 'block';
+      beamEl.style.borderColor = gear.beamColor || '#fb923c';
       setTimeout(() => {
-        if (banner.parentNode) banner.parentNode.removeChild(banner);
+        beamEl.style.display = 'none';
+      }, 1500);
+    }
+
+    /**
+     * 傷害跳字特效
+     */
+    showDamageText(text, isCrit, isHeal) {
+      const container = document.getElementById('battle-damage-layer');
+      if (!container) return;
+
+      const span = document.createElement('div');
+      span.className = `floating-dmg ${isCrit ? 'dmg-crit' : ''} ${isHeal ? 'dmg-heal' : ''}`;
+      span.innerText = isCrit ? `💥 ${text}!` : text;
+
+      // 隨機水平偏移
+      span.style.left = `${45 + (Math.random() * 20 - 10)}%`;
+      span.style.top = `${40 + (Math.random() * 20 - 10)}%`;
+
+      container.appendChild(span);
+      setTimeout(() => {
+        if (span.parentNode) span.parentNode.removeChild(span);
+      }, 800);
+    }
+
+    /**
+     * 提示浮動訊息 (Toast)
+     */
+    showToast(msg, type = 'info') {
+      const container = document.getElementById('toast-container');
+      if (!container) return;
+
+      const toast = document.createElement('div');
+      toast.className = `game-toast toast-${type}`;
+      toast.innerText = msg;
+      container.appendChild(toast);
+
+      setTimeout(() => {
+        toast.classList.add('fade-out');
         setTimeout(() => {
-          this.processAchievementToastQueue();
-        }, 200);
-      }, 500);
-    }, 4000);
-  }
+          if (toast.parentNode) toast.parentNode.removeChild(toast);
+        }, 400);
+      }, 3000);
+    }
 
-  // 劍境維度機制已暫時取消
+    /**
+     * 切換五大核心分頁
+     */
+    switchTab(tabKey) {
+      const tabs = ['battle', 'gear', 'talents', 'market', 'achievements'];
+      if (!tabs.includes(tabKey)) return;
 
-  // 清理計時器（用於重置或自動測試）
-  destroy() {
-    if (this.achievementToastQueue) this.achievementToastQueue = [];
-    this.isShowingAchievementToast = false;
-    if (this.combatInterval) clearInterval(this.combatInterval);
-    if (this.saveInterval) clearInterval(this.saveInterval);
-    if (this.buffInterval) clearInterval(this.buffInterval);
-    if (this.bossTimerInterval) clearInterval(this.bossTimerInterval);
-  }
-}
+      this.activeTab = tabKey;
+      tabs.forEach(t => {
+        const pane = document.getElementById(`tab-${t}`);
+        const btn = document.querySelector(`.tab-btn[data-tab="${t}"]`);
+        if (pane) pane.style.display = (t === tabKey) ? 'block' : 'none';
+        if (btn) {
+          if (t === tabKey) btn.classList.add('active');
+          else btn.classList.remove('active');
+        }
+      });
 
-if (typeof window !== "undefined") window.SamuraiGame = SamuraiGame;
-if (typeof global !== "undefined") global.SamuraiGame = SamuraiGame;
+      // 各頁專屬刷新
+      if (tabKey === 'gear') this.renderGearUI();
+      else if (tabKey === 'talents') this.renderTalentsUI();
+      else if (tabKey === 'market' && this.marketChat) {
+        this.marketChat.renderMarketUI();
+        this.marketChat.renderChatUI();
+      }
+      else if (tabKey === 'achievements') {
+        this.renderAchievementsUI();
+        this.renderDailySignInUI();
+      }
+    }
 
-// 實例化全域 Game 物件並確保可靠啟動
-if (typeof window !== "undefined" && !window.__TESTING__) {
-  window.game = new SamuraiGame();
-  function initSamuraiGame() {
-    if (window.game && !window.game.isStarted) {
-      window.game.isStarted = true;
-      window.game.start();
+    /**
+     * 客製外觀更新
+     */
+    setCosmetic(type, value) {
+      if (!this.player.cosmetics) this.player.cosmetics = {};
+      this.player.cosmetics[type] = value;
+      this.updateHeaderUI();
+      this.renderGearUI();
+      this.showToast(`外觀造型已套用！`, 'success');
+    }
+
+    /**
+     * 渲染頂部與總體數值
+     */
+    updateHeaderUI() {
+      const stats = this.getCalculatedStats();
+      const levelEl = document.getElementById('player-level-val');
+      const powerEl = document.getElementById('player-power-val');
+      const goldEl = document.getElementById('player-gold-val');
+      const ironEl = document.getElementById('player-iron-val');
+      const soulsEl = document.getElementById('player-souls-val');
+      const nameEl = document.getElementById('player-name-val');
+      const titleEl = document.getElementById('player-title-val');
+      const avatarEl = document.getElementById('player-avatar-icon');
+
+      if (levelEl) levelEl.innerText = this.player.level;
+      if (powerEl) powerEl.innerText = stats.power.toLocaleString();
+      if (goldEl) goldEl.innerText = this.player.gold.toLocaleString();
+      if (ironEl) ironEl.innerText = this.player.iron.toLocaleString();
+      if (soulsEl) soulsEl.innerText = this.player.souls.toLocaleString();
+      if (nameEl) nameEl.innerText = this.player.name;
+      if (titleEl) titleEl.innerText = `【${this.player.cosmetics.title || '流浪武士'}】`;
+
+      // 替換武士真實頭像
+      if (avatarEl) {
+        const avatars = {
+          samurai_general: '⚔️',
+          samurai_oni: '👺',
+          samurai_lord: '🏯',
+          samurai_female: '🌸',
+          samurai_daimyo: '👑'
+        };
+        avatarEl.innerText = avatars[this.player.cosmetics.avatar] || '⚔️';
+      }
+
+      // EXP 進度條
+      const expBar = document.getElementById('player-exp-bar');
+      const expText = document.getElementById('player-exp-text');
+      if (expBar) {
+        const pct = Math.min(100, Math.round((this.player.exp / this.player.maxExp) * 100));
+        expBar.style.width = `${pct}%`;
+      }
+      if (expText) {
+        expText.innerText = `${this.player.exp} / ${this.player.maxExp}`;
+      }
+    }
+
+    /**
+     * 渲染戰鬥畫面
+     */
+    updateBattleUI() {
+      if (!this.currentEnemy) return;
+      const nameEl = document.getElementById('enemy-name');
+      const avatarEl = document.getElementById('enemy-avatar');
+      const hpText = document.getElementById('enemy-hp-text');
+      const hpBar = document.getElementById('enemy-hp-bar');
+      const actTitle = document.getElementById('current-act-title');
+      const actProgressText = document.getElementById('act-progress-text');
+
+      const actIndex = Math.max(0, Math.min(6, (this.player.act || 1) - 1));
+      const actData = window.CAMPAIGN_ACTS[actIndex];
+
+      if (actTitle && actData) actTitle.innerText = `${actData.name} - ${actData.subtitle}`;
+      if (actProgressText && actData) {
+        actProgressText.innerText = this.player.actBossUnlocked
+          ? `⚠️ 首領戰鬥中！`
+          : `討伐進度: ${this.player.actProgress} / ${actData.bossKillsRequired}`;
+      }
+
+      if (nameEl) nameEl.innerText = `${this.currentEnemy.isBoss ? '👑 [首領] ' : ''}${this.currentEnemy.name}`;
+      if (avatarEl) avatarEl.innerText = this.currentEnemy.avatar || '👹';
+      this.updateEnemyHealthBar();
+    }
+
+    updateEnemyHealthBar() {
+      if (!this.currentEnemy) return;
+      const hpText = document.getElementById('enemy-hp-text');
+      const hpBar = document.getElementById('enemy-hp-bar');
+      const curHp = Math.max(0, this.currentEnemy.hp);
+      const maxHp = this.currentEnemy.maxHp;
+
+      if (hpText) hpText.innerText = `${curHp.toLocaleString()} / ${maxHp.toLocaleString()}`;
+      if (hpBar) {
+        const pct = Math.max(0, Math.min(100, (curHp / maxHp) * 100));
+        hpBar.style.width = `${pct}%`;
+      }
+    }
+
+    /**
+     * 渲染裝備分頁 (6 格紙娃娃 + 背包 + 詞綴故事 + 客製造型)
+     */
+    renderGearUI() {
+      const container = document.getElementById('equipped-slots-grid');
+      if (container) {
+        const slots = ['weapon', 'offhand', 'helm', 'armor', 'accessory', 'boots'];
+        container.innerHTML = slots.map(slotKey => {
+          const gear = this.player.equipped[slotKey];
+          const slotMeta = window.GEAR_SLOTS[slotKey];
+          if (!gear) {
+            return `
+              <div class="gear-slot empty-slot">
+                <div class="slot-placeholder-icon">${slotMeta.icon}</div>
+                <div class="slot-name">${slotMeta.name}</div>
+                <div class="slot-status">未裝備</div>
+              </div>
+            `;
+          }
+
+          const q = window.GEAR_QUALITIES[gear.quality] || window.GEAR_QUALITIES.common;
+          return `
+            <div class="gear-slot equipped" style="border: 2px solid ${q.border}; background: ${q.bgGlow};">
+              <div class="gear-slot-header">
+                <span class="gear-icon">${gear.icon}</span>
+                <div class="gear-meta">
+                  <div class="gear-name" style="color: ${q.color};">${gear.name} ${gear.upgradeLevel ? `+${gear.upgradeLevel}` : ''}</div>
+                  <div class="gear-sub">${gear.slotName} | 戰力 +${gear.gearScore}</div>
+                </div>
+              </div>
+              <div class="gear-slot-actions">
+                <button class="btn btn-sm btn-gold" onclick="window.game.upgradeGear('${gear.uid}')">🔨 強化</button>
+                <button class="btn btn-sm btn-outline" onclick="window.game.unequipGear('${slotKey}')">卸下</button>
+              </div>
+            </div>
+          `;
+        }).join('');
+      }
+
+      // 渲染背包裝備列表
+      const invContainer = document.getElementById('inventory-grid');
+      const invCount = document.getElementById('inventory-count-badge');
+      if (invCount) invCount.innerText = `${this.player.inventory.length} / 50`;
+
+      if (invContainer) {
+        if (this.player.inventory.length === 0) {
+          invContainer.innerHTML = `
+            <div style="text-align: center; color: var(--text-muted); padding: 30px; grid-column: 1 / -1;">
+              🎒 行囊空空如也。請至【自動討伐】推進戰役，掉落神兵將自動存放於此！
+            </div>
+          `;
+        } else {
+          invContainer.innerHTML = this.player.inventory.map(gear => {
+            const q = window.GEAR_QUALITIES[gear.quality] || window.GEAR_QUALITIES.common;
+            return `
+              <div class="inv-card" style="border: 2px solid ${q.border}; background: ${q.bgGlow};">
+                <div class="inv-card-header">
+                  <span class="inv-icon">${gear.icon}</span>
+                  <div class="inv-info">
+                    <div class="inv-name" style="color: ${q.color};">${gear.name}</div>
+                    <div class="inv-sub">${gear.slotName} | 戰力 +${gear.gearScore}</div>
+                  </div>
+                </div>
+                <div class="inv-lore">"${gear.lore || ''}"</div>
+                <div class="inv-affixes">
+                  ${gear.baseAtk ? `<span class="affix-tag">攻擊 +${gear.baseAtk}</span>` : ''}
+                  ${gear.baseDef ? `<span class="affix-tag">防禦 +${gear.baseDef}</span>` : ''}
+                  ${gear.baseHP ? `<span class="affix-tag">生命 +${gear.baseHP}</span>` : ''}
+                  ${gear.affixes ? gear.affixes.map(a => `<span class="affix-tag">${a.text}</span>`).join('') : ''}
+                  ${gear.legendaryPower ? `<div class="power-tag">🌟 ${gear.legendaryPower.name}: ${gear.legendaryPower.desc}</div>` : ''}
+                </div>
+                <div class="inv-actions">
+                  <button class="btn btn-sm btn-gold" onclick="window.game.equipGear('${gear.uid}')">穿戴</button>
+                  <button class="btn btn-sm btn-outline" onclick="window.game.marketChat.listMyGear('${gear.uid}')">上架拍賣</button>
+                  <button class="btn btn-sm btn-danger" onclick="window.game.decomposeSingleGear('${gear.uid}')">分解</button>
+                </div>
+              </div>
+            `;
+          }).join('');
+        }
+      }
+    }
+
+    /**
+     * 分解單件裝備
+     */
+    decomposeSingleGear(gearUid) {
+      const idx = this.player.inventory.findIndex(g => g.uid === gearUid);
+      if (idx === -1) return;
+      const gear = this.player.inventory[idx];
+      const mats = window.decomposeGear(gear);
+
+      this.player.inventory.splice(idx, 1);
+      this.player.iron += mats.iron;
+      this.player.souls += mats.souls;
+      this.player.gold += mats.gold;
+
+      this.showToast(`已分解【${gear.name}】，獲得玉鋼 x${mats.iron}、魂玉 x${mats.souls}`, 'info');
+      this.renderGearUI();
+      this.updateHeaderUI();
+      this.checkSmartEquip();
+    }
+
+    /**
+     * 渲染天賦分頁
+     */
+    renderTalentsUI() {
+      const classSelect = document.getElementById('class-select-container');
+      const talentsList = document.getElementById('talents-tree-container');
+      const pointsVal = document.getElementById('talent-points-available');
+
+      if (pointsVal) pointsVal.innerText = this.player.talentPoints;
+
+      // 四大流派選擇鈕
+      if (classSelect && window.SAMURAI_CLASSES) {
+        classSelect.innerHTML = Object.keys(window.SAMURAI_CLASSES).map(cKey => {
+          const cls = window.SAMURAI_CLASSES[cKey];
+          const isSelected = this.player.classId === cKey;
+          return `
+            <button class="class-card-btn ${isSelected ? 'active' : ''}" onclick="window.game.switchClass('${cKey}')">
+              <span class="class-icon">${cls.icon}</span>
+              <div class="class-name">${cls.name}</div>
+              <div class="class-subtitle">${cls.subtitle}</div>
+            </button>
+          `;
+        }).join('');
+      }
+
+      // 當前流派天賦樹渲染
+      const curCls = window.SAMURAI_CLASSES[this.player.classId];
+      if (talentsList && curCls) {
+        talentsList.innerHTML = `
+          <div class="current-class-hero" style="border-left: 4px solid ${curCls.themeColor};">
+            <h3>${curCls.icon} ${curCls.name} - ${curCls.subtitle}</h3>
+            <p>${curCls.desc}</p>
+          </div>
+          <div class="talents-grid">
+            ${curCls.talents.map(tal => {
+              const curRank = this.player.talents[tal.id] || 0;
+              const canLevel = this.player.talentPoints > 0 && curRank < tal.maxRank;
+              return `
+                <div class="talent-card">
+                  <div class="talent-header">
+                    <span class="talent-icon">${tal.icon}</span>
+                    <div class="talent-title">
+                      <div class="talent-name">${tal.name}</div>
+                      <div class="talent-rank">等級: ${curRank} / ${tal.maxRank}</div>
+                    </div>
+                  </div>
+                  <div class="talent-desc">${tal.desc}</div>
+                  <div class="talent-footer">
+                    <button class="btn ${canLevel ? 'btn-gold' : 'btn-disabled'}" 
+                            onclick="window.game.addTalentPoint('${tal.id}')"
+                            ${canLevel ? '' : 'disabled'}>
+                      ➕ 投入天賦點
+                    </button>
+                  </div>
+                </div>
+              `;
+            }).join('')}
+          </div>
+        `;
+      }
+    }
+
+    /**
+     * 渲染成就分頁
+     */
+    renderAchievementsUI() {
+      const container = document.getElementById('achievements-list-container');
+      if (!container || !window.ACHIEVEMENTS_DB) return;
+
+      container.innerHTML = window.ACHIEVEMENTS_DB.map(ach => {
+        const status = this.player.achievements[ach.id] || { unlocked: false, claimed: false };
+        let btnHtml = '';
+
+        if (!status.unlocked) {
+          btnHtml = `<span class="badge-locked">🔒 未達成</span>`;
+        } else if (!status.claimed) {
+          btnHtml = `<button class="btn btn-gold btn-sm" onclick="window.game.claimAchievement('${ach.id}')">🎁 領取獎勵</button>`;
+        } else {
+          btnHtml = `<span class="badge-completed">✅ 已領取</span>`;
+        }
+
+        return `
+          <div class="achievement-card ${status.unlocked ? 'unlocked' : ''}">
+            <div class="ach-crest"><span class="ach-icon">${ach.icon}</span></div>
+            <div class="ach-details">
+              <div class="ach-name">${ach.name} <span class="ach-pts">(+${ach.points} 點)</span></div>
+              <div class="ach-desc">${ach.desc}</div>
+            </div>
+            <div class="ach-action">${btnHtml}</div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    /**
+     * 渲染每日簽到
+     */
+    renderDailySignInUI() {
+      const container = document.getElementById('daily-signin-grid');
+      if (!container || !window.DAILY_SIGNIN_REWARDS) return;
+
+      const today = new Date().toISOString().slice(0, 10);
+      const isClaimedToday = this.player.dailySignIn.lastClaimDate === today;
+      const claimedCount = this.player.dailySignIn.claimedDays;
+
+      container.innerHTML = window.DAILY_SIGNIN_REWARDS.map(r => {
+        const dayIdx = r.day;
+        const isPast = dayIdx <= (claimedCount % 7) && isClaimedToday;
+        const isCurrent = !isClaimedToday && dayIdx === ((claimedCount % 7) + 1);
+
+        return `
+          <div class="daily-reward-card ${isCurrent ? 'active-today' : ''} ${isPast ? 'claimed' : ''}">
+            <div class="daily-day-label">第 ${r.day} 天</div>
+            <div class="daily-icon">${r.icon}</div>
+            <div class="daily-name">${r.name}</div>
+            <div class="daily-desc">${r.desc}</div>
+            ${isCurrent ? `
+              <button class="btn btn-gold btn-sm" onclick="window.game.claimDailyReward()">✨ 立即簽到</button>
+            ` : (isPast ? `<span class="daily-checked">✔️ 已領取</span>` : `<span class="daily-wait">⏳ 敬請期待</span>`)}
+          </div>
+        `;
+      }).join('');
+    }
+
+    /**
+     * 綁定 Google 登入 (Google Identity Services)
+     */
+    handleGoogleLogin(credentialResponse) {
+      if (!credentialResponse || !credentialResponse.credential) return;
+      try {
+        // 解碼 JWT Payload
+        const base64Url = credentialResponse.credential.split('.')[1];
+        const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+        const jsonPayload = decodeURIComponent(atob(base64).split('').map(c => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2)).join(''));
+        const profile = JSON.parse(jsonPayload);
+
+        this.player.googleProfile = {
+          name: profile.name,
+          email: profile.email,
+          picture: profile.picture,
+          sub: profile.sub
+        };
+        this.player.name = profile.name || this.player.name;
+
+        this.showToast(`🎉 成功以 Google 帳號【${profile.name}】登入！角色已安全綁定`, 'success');
+        this.updateHeaderUI();
+        this.save();
+      } catch (e) {
+        console.error('Google decode failed', e);
+      }
+    }
+
+    /**
+     * 儲存進度 (LocalStorage + 更新存檔時間)
+     */
+    save() {
+      this.player.lastSaveTime = Date.now();
+      try {
+        localStorage.setItem('samurai_resurrected_save', JSON.stringify(this.player));
+      } catch (e) {
+        console.error('Local save error', e);
+      }
+    }
+
+    /**
+     * 讀取進度
+     */
+    load() {
+      try {
+        const saved = localStorage.getItem('samurai_resurrected_save');
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          this.player = Object.assign(this.initDefaultPlayer(), parsed);
+        }
+      } catch (e) {
+        console.error('Load save error', e);
+      }
+    }
+
+    /**
+     * 導出存檔代碼 (Base64)
+     */
+    exportSave() {
+      this.save();
+      const code = btoa(encodeURIComponent(JSON.stringify(this.player)));
+      navigator.clipboard.writeText(code).then(() => {
+        this.showToast(`存檔代碼已複製到剪貼簿！`, 'success');
+      }).catch(() => {
+        prompt('請手動複製存檔代碼：', code);
+      });
+    }
+
+    /**
+     * 匯入存檔代碼
+     */
+    importSave() {
+      const code = prompt('請貼上存檔代碼：');
+      if (!code) return;
+      try {
+        const json = decodeURIComponent(atob(code.trim()));
+        const parsed = JSON.parse(json);
+        this.player = Object.assign(this.initDefaultPlayer(), parsed);
+        this.save();
+        this.showToast(`存檔匯入成功！`, 'success');
+        location.reload();
+      } catch (e) {
+        this.showToast(`存檔代碼無效！`, 'error');
+      }
+    }
+
+    /**
+     * 介面事件初始化
+     */
+    initUI() {
+      this.updateHeaderUI();
+      this.switchTab('battle');
+    }
+
+    /**
+     * 身障無障礙操作控制設定 (全鍵盤單鍵支援 + 空白鍵換裝/揮刀)
+     */
+    setupControls() {
+      window.addEventListener('keydown', (e) => {
+        if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+
+        if (e.code === 'Space') {
+          e.preventDefault();
+          if (this.smartEquipTarget) {
+            this.equipSmartTarget();
+          } else {
+            this.manualSlash();
+          }
+        } else if (e.code === 'Digit1') {
+          this.switchTab('battle');
+        } else if (e.code === 'Digit2') {
+          this.switchTab('gear');
+        } else if (e.code === 'Digit3') {
+          this.switchTab('talents');
+        } else if (e.code === 'Digit4') {
+          this.switchTab('market');
+        } else if (e.code === 'Digit5') {
+          this.switchTab('achievements');
+        } else if (e.code === 'KeyM') {
+          if (this.audio) {
+            const muted = this.audio.toggleMute();
+            this.showToast(muted ? '🔇 聲音已完全靜音' : '🔊 音效已開啟', 'info');
+          }
+        }
+      });
     }
   }
-  if (typeof document !== "undefined") {
-    if (document.readyState === "loading") {
-      document.addEventListener("DOMContentLoaded", initSamuraiGame);
-    } else {
-      initSamuraiGame();
-    }
+
+  // 啟動入口
+  window.SamuraiGame = SamuraiGame;
+  if (typeof window !== 'undefined' && typeof window.addEventListener === 'function') {
+    window.addEventListener('DOMContentLoaded', () => {
+      window.game = new SamuraiGame();
+    });
   }
-}
+
+})();
