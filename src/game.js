@@ -1,33 +1,39 @@
 /**
  * 《武士之刃：無雙斬》（Samurai Blade: Resurrected）核心遊戲引擎 (src/game.js)
  * 特色：
- * 1. 暗黑破壞神式 6 大品質掉寶與暗金光柱
- * 2. 身障友善全自動討伐、一鍵智慧換裝浮動按鈕、自動分解過濾器
- * 3. 5 大直覺核心分頁、四大武士流派與天賦樹
- * 4. 暗黑 3 式中下方金邊成就橫幅與歡慶號角
- * 5. 離線掛機收益結算、Google 一鍵登入與純前端 100% 零帳單保證
+ * 1. 暗黑破壞神 3/4 風格：首頁 New Game 與創角儀式、主城營地 (Town Hub)、小站傳送陣世界地圖 (Waypoints)
+ * 2. 6 大品質掉寶與暗金光柱、金屬回響音效
+ * 3. 身障友善全自動討伐、一鍵智慧換裝浮動按鈕、自動分解過濾器
+ * 4. 5 大直覺核心分頁、四大武士流派與天賦樹
+ * 5. 暗黑 3 式中下方金邊成就橫幅與離線掛機結算
  */
 (function() {
   'use strict';
 
   class SamuraiGame {
     constructor() {
-      this.version = '2.0.0-resurrected';
+      this.version = '2.1.0-diablo-world';
       this.activeTab = 'battle';
       this.combatInterval = null;
       this.currentEnemy = null;
       this.smartEquipTarget = null;
       this.achievementQueue = [];
       this.isShowingAchievement = false;
+      this.creationDraft = {
+        name: '宮本武藏',
+        classId: 'kensei',
+        avatar: 'samurai_general',
+        bladeTrail: 'cherry'
+      };
 
       // 初始化音效引擎
       this.audio = window.SamuraiAudioEngine ? new window.SamuraiAudioEngine() : null;
 
-      // 初始化玩家數據
+      // 初始化預設玩家數據
       this.player = this.initDefaultPlayer();
 
       // 載入本機存檔
-      this.load();
+      this.hasExistingSave = this.load();
 
       // 初始化拍賣與聊天系統
       if (window.MarketChatManager) {
@@ -38,14 +44,19 @@
       this.initUI();
       this.setupControls();
 
-      // 檢查離線收益
-      this.processOfflineProgress();
-
-      // 啟動全自動討伐戰鬥迴圈
-      this.startCombatLoop();
+      // 如果已有創角存檔，檢查離線收益並啟動戰鬥
+      if (this.player.characterCreated) {
+        this.hideTitleAndCreation();
+        this.processOfflineProgress();
+        this.startCombatLoop();
+      } else {
+        this.showTitleScreen();
+      }
 
       // 定時自動存檔 (每 10 秒)
-      this.autoSaveInterval = setInterval(() => this.save(), 10000);
+      this.autoSaveInterval = setInterval(() => {
+        if (this.player.characterCreated) this.save();
+      }, 10000);
       if (typeof this.autoSaveInterval.unref === 'function') this.autoSaveInterval.unref();
     }
 
@@ -54,17 +65,18 @@
      */
     initDefaultPlayer() {
       return {
+        characterCreated: false,
         name: '無雙武士',
-        avatar: 'samurai_commander', // 正統日本武士頭像
+        avatar: 'samurai_general',
         title: '流浪武士',
-        classId: 'kensei', // 劍聖
+        classId: 'kensei',
         level: 1,
         exp: 0,
         maxExp: 100,
         gold: 1500,
-        iron: 30, // 玉鋼
-        souls: 5,  // 魂玉
-        talentPoints: 0,
+        iron: 30,
+        souls: 5,
+        talentPoints: 1, // 創角即贈送 1 點天賦可體驗
         talents: {
           kensei_crit: 0,
           kensei_dual: 0,
@@ -88,7 +100,10 @@
           boots: null
         },
         inventory: [],
+        inTown: false, // 是否在京都主城安全區
+        townBuffUntil: 0, // 主城巫女祈福 Buff 到期時間
         act: 1,
+        maxUnlockedAct: 1,
         actProgress: 0,
         actBossUnlocked: false,
         cosmetics: {
@@ -117,24 +132,261 @@
           marketSales: 0,
           marketPurchases: 0,
           upgradesSuccess: 0,
-          highestPower: 0
+          highestPower: 0,
+          townVisits: 0
         },
-        googleProfile: null,
         lastSaveTime: Date.now()
       };
+    }
+
+    /**
+     * ==================== 1. 首頁 New Game 與創角流程 ====================
+     */
+    showTitleScreen() {
+      const titleScreen = document.getElementById('title-screen-overlay');
+      const continueBtn = document.getElementById('btn-continue-game');
+      if (titleScreen) titleScreen.style.display = 'flex';
+      if (continueBtn) {
+        continueBtn.style.display = this.hasExistingSave && this.player.characterCreated ? 'inline-flex' : 'none';
+      }
+    }
+
+    hideTitleAndCreation() {
+      const titleScreen = document.getElementById('title-screen-overlay');
+      const creationScreen = document.getElementById('character-creation-overlay');
+      if (titleScreen) titleScreen.style.display = 'none';
+      if (creationScreen) creationScreen.style.display = 'none';
+    }
+
+    /**
+     * 點擊「New Game (開啟新武士傳奇)」打開創角大廳
+     */
+    startNewGameFlow() {
+      const titleScreen = document.getElementById('title-screen-overlay');
+      const creationScreen = document.getElementById('character-creation-overlay');
+      if (titleScreen) titleScreen.style.display = 'none';
+      if (creationScreen) {
+        creationScreen.style.display = 'flex';
+        this.renderCreationPreview();
+      }
+      if (this.audio) this.audio.playEquipSound();
+    }
+
+    /**
+     * 點擊「Continue Game (繼續武道征途)」
+     */
+    continueGameFlow() {
+      this.hideTitleAndCreation();
+      this.updateHeaderUI();
+      this.updateBattleUI();
+      this.startCombatLoop();
+      if (this.audio) this.audio.playCoinSound();
+    }
+
+    selectCreationClass(classId) {
+      if (!window.SAMURAI_CLASSES[classId]) return;
+      this.creationDraft.classId = classId;
+      this.renderCreationPreview();
+      if (this.audio) this.audio.playSlashSound(false);
+    }
+
+    selectCreationAvatar(avatarKey) {
+      this.creationDraft.avatar = avatarKey;
+      this.renderCreationPreview();
+      if (this.audio) this.audio.playEquipSound();
+    }
+
+    selectCreationTrail(trailKey) {
+      this.creationDraft.bladeTrail = trailKey;
+      this.renderCreationPreview();
+    }
+
+    renderCreationPreview() {
+      // 更新流派選擇按鈕狀態
+      document.querySelectorAll('.create-class-btn').forEach(btn => {
+        if (btn.dataset.class === this.creationDraft.classId) btn.classList.add('active');
+        else btn.classList.remove('active');
+      });
+
+      // 更新頭像按鈕狀態
+      document.querySelectorAll('.create-avatar-btn').forEach(btn => {
+        if (btn.dataset.avatar === this.creationDraft.avatar) btn.classList.add('active');
+        else btn.classList.remove('active');
+      });
+
+      // 顯示選中流派詳情
+      const cls = window.SAMURAI_CLASSES ? window.SAMURAI_CLASSES[this.creationDraft.classId] : null;
+      const previewBox = document.getElementById('creation-class-desc-box');
+      if (previewBox && cls) {
+        previewBox.innerHTML = `
+          <div style="font-size: 1.2rem; font-weight: 900; color: ${cls.themeColor}; margin-bottom: 4px;">
+            ${cls.icon} ${cls.name} — ${cls.subtitle}
+          </div>
+          <div style="font-size: 0.95rem; color: var(--text-main); line-height: 1.4;">
+            ${cls.desc}
+          </div>
+        `;
+      }
+    }
+
+    /**
+     * 完成角色創建，進入戰國暗黑世界
+     */
+    confirmCharacterCreation() {
+      const nameInput = document.getElementById('creation-name-input');
+      const chosenName = (nameInput && nameInput.value.trim()) ? nameInput.value.trim() : '宮本武藏';
+
+      // 重置為全新角色數據
+      this.player = this.initDefaultPlayer();
+      this.player.characterCreated = true;
+      this.player.name = chosenName;
+      this.player.classId = this.creationDraft.classId || 'kensei';
+      this.player.cosmetics.avatar = this.creationDraft.avatar || 'samurai_general';
+      this.player.cosmetics.bladeTrail = this.creationDraft.bladeTrail || 'cherry';
+
+      // 贈送新手開荒傳家寶武器（魔法藍裝）
+      if (window.generateGear) {
+        this.player.equipped.weapon = window.generateGear('weapon', 'magic', 1);
+      }
+
+      this.hideTitleAndCreation();
+      this.save();
+      this.updateHeaderUI();
+      this.switchTab('battle');
+      this.startCombatLoop();
+
+      if (this.audio) this.audio.playAchievementFanfare();
+      this.showToast(`🎉 角色【${chosenName}】創建完成！踏入戰國暗黑征途！`, 'success');
+    }
+
+    /**
+     * ==================== 2. 主城營地 (Town Hub) 與小站傳送陣 (World Map) ====================
+     */
+
+    /**
+     * 打開暗黑 3/4 風格世界地圖 (Waypoints Modal)
+     */
+    openWorldMap() {
+      const modal = document.getElementById('world-map-modal');
+      if (!modal) return;
+      this.renderWorldMapModal();
+      modal.style.display = 'flex';
+      if (this.audio) this.audio.playEquipSound();
+    }
+
+    closeWorldMap() {
+      const modal = document.getElementById('world-map-modal');
+      if (modal) modal.style.display = 'none';
+    }
+
+    renderWorldMapModal() {
+      const container = document.getElementById('world-map-nodes-container');
+      if (!container || !window.CAMPAIGN_ACTS) return;
+
+      const maxAct = Math.max(this.player.maxUnlockedAct || 1, this.player.act || 1);
+      this.player.maxUnlockedAct = maxAct;
+
+      // 主城傳送節點 + 7 大章節小站
+      const townActive = this.player.inTown;
+      let html = `
+        <div class="waypoint-card town-waypoint ${townActive ? 'current-location' : ''}" onclick="window.game.teleportToTown()">
+          <div class="wp-icon">🏯</div>
+          <div class="wp-info">
+            <div class="wp-title">【主城安全區】京都・新選本陣</div>
+            <div class="wp-sub">篝火祈福(+15%攻擊) | 刀匠強化 | 浪人拍賣行 | 百鬼不侵</div>
+          </div>
+          <div class="wp-action">
+            ${townActive ? '<span class="wp-badge-here">📍 目前所在</span>' : '<button class="btn btn-gold btn-sm">🌀 回城傳送</button>'}
+          </div>
+        </div>
+      `;
+
+      html += window.CAMPAIGN_ACTS.map(actData => {
+        const isUnlocked = actData.act <= maxAct || this.player.level >= actData.reqLevel;
+        const isHere = !this.player.inTown && this.player.act === actData.act;
+
+        return `
+          <div class="waypoint-card ${isUnlocked ? 'unlocked' : 'locked'} ${isHere ? 'current-location' : ''}"
+               onclick="${isUnlocked ? `window.game.travelToZone(${actData.act})` : ''}">
+            <div class="wp-icon">${actData.mapIcon || '⛩️'}</div>
+            <div class="wp-info">
+              <div class="wp-title">${actData.name} <span class="wp-lvl">(推薦 Lv.${actData.reqLevel})</span></div>
+              <div class="wp-sub">${actData.subtitle} — 首領：${actData.boss.name}</div>
+            </div>
+            <div class="wp-action">
+              ${isHere
+                ? '<span class="wp-badge-here">⚔️ 征戰中</span>'
+                : (isUnlocked
+                    ? `<button class="btn btn-gold btn-sm">⚡ 傳送前往</button>`
+                    : `<span class="wp-badge-locked">🔒 需通關前章或 Lv.${actData.reqLevel}</span>`)}
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      container.innerHTML = html;
+    }
+
+    /**
+     * 一鍵回城傳送 (Town Portal - 暗黑經典快捷鍵 T 或按鈕)
+     */
+    teleportToTown() {
+      this.player.inTown = true;
+      this.player.statsTracked.townVisits = (this.player.statsTracked.townVisits || 0) + 1;
+      this.closeWorldMap();
+      this.switchTab('battle');
+      this.updateBattleUI();
+      if (this.audio) this.audio.playAchievementFanfare();
+      this.showToast(`🏯 已透過傳送陣返回【京都・新選本陣】安全區！`, 'info');
+    }
+
+    /**
+     * 從主城或世界地圖傳送至指定章節戰場
+     */
+    travelToZone(actNumber) {
+      const actIdx = actNumber - 1;
+      if (!window.CAMPAIGN_ACTS || !window.CAMPAIGN_ACTS[actIdx]) return;
+
+      const actData = window.CAMPAIGN_ACTS[actIdx];
+      const maxAct = Math.max(this.player.maxUnlockedAct || 1, this.player.act || 1);
+      if (actNumber > maxAct && this.player.level < actData.reqLevel) {
+        this.showToast(`尚未解鎖該區域！需要等級 Lv.${actData.reqLevel}`, 'warning');
+        return;
+      }
+
+      this.player.inTown = false;
+      this.player.act = actNumber;
+      this.player.actProgress = 0;
+      this.player.actBossUnlocked = false;
+
+      this.closeWorldMap();
+      this.switchTab('battle');
+      this.spawnNextEnemy();
+      if (this.audio) this.audio.playSlashSound(true);
+      this.showToast(`⚡ 已傳送至【${actData.name}】展開討伐！`, 'success');
+    }
+
+    /**
+     * 主城巫女篝火祈福 (獲得 30 分鐘 +15% 攻擊力與生機恢復)
+     */
+    prayAtTownShrine() {
+      this.player.townBuffUntil = Date.now() + 30 * 60 * 1000;
+      if (this.audio) this.audio.playAchievementFanfare();
+      this.showToast(`⛩️ 巫女祈福完成！獲得【出雲武運祝福】攻擊力提升 15% (持續 30 分鐘)！`, 'success');
+      this.updateHeaderUI();
+      this.updateBattleUI();
     }
 
     /**
      * 計算玩家綜合戰力與各項戰鬥屬性
      */
     getCalculatedStats() {
-      // 基礎數值
       let baseAtk = 20 + (this.player.level - 1) * 6;
       let baseDef = 10 + (this.player.level - 1) * 4;
       let baseHP = 150 + (this.player.level - 1) * 35;
       let baseSpd = 10;
       let critRate = 5;
-      let critDmg = 50; // 基礎 150% 暴擊傷害
+      let critDmg = 50;
       let lifeSteal = 0;
       let armorPen = 0;
       let dmgRed = 0;
@@ -151,7 +403,6 @@
           baseHP += (gear.baseHP || 0) * upMul;
           baseSpd += (gear.baseSpd || 0) * upMul;
 
-          // 詞綴計算
           if (gear.affixes && Array.isArray(gear.affixes)) {
             gear.affixes.forEach(aff => {
               if (aff.stat === 'atkPct') baseAtk *= (1 + aff.val / 100);
@@ -186,6 +437,12 @@
         goldBonus += (classBonuses.goldBonus || 0);
       }
 
+      // 主城神社祈福加成 (+15% 攻擊)
+      const hasTownBuff = (this.player.townBuffUntil || 0) > Date.now();
+      if (hasTownBuff) {
+        baseAtk *= 1.15;
+      }
+
       const finalAtk = Math.round(baseAtk);
       const finalDef = Math.round(baseDef);
       const finalMaxHP = Math.round(baseHP);
@@ -208,19 +465,26 @@
         dmgRed: Math.min(65, dmgRed),
         magicFind: magicFind,
         goldBonus: goldBonus,
+        hasTownBuff: hasTownBuff,
         power: finalPower
       };
     }
 
     /**
-     * 啟動全自動討伐戰鬥迴圈 (身障友善：完全自動運作)
+     * 啟動全自動討伐戰鬥迴圈
      */
     startCombatLoop() {
       if (this.combatInterval) clearInterval(this.combatInterval);
-      this.spawnNextEnemy();
+      if (!this.player.inTown) {
+        this.spawnNextEnemy();
+      } else {
+        this.updateBattleUI();
+      }
 
       this.combatInterval = setInterval(() => {
-        this.autoCombatTick();
+        if (!this.player.inTown) {
+          this.autoCombatTick();
+        }
       }, 700);
       if (typeof this.combatInterval.unref === 'function') this.combatInterval.unref();
     }
@@ -242,6 +506,7 @@
      * 自動戰鬥每拍推進
      */
     autoCombatTick() {
+      if (this.player.inTown) return;
       if (!this.currentEnemy || this.currentEnemy.hp <= 0) {
         this.spawnNextEnemy();
         return;
@@ -251,7 +516,6 @@
       const isCrit = Math.random() * 100 < stats.critRate;
       let dmg = stats.atk * (0.85 + Math.random() * 0.3);
 
-      // 破甲與防禦減免
       const enemyDef = Math.max(0, (this.currentEnemy.def || 0) - stats.armorPen);
       const reduction = enemyDef / (enemyDef + 100);
       dmg = Math.max(1, dmg * (1 - reduction));
@@ -263,44 +527,35 @@
       dmg = Math.round(dmg);
       this.currentEnemy.hp -= dmg;
 
-      // 播放揮刀音效
       if (this.audio) this.audio.playSlashSound(isCrit);
-
-      // 顯示傷害浮動字體
       this.showDamageText(dmg, isCrit, false);
 
-      // 吸血回饋 (如果有吸血)
       if (stats.lifeSteal > 0) {
         const heal = Math.round(dmg * (stats.lifeSteal / 100));
         if (heal > 0) this.showDamageText(`+${heal} 汲血`, false, true);
       }
 
-      // 更新戰鬥血條
       this.updateEnemyHealthBar();
 
-      // 怪物擊敗判定
       if (this.currentEnemy.hp <= 0) {
         this.onEnemyDefeated();
       }
     }
 
-    /**
-     * 手動點擊揮刀（身障輔助：支援點擊畫面任意戰鬥區域額外補刀，絕不強制）
-     */
     manualSlash() {
-      if (!this.currentEnemy) return;
+      if (this.player.inTown || !this.currentEnemy) return;
       this.autoCombatTick();
     }
 
-    /**
-     * 生成下一隻怪物或首領
-     */
     spawnNextEnemy() {
+      if (this.player.inTown) {
+        this.updateBattleUI();
+        return;
+      }
       const actIndex = Math.max(0, Math.min(6, (this.player.act || 1) - 1));
       const actData = window.CAMPAIGN_ACTS ? window.CAMPAIGN_ACTS[actIndex] : null;
       if (!actData) return;
 
-      // 判斷是否討伐章節首領
       if (this.player.actBossUnlocked) {
         this.currentEnemy = {
           ...actData.boss,
@@ -322,25 +577,19 @@
       this.updateBattleUI();
     }
 
-    /**
-     * 擊敗怪物處理：經驗、金幣、暗黑裝備掉落與光柱
-     */
     onEnemyDefeated() {
       const enemy = this.currentEnemy;
       const stats = this.getCalculatedStats();
       this.player.statsTracked.totalKills++;
 
-      // 獲得金幣與經驗
       const goldEarned = Math.round((enemy.gold || 10) * (1 + stats.goldBonus / 100));
       const expEarned = enemy.exp || 15;
 
       this.player.gold += goldEarned;
       this.addExp(expEarned);
 
-      // 掉落裝備判定
       this.rollGearDrop(enemy);
 
-      // 章節推進判定
       const actIndex = Math.max(0, Math.min(6, (this.player.act || 1) - 1));
       const actData = window.CAMPAIGN_ACTS[actIndex];
 
@@ -354,10 +603,12 @@
           this.marketChat.addChatMessage('全服公告', `🎊 恭喜玩家【${this.player.name}】斬殺了【${enemy.name}】，武威震懾天下！`, true);
         }
 
-        // 開啟下一章
         if (this.player.act < 7) {
           this.player.act++;
-          this.showToast(`🗺️ 已解鎖全新章節【${window.CAMPAIGN_ACTS[this.player.act - 1].name}】！`, 'success');
+          if (this.player.act > (this.player.maxUnlockedAct || 1)) {
+            this.player.maxUnlockedAct = this.player.act;
+          }
+          this.showToast(`🗺️ 已解鎖世界地圖全新章節【${window.CAMPAIGN_ACTS[this.player.act - 1].name}】！`, 'success');
         }
       } else {
         this.player.actProgress++;
@@ -367,24 +618,17 @@
         }
       }
 
-      // 檢查成就
       this.checkAchievements();
-
-      // 生成下一隻
       setTimeout(() => this.spawnNextEnemy(), 300);
       this.updateHeaderUI();
     }
 
-    /**
-     * 暗黑式隨機掉寶與光柱特效
-     */
     rollGearDrop(enemy) {
       if (!window.generateGear) return;
       const dropChance = enemy.isBoss ? 0.95 : 0.35;
       if (Math.random() > dropChance) return;
 
       const stats = this.getCalculatedStats();
-      // 依尋寶值 (Magic Find) 提升高品質機率
       const mfBonus = stats.magicFind || 0;
       const roll = Math.random() * 100;
 
@@ -407,16 +651,13 @@
       if (quality === 'legendary') this.player.statsTracked.legendaryLooted++;
       if (quality === 'ancient') this.player.statsTracked.ancientLooted++;
 
-      // 播放暗黑經典掉落音效（傳奇與遠古觸發經典 Ding!）
       if (this.audio) this.audio.playDropSound(quality);
 
-      // 傳奇與遠古觸發全服聊天室廣播與暗金光柱
       if (quality === 'legendary' || quality === 'ancient') {
         this.triggerLootBeam(gear);
         if (this.marketChat) this.marketChat.broadcastLoot(this.player.name, gear);
       }
 
-      // 自動分解過濾器判定 (身障無障礙優化：保持行囊清潔)
       if (this.shouldAutoDecompose(quality)) {
         const mats = window.decomposeGear(gear);
         this.player.iron += mats.iron;
@@ -426,13 +667,9 @@
         return;
       }
 
-      // 存入背包
       this.addGearToInventory(gear);
     }
 
-    /**
-     * 檢查是否自動分解
-     */
     shouldAutoDecompose(quality) {
       if (quality === 'common' && this.player.settings.autoDecomposeCommon) return true;
       if (quality === 'magic' && this.player.settings.autoDecomposeMagic) return true;
@@ -440,9 +677,6 @@
       return false;
     }
 
-    /**
-     * 存入背包並觸發「一鍵智慧換裝」偵測
-     */
     addGearToInventory(gear) {
       if (this.player.inventory.length >= 50) {
         this.showToast(`⚠️ 行囊已滿 (50/50)，請分解多餘裝備！`, 'warning');
@@ -450,14 +684,9 @@
       }
       this.player.inventory.push(gear);
       this.renderGearUI();
-
-      // 智慧換裝比對
       this.checkSmartEquip();
     }
 
-    /**
-     * 一鍵智慧換裝比對邏輯 (Smart Equip floating banner)
-     */
     checkSmartEquip() {
       let bestUpgrade = null;
       let maxScoreDiff = 0;
@@ -499,9 +728,6 @@
       }
     }
 
-    /**
-     * 執行一鍵換裝
-     */
     equipSmartTarget() {
       if (!this.smartEquipTarget) return;
       this.equipGear(this.smartEquipTarget.uid);
@@ -511,9 +737,6 @@
       this.checkSmartEquip();
     }
 
-    /**
-     * 裝備特定裝備
-     */
     equipGear(gearUid) {
       const idx = this.player.inventory.findIndex(g => g.uid === gearUid);
       if (idx === -1) return;
@@ -536,9 +759,6 @@
       this.checkAchievements();
     }
 
-    /**
-     * 卸下裝備
-     */
     unequipGear(slot) {
       const oldGear = this.player.equipped[slot];
       if (!oldGear) return;
@@ -553,9 +773,6 @@
       this.updateHeaderUI();
     }
 
-    /**
-     * 一鍵分解背包內所有普通與魔法裝備
-     */
     decomposeAllJunk() {
       const toDecompose = this.player.inventory.filter(g => g.quality === 'common' || g.quality === 'magic');
       if (toDecompose.length === 0) {
@@ -584,9 +801,6 @@
       this.updateHeaderUI();
     }
 
-    /**
-     * 強化裝備
-     */
     upgradeGear(gearUid) {
       let gear = null;
       for (const slotKey of Object.keys(this.player.equipped)) {
@@ -623,9 +837,6 @@
       this.checkAchievements();
     }
 
-    /**
-     * 升級與天賦獲得
-     */
     addExp(amount) {
       this.player.exp += amount;
       while (this.player.exp >= this.player.maxExp) {
@@ -639,9 +850,6 @@
       }
     }
 
-    /**
-     * 升級指定天賦
-     */
     addTalentPoint(talentId) {
       if (this.player.talentPoints <= 0) {
         this.showToast(`天賦點數不足！請先升級獲得點數`, 'warning');
@@ -663,9 +871,6 @@
       this.checkAchievements();
     }
 
-    /**
-     * 免費重置天賦 (身障與零壓力體驗：100% 免費無上限隨時洗點)
-     */
     resetTalents() {
       let refunded = 0;
       for (const tKey of Object.keys(this.player.talents)) {
@@ -679,9 +884,6 @@
       this.updateHeaderUI();
     }
 
-    /**
-     * 切換職業流派
-     */
     switchClass(classId) {
       if (!window.SAMURAI_CLASSES[classId]) return;
       this.player.classId = classId;
@@ -691,9 +893,6 @@
       this.updateHeaderUI();
     }
 
-    /**
-     * 暗黑 3 式中下方金邊成就橫幅觸發 (Diablo 3 Banner)
-     */
     triggerAchievementBanner(ach) {
       this.achievementQueue.push(ach);
       if (!this.isShowingAchievement) {
@@ -733,9 +932,6 @@
       }, 4000);
     }
 
-    /**
-     * 檢查成就解鎖
-     */
     checkAchievements() {
       if (!window.ACHIEVEMENTS_DB) return;
       const stats = this.getCalculatedStats();
@@ -774,9 +970,6 @@
       });
     }
 
-    /**
-     * 領取成就獎勵
-     */
     claimAchievement(achId) {
       const ach = window.ACHIEVEMENTS_DB.find(a => a.id === achId);
       if (!ach || !this.player.achievements[achId] || this.player.achievements[achId].claimed) return;
@@ -802,9 +995,6 @@
       this.updateHeaderUI();
     }
 
-    /**
-     * 一鍵領取所有已達成成就
-     */
     claimAllAchievements() {
       let claimedCount = 0;
       window.ACHIEVEMENTS_DB.forEach(ach => {
@@ -820,9 +1010,6 @@
       }
     }
 
-    /**
-     * 每日登入簽到領取 (7日循環)
-     */
     claimDailyReward() {
       const today = new Date().toISOString().slice(0, 10);
       if (this.player.dailySignIn.lastClaimDate === today) {
@@ -853,15 +1040,11 @@
       this.updateHeaderUI();
     }
 
-    /**
-     * 離線收益結算 (身障與休閒放置體驗：上線即領)
-     */
     processOfflineProgress() {
       const now = Date.now();
       const last = this.player.lastSaveTime || now;
       const elapsedSeconds = Math.floor((now - last) / 1000);
 
-      // 超過 60 秒才算離線收益，最多計算 12 小時 (43,200 秒)
       if (elapsedSeconds < 60) return;
 
       const calcSeconds = Math.min(43200, elapsedSeconds);
@@ -873,13 +1056,11 @@
       const goldGain = totalOfflineKills * 8;
       const ironGain = Math.round(totalOfflineKills * 0.4);
 
-      // 累計
       this.player.gold += goldGain;
       this.player.iron += ironGain;
       this.addExp(expGain);
       this.player.statsTracked.totalKills += totalOfflineKills;
 
-      // 隨機贈送 1~3 件高品質裝備
       const bonusGears = [];
       const bonusCount = Math.min(3, Math.max(1, Math.floor(calcSeconds / 3600)));
       if (window.generateGear) {
@@ -890,7 +1071,6 @@
         }
       }
 
-      // 彈出離線結算彈窗
       const modal = document.getElementById('offline-modal');
       const body = document.getElementById('offline-modal-body');
       if (modal && body) {
@@ -923,9 +1103,6 @@
       if (this.audio) this.audio.playCoinSound();
     }
 
-    /**
-     * 暗金光柱特效
-     */
     triggerLootBeam(gear) {
       const beamEl = document.getElementById('loot-beam-overlay');
       if (!beamEl) return;
@@ -936,9 +1113,6 @@
       }, 1500);
     }
 
-    /**
-     * 傷害跳字特效
-     */
     showDamageText(text, isCrit, isHeal) {
       const container = document.getElementById('battle-damage-layer');
       if (!container) return;
@@ -947,7 +1121,6 @@
       span.className = `floating-dmg ${isCrit ? 'dmg-crit' : ''} ${isHeal ? 'dmg-heal' : ''}`;
       span.innerText = isCrit ? `💥 ${text}!` : text;
 
-      // 隨機水平偏移
       span.style.left = `${45 + (Math.random() * 20 - 10)}%`;
       span.style.top = `${40 + (Math.random() * 20 - 10)}%`;
 
@@ -957,9 +1130,6 @@
       }, 800);
     }
 
-    /**
-     * 提示浮動訊息 (Toast)
-     */
     showToast(msg, type = 'info') {
       const container = document.getElementById('toast-container');
       if (!container) return;
@@ -977,9 +1147,6 @@
       }, 3000);
     }
 
-    /**
-     * 切換五大核心分頁
-     */
     switchTab(tabKey) {
       const tabs = ['battle', 'gear', 'talents', 'market', 'achievements'];
       if (!tabs.includes(tabKey)) return;
@@ -995,8 +1162,8 @@
         }
       });
 
-      // 各頁專屬刷新
-      if (tabKey === 'gear') this.renderGearUI();
+      if (tabKey === 'battle') this.updateBattleUI();
+      else if (tabKey === 'gear') this.renderGearUI();
       else if (tabKey === 'talents') this.renderTalentsUI();
       else if (tabKey === 'market' && this.marketChat) {
         this.marketChat.renderMarketUI();
@@ -1008,9 +1175,6 @@
       }
     }
 
-    /**
-     * 客製外觀更新
-     */
     setCosmetic(type, value) {
       if (!this.player.cosmetics) this.player.cosmetics = {};
       this.player.cosmetics[type] = value;
@@ -1019,9 +1183,6 @@
       this.showToast(`外觀造型已套用！`, 'success');
     }
 
-    /**
-     * 渲染頂部與總體數值
-     */
     updateHeaderUI() {
       const stats = this.getCalculatedStats();
       const levelEl = document.getElementById('player-level-val');
@@ -1041,7 +1202,6 @@
       if (nameEl) nameEl.innerText = this.player.name;
       if (titleEl) titleEl.innerText = `【${this.player.cosmetics.title || '流浪武士'}】`;
 
-      // 替換武士真實頭像
       if (avatarEl) {
         const avatars = {
           samurai_general: '⚔️',
@@ -1053,7 +1213,6 @@
         avatarEl.innerText = avatars[this.player.cosmetics.avatar] || '⚔️';
       }
 
-      // EXP 進度條
       const expBar = document.getElementById('player-exp-bar');
       const expText = document.getElementById('player-exp-text');
       if (expBar) {
@@ -1063,39 +1222,42 @@
       if (expText) {
         expText.innerText = `${this.player.exp} / ${this.player.maxExp}`;
       }
-
-      // 帳號綁定狀態按鈕
-      const authText = document.getElementById('header-auth-text');
-      if (authText) {
-        if (this.player.googleProfile && this.player.googleProfile.name) {
-          authText.innerText = '✔️ ' + this.player.googleProfile.name.slice(0, 5);
-        } else if (this.player.name && this.player.name !== '無雙武士') {
-          authText.innerText = '✔️ ' + this.player.name.slice(0, 5);
-        } else {
-          authText.innerText = '登入綁定';
-        }
-      }
     }
 
     /**
-     * 渲染戰鬥畫面
+     * 渲染戰鬥畫面與主城畫面切換
      */
     updateBattleUI() {
+      const townPane = document.getElementById('town-hub-view');
+      const combatPane = document.getElementById('combat-field-view');
+      const actTitle = document.getElementById('current-act-title');
+      const actProgressText = document.getElementById('act-progress-text');
+
+      if (this.player.inTown) {
+        if (townPane) townPane.style.display = 'flex';
+        if (combatPane) combatPane.style.display = 'none';
+        if (actTitle) actTitle.innerText = `🏯 京都・新選本陣（主城安全區）`;
+        if (actProgressText) {
+          const hasBuff = (this.player.townBuffUntil || 0) > Date.now();
+          actProgressText.innerText = hasBuff ? `⛩️ 出雲武運祝福生效中 (+15% 攻擊)` : `🕯️ 篝火安全休息中`;
+        }
+        return;
+      }
+
+      if (townPane) townPane.style.display = 'none';
+      if (combatPane) combatPane.style.display = 'flex';
+
       if (!this.currentEnemy) return;
       const nameEl = document.getElementById('enemy-name');
       const avatarEl = document.getElementById('enemy-avatar');
-      const hpText = document.getElementById('enemy-hp-text');
-      const hpBar = document.getElementById('enemy-hp-bar');
-      const actTitle = document.getElementById('current-act-title');
-      const actProgressText = document.getElementById('act-progress-text');
 
       const actIndex = Math.max(0, Math.min(6, (this.player.act || 1) - 1));
       const actData = window.CAMPAIGN_ACTS[actIndex];
 
-      if (actTitle && actData) actTitle.innerText = `${actData.name} - ${actData.subtitle}`;
+      if (actTitle && actData) actTitle.innerText = `${actData.mapIcon || '⚔️'} ${actData.name} - ${actData.subtitle}`;
       if (actProgressText && actData) {
         actProgressText.innerText = this.player.actBossUnlocked
-          ? `⚠️ 首領戰鬥中！`
+          ? `⚠️ 首領決戰中！`
           : `討伐進度: ${this.player.actProgress} / ${actData.bossKillsRequired}`;
       }
 
@@ -1118,9 +1280,6 @@
       }
     }
 
-    /**
-     * 渲染裝備分頁 (6 格紙娃娃 + 背包 + 詞綴故事 + 客製造型)
-     */
     renderGearUI() {
       const container = document.getElementById('equipped-slots-grid');
       if (container) {
@@ -1157,7 +1316,6 @@
         }).join('');
       }
 
-      // 渲染背包裝備列表
       const invContainer = document.getElementById('inventory-grid');
       const invCount = document.getElementById('inventory-count-badge');
       if (invCount) invCount.innerText = `${this.player.inventory.length} / 50`;
@@ -1201,9 +1359,6 @@
       }
     }
 
-    /**
-     * 分解單件裝備
-     */
     decomposeSingleGear(gearUid) {
       const idx = this.player.inventory.findIndex(g => g.uid === gearUid);
       if (idx === -1) return;
@@ -1221,9 +1376,6 @@
       this.checkSmartEquip();
     }
 
-    /**
-     * 渲染天賦分頁
-     */
     renderTalentsUI() {
       const classSelect = document.getElementById('class-select-container');
       const talentsList = document.getElementById('talents-tree-container');
@@ -1231,7 +1383,6 @@
 
       if (pointsVal) pointsVal.innerText = this.player.talentPoints;
 
-      // 四大流派選擇鈕
       if (classSelect && window.SAMURAI_CLASSES) {
         classSelect.innerHTML = Object.keys(window.SAMURAI_CLASSES).map(cKey => {
           const cls = window.SAMURAI_CLASSES[cKey];
@@ -1246,7 +1397,6 @@
         }).join('');
       }
 
-      // 當前流派天賦樹渲染
       const curCls = window.SAMURAI_CLASSES[this.player.classId];
       if (talentsList && curCls) {
         talentsList.innerHTML = `
@@ -1283,9 +1433,6 @@
       }
     }
 
-    /**
-     * 渲染成就分頁
-     */
     renderAchievementsUI() {
       const container = document.getElementById('achievements-list-container');
       if (!container || !window.ACHIEVEMENTS_DB) return;
@@ -1315,9 +1462,6 @@
       }).join('');
     }
 
-    /**
-     * 渲染每日簽到
-     */
     renderDailySignInUI() {
       const container = document.getElementById('daily-signin-grid');
       if (!container || !window.DAILY_SIGNIN_REWARDS) return;
@@ -1346,117 +1490,7 @@
     }
 
     /**
-     * 綁定 Google 登入 (Google Identity Services)
-     */
-    handleGoogleLogin(credentialResponse) {
-      if (!credentialResponse || !credentialResponse.credential) return;
-      try {
-        // 解碼 JWT Payload
-        const base64Url = credentialResponse.credential.split('.')[1];
-        const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-        const jsonPayload = decodeURIComponent(atob(base64).split('').map(c => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2)).join(''));
-        const profile = JSON.parse(jsonPayload);
-
-        this.player.googleProfile = {
-          name: profile.name,
-          email: profile.email,
-          picture: profile.picture,
-          sub: profile.sub
-        };
-        this.player.name = profile.name || this.player.name;
-
-        this.showToast(`🎉 成功以 Google 帳號【${profile.name}】登入！角色已安全綁定`, 'success');
-        this.updateHeaderUI();
-        this.save();
-        this.closeAuthModal();
-      } catch (e) {
-        console.error('Google decode failed', e);
-      }
-    }
-
-    openAuthModal() {
-      const modal = document.getElementById('auth-modal');
-      const statusDisplay = document.getElementById('auth-status-display');
-      const nameInput = document.getElementById('custom-samurai-name-input');
-      const clientIdInput = document.getElementById('google-client-id-input');
-
-      if (statusDisplay) {
-        if (this.player.googleProfile && this.player.googleProfile.name) {
-          statusDisplay.innerHTML = `
-            <div style="color: #4ade80; font-weight: 700; margin-bottom: 4px;">✔️ 已成功綁定 Google 官方帳號</div>
-            <div style="font-size: 0.9rem;">使用者：<strong>${this.player.googleProfile.name}</strong> (${this.player.googleProfile.email})</div>
-          `;
-        } else {
-          statusDisplay.innerHTML = `
-            <div style="color: var(--gold-accent); font-weight: 700; margin-bottom: 4px;">👤 當前角色稱號：${this.player.name}</div>
-            <div style="font-size: 0.85rem; color: var(--text-muted);">存檔儲存狀態：本機安全儲存 (已自動同步備份)</div>
-          `;
-        }
-      }
-
-      if (nameInput) nameInput.value = this.player.name;
-      if (clientIdInput) clientIdInput.value = (this.player.settings && this.player.settings.googleClientId) || '';
-      if (modal) modal.style.display = 'flex';
-    }
-
-    closeAuthModal() {
-      const modal = document.getElementById('auth-modal');
-      if (modal) modal.style.display = 'none';
-    }
-
-    saveCustomName() {
-      const nameInput = document.getElementById('custom-samurai-name-input');
-      if (!nameInput || !nameInput.value.trim()) {
-        this.showToast('請輸入有效的武士名稱！', 'warning');
-        return;
-      }
-      this.player.name = nameInput.value.trim();
-      this.updateHeaderUI();
-      this.save();
-      this.showToast(`已成功綁定稱號為【${this.player.name}】！`, 'success');
-      this.openAuthModal();
-    }
-
-    startGoogleLoginWithClientId() {
-      const clientIdInput = document.getElementById('google-client-id-input');
-      const clientId = clientIdInput ? clientIdInput.value.trim() : '';
-
-      if (!clientId || clientId.includes('demo-client-id')) {
-        this.showToast('尚未填寫有效的 Google Client ID！建議直接使用【途徑一】快速命名綁定，無須任何設定！', 'warning');
-        return;
-      }
-
-      if (!this.player.settings) this.player.settings = {};
-      this.player.settings.googleClientId = clientId;
-      this.save();
-
-      if (window.google && window.google.accounts && window.google.accounts.id) {
-        try {
-          window.google.accounts.id.initialize({
-            client_id: clientId,
-            callback: (res) => this.handleGoogleLogin(res)
-          });
-          window.google.accounts.id.prompt();
-          this.showToast('已啟動 Google 官方安全登入！', 'info');
-        } catch (e) {
-          console.error('Google init failed', e);
-          this.showToast('Google 登入初始化失敗，請檢查 Client ID 是否正確。', 'error');
-        }
-      } else {
-        this.showToast('正在載入 Google 認證服務，請稍候重試', 'info');
-      }
-    }
-
-    clearAuthBinding() {
-      this.player.googleProfile = null;
-      this.save();
-      this.updateHeaderUI();
-      this.openAuthModal();
-      this.showToast('已解除 Google 帳號綁定', 'info');
-    }
-
-    /**
-     * 儲存進度 (LocalStorage + 更新存檔時間)
+     * 儲存進度
      */
     save() {
       this.player.lastSaveTime = Date.now();
@@ -1469,6 +1503,7 @@
 
     /**
      * 讀取進度
+     * @returns {boolean} 是否成功載入既有存檔
      */
     load() {
       try {
@@ -1476,15 +1511,14 @@
         if (saved) {
           const parsed = JSON.parse(saved);
           this.player = Object.assign(this.initDefaultPlayer(), parsed);
+          return true;
         }
       } catch (e) {
         console.error('Load save error', e);
       }
+      return false;
     }
 
-    /**
-     * 導出存檔代碼 (Base64)
-     */
     exportSave() {
       this.save();
       const code = btoa(encodeURIComponent(JSON.stringify(this.player)));
@@ -1495,9 +1529,6 @@
       });
     }
 
-    /**
-     * 匯入存檔代碼
-     */
     importSave() {
       const code = prompt('請貼上存檔代碼：');
       if (!code) return;
@@ -1505,6 +1536,7 @@
         const json = decodeURIComponent(atob(code.trim()));
         const parsed = JSON.parse(json);
         this.player = Object.assign(this.initDefaultPlayer(), parsed);
+        this.player.characterCreated = true;
         this.save();
         this.showToast(`存檔匯入成功！`, 'success');
         location.reload();
@@ -1513,17 +1545,11 @@
       }
     }
 
-    /**
-     * 介面事件初始化
-     */
     initUI() {
       this.updateHeaderUI();
       this.switchTab('battle');
     }
 
-    /**
-     * 身障無障礙操作控制設定 (全鍵盤單鍵支援 + 空白鍵換裝/揮刀)
-     */
     setupControls() {
       window.addEventListener('keydown', (e) => {
         if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
@@ -1545,17 +1571,17 @@
           this.switchTab('market');
         } else if (e.code === 'Digit5') {
           this.switchTab('achievements');
+        } else if (e.code === 'KeyT') {
+          // 暗黑經典快捷鍵 T：回城傳送
+          this.teleportToTown();
         } else if (e.code === 'KeyM') {
-          if (this.audio) {
-            const muted = this.audio.toggleMute();
-            this.showToast(muted ? '🔇 聲音已完全靜音' : '🔊 音效已開啟', 'info');
-          }
+          // 暗黑經典快捷鍵 M：打開世界地圖
+          this.openWorldMap();
         }
       });
     }
   }
 
-  // 啟動入口
   window.SamuraiGame = SamuraiGame;
   if (typeof window !== 'undefined' && typeof window.addEventListener === 'function') {
     window.addEventListener('DOMContentLoaded', () => {
