@@ -1823,26 +1823,27 @@ class SamuraiGame {
     let isMouseDown = false;
     let startX = 0;
     let startScrollLeft = 0;
-    let draggedDistance = 0;
+    let hasDragged = false;
 
     tabNav.addEventListener("mousedown", (e) => {
       if (e.button !== 0) return; // 僅響應滑鼠左鍵
       isMouseDown = true;
-      startX = e.pageX - tabNav.offsetLeft;
+      startX = e.pageX;
       startScrollLeft = tabNav.scrollLeft || 0;
-      draggedDistance = 0;
-      tabNav.classList.add("is-dragging");
+      hasDragged = false;
     });
 
     if (typeof window !== "undefined" && window.addEventListener) {
       window.addEventListener("mousemove", (e) => {
         if (!isMouseDown) return;
-        const x = e.pageX - tabNav.offsetLeft;
-        const walk = x - startX;
-        draggedDistance = Math.abs(walk);
-        if (draggedDistance > 3) {
+        const dx = e.pageX - startX;
+        if (!hasDragged && Math.abs(dx) > 8) {
+          hasDragged = true;
+          tabNav.classList.add("is-dragging");
+        }
+        if (hasDragged) {
           if (e.preventDefault) e.preventDefault();
-          tabNav.scrollLeft = startScrollLeft - walk;
+          tabNav.scrollLeft = startScrollLeft - dx;
           this.updateTabNavArrows();
         }
       });
@@ -1850,10 +1851,13 @@ class SamuraiGame {
       const endDrag = () => {
         if (!isMouseDown) return;
         isMouseDown = false;
-        setTimeout(() => {
-          tabNav.classList.remove("is-dragging");
-          draggedDistance = 0;
-        }, 50);
+        tabNav.classList.remove("is-dragging");
+        if (hasDragged) {
+          // 短暫保持 hasDragged 為 true，讓緊隨其後的 click 事件被捕獲攔截
+          setTimeout(() => {
+            hasDragged = false;
+          }, 80);
+        }
         this.updateTabNavArrows();
       };
 
@@ -1863,12 +1867,11 @@ class SamuraiGame {
       });
     }
 
-    // 拖曳結束時如果移動距離超過 6px，攔截該次 click 事件，防止放開滑鼠時誤切換分頁
+    // 僅在發生實際拖曳位移時攔截按鈕點擊，一般點擊則完全不受影響
     tabNav.addEventListener("click", (e) => {
-      if (draggedDistance > 6) {
+      if (hasDragged) {
         if (e.preventDefault) e.preventDefault();
         if (e.stopPropagation) e.stopPropagation();
-        draggedDistance = 0;
       }
     }, true);
 
