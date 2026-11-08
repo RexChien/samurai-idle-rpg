@@ -1272,6 +1272,30 @@ body {
   font-size: 1rem;
 }
 
+/* 登入綁定彈窗樣式 */
+.auth-status-box {
+  background: #181a20;
+  border: 1px solid var(--border-gold);
+  border-radius: 8px;
+  padding: 12px;
+  margin-bottom: 14px;
+}
+
+.auth-input-row {
+  display: flex;
+  gap: 8px;
+}
+
+.auth-input-row input {
+  flex: 1;
+  background: #181a20;
+  border: 1px solid var(--border-muted);
+  color: var(--text-main);
+  padding: 8px 12px;
+  border-radius: 6px;
+  font-size: 0.95rem;
+}
+
 /* Toast 提示 */
 .toast-container {
   position: fixed;
