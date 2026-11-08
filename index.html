@@ -21,18 +21,24 @@
     <!-- 頂部標題與貨幣欄 -->
     <header class="game-header">
       <div class="brand-title">
-        <h1>🗡️ 無雙劍心</h1>
-        <span class="badge">武士之刃・放置RPG</span>
+        <h1 data-i18n="gameTitle">🗡️ 無雙劍心</h1>
+        <span class="badge" data-i18n="gameSubtitle">武士之刃・放置RPG</span>
+      </div>
+      <!-- 語系切換器 (Language Switcher) -->
+      <div class="lang-switch-container">
+        <button class="lang-btn active" data-lang="zh-TW" onclick="window.setLanguage('zh-TW')" title="繁體中文">繁中</button>
+        <button class="lang-btn" data-lang="en" onclick="window.setLanguage('en')" title="English">EN</button>
+        <button class="lang-btn" data-lang="ja" onclick="window.setLanguage('ja')" title="日本語">日本語</button>
       </div>
       <div class="resource-bar">
-        <div class="res-item gold" title="金小判（擊敵與熔煉獲得，用於鍛造與研磨）">
-          🪙 金小判: <span id="res-gold">0</span>
+        <div class="res-item gold" data-i18n-title="resGoldTip" title="金小判（擊敵與熔煉獲得，用於鍛造與研磨）">
+          <span data-i18n="resGold">🪙 金小判</span>: <span id="res-gold">0</span>
         </div>
-        <div class="res-item steel" title="踏鞴玉鋼（名刀核心鍛造與強化材料）">
-          💎 玉鋼: <span id="res-steel">0</span>
+        <div class="res-item steel" data-i18n-title="resSteelTip" title="踏鞴玉鋼（名刀核心鍛造與強化材料）">
+          <span data-i18n="resSteel">💎 玉鋼</span>: <span id="res-steel">0</span>
         </div>
-        <div class="res-item karma" title="輪迴魂火（劍心輪迴轉生獲得，用於點亮永久神龕天賦）">
-          🌀 魂火: <span id="res-karma">0</span>
+        <div class="res-item karma" data-i18n-title="resKarmaTip" title="輪迴魂火（劍心輪迴轉生獲得，用於點亮永久神龕天賦）">
+          <span data-i18n="resKarma">🌀 魂火</span>: <span id="res-karma">0</span>
         </div>
       </div>
     </header>
@@ -60,42 +66,42 @@
       </div>
 
       <div class="stats-grid-mini">
-        <div class="stat-cell"><span>攻擊力</span><span id="stat-atk">0</span></div>
-        <div class="stat-cell"><span>防禦力</span><span id="stat-def">0</span></div>
-        <div class="stat-cell"><span>會心率</span><span id="stat-crit">0%</span></div>
-        <div class="stat-cell"><span>會心傷</span><span id="stat-critdmg">0%</span></div>
-        <div class="stat-cell"><span>拔刀速度</span><span id="stat-speed">0 次/秒</span></div>
-        <div class="stat-cell"><span>破甲穿透</span><span id="stat-pen">0%</span></div>
+        <div class="stat-cell"><span data-i18n="statAtk">攻擊力</span><span id="stat-atk">0</span></div>
+        <div class="stat-cell"><span data-i18n="statDef">防禦力</span><span id="stat-def">0</span></div>
+        <div class="stat-cell"><span data-i18n="statCrit">會心率</span><span id="stat-crit">0%</span></div>
+        <div class="stat-cell"><span data-i18n="statCritDmg">會心傷</span><span id="stat-critdmg">0%</span></div>
+        <div class="stat-cell"><span data-i18n="statSpeed">拔刀速度</span><span id="stat-speed">0 次/秒</span></div>
+        <div class="stat-cell"><span data-i18n="statPen">破甲穿透</span><span id="stat-pen">0%</span></div>
       </div>
     </section>
 
     <!-- 導航分頁 -->
     <nav class="tab-nav">
-      <button class="tab-btn active" data-tab="battle" onclick="window.game.switchTab('battle')">
+      <button class="tab-btn active" data-tab="battle" onclick="window.game.switchTab('battle')" data-i18n="tabBattle">
         ⚔️ 討伐修煉
       </button>
-      <button class="tab-btn" data-tab="story" onclick="window.game.switchTab('story')">
+      <button class="tab-btn" data-tab="story" onclick="window.game.switchTab('story')" data-i18n="tabStory">
         📜 命運繪卷
       </button>
-      <button class="tab-btn" data-tab="forge" onclick="window.game.switchTab('forge')">
+      <button class="tab-btn" data-tab="forge" onclick="window.game.switchTab('forge')" data-i18n="tabForge">
         ⚒️ 名刀鍛造
       </button>
-      <button class="tab-btn" data-tab="dojo" onclick="window.game.switchTab('dojo')">
+      <button class="tab-btn" data-tab="dojo" onclick="window.game.switchTab('dojo')" data-i18n="tabDojo">
         ⛩️ 流派奧義
       </button>
-      <button class="tab-btn" data-tab="prestige" onclick="window.game.switchTab('prestige')">
+      <button class="tab-btn" data-tab="prestige" onclick="window.game.switchTab('prestige')" data-i18n="tabPrestige">
         🌀 劍心轉生
       </button>
-      <button class="tab-btn" data-tab="inventory" onclick="window.game.switchTab('inventory')">
+      <button class="tab-btn" data-tab="inventory" onclick="window.game.switchTab('inventory')" data-i18n="tabInventory">
         🎒 行囊裝備
       </button>
-      <button class="tab-btn" data-tab="codex" onclick="window.game.switchTab('codex')">
+      <button class="tab-btn" data-tab="codex" onclick="window.game.switchTab('codex')" data-i18n="tabCodex">
         📖 名刀鑑賞
       </button>
-      <button class="tab-btn" data-tab="community" onclick="window.game.switchTab('community')">
+      <button class="tab-btn" data-tab="community" onclick="window.game.switchTab('community')" data-i18n="tabCommunity">
         🏮 浪人茶屋
       </button>
-      <button class="tab-btn" data-tab="settings" onclick="window.game.switchTab('settings')">
+      <button class="tab-btn" data-tab="settings" onclick="window.game.switchTab('settings')" data-i18n="tabSettings">
         ⚙️ 修行存檔
       </button>
     </nav>
@@ -449,7 +455,20 @@
       <!-- ================= 6. 設定與存檔分頁 ================= -->
       <div id="tab-settings" class="tab-pane">
         <div class="settings-box">
-          <h3>⚙️ 修行存檔與系統設定</h3>
+          <h3 data-i18n="settingsTitle">⚙️ 修行存檔與系統設定</h3>
+
+          <!-- 語系切換器 (Language Setting) -->
+          <div class="settings-row" style="flex-wrap: wrap; gap: 8px; border-bottom: 1px solid rgba(255,255,255,0.08); padding-bottom: 12px;">
+            <div>
+              <div style="font-weight:bold;color:#fff;" data-i18n="settingsLangTitle">🌐 語言切換 / Language / 言語</div>
+              <div style="font-size:0.8rem;color:#888;">繁體中文 / English / 日本語</div>
+            </div>
+            <div class="lang-setting-buttons">
+              <button class="btn-sub lang-btn-setting active" data-lang="zh-TW" onclick="window.setLanguage('zh-TW')">繁體中文</button>
+              <button class="btn-sub lang-btn-setting" data-lang="en" onclick="window.setLanguage('en')">English</button>
+              <button class="btn-sub lang-btn-setting" data-lang="ja" onclick="window.setLanguage('ja')">日本語</button>
+            </div>
+          </div>
 
           <div class="settings-row">
             <div>
@@ -836,7 +855,8 @@
     }
   </script>
 
-  <!-- 引入遊戲數據庫與引擎腳本 -->
+  <!-- 引入多國語系、遊戲數據庫與引擎腳本 -->
+  <script src="data/i18n.js"></script>
   <script src="data/swords.js"></script>
   <script src="data/items.js"></script>
   <script src="data/enemies.js"></script>
