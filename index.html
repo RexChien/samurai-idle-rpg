@@ -51,9 +51,32 @@
 
     <!-- 角色境界與簡報欄 -->
     <section class="character-banner">
-      <div class="avatar-badge">
-        <span class="avatar-icon">🥷</span>
-        <span style="font-size:0.7rem;color:#f59e0b;" id="player-level">Lv.1</span>
+      <div class="avatar-badge" title="武士境界">
+        <div class="avatar-icon samurai-avatar-wrap">
+          <svg viewBox="0 0 48 48" width="38" height="38" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <!-- 雙太刀背景交叉 (Crossed Katanas) -->
+            <path d="M8 8 L40 40 M40 8 L8 40" stroke="#c5a059" stroke-width="2" stroke-linecap="round"/>
+            <path d="M6 6 L12 12 M42 6 L36 12" stroke="#d9383a" stroke-width="2.5" stroke-linecap="round"/>
+            <!-- 日本武士兜 (Samurai Kabuto Bowl) -->
+            <path d="M14 26 C14 16 34 16 34 26 Z" fill="#1c1917" stroke="#c5a059" stroke-width="1.5"/>
+            <!-- 吹返 (Fukikaeshi) -->
+            <path d="M12 24 C10 21 13 18 16 20 L16 27 Z" fill="#991b1b" stroke="#f59e0b" stroke-width="1"/>
+            <path d="M36 24 C38 21 35 18 32 20 L32 27 Z" fill="#991b1b" stroke="#f59e0b" stroke-width="1"/>
+            <!-- 金色三日月前立 (Golden Crescent Moon Crest / Maedate) -->
+            <path d="M16 14 C22 8 28 8 32 14 C27 11 21 11 16 14 Z" fill="#f59e0b" stroke="#fbbf24" stroke-width="0.8"/>
+            <!-- 兜頂鍬形台圓徽 (Kabuto Top Emblem) -->
+            <circle cx="24" cy="18" r="3" fill="#f59e0b" stroke="#fff" stroke-width="0.5"/>
+            <!-- 面頰護具與忍緒 (Mempo Face Guard & Cords) -->
+            <path d="M18 28 C18 36 30 36 30 28" fill="#292524" stroke="#d9383a" stroke-width="1.5"/>
+            <!-- 武士冷徹眼神光 (Samurai Eyes) -->
+            <circle cx="21" cy="27" r="1.2" fill="#38bdf8"/>
+            <circle cx="27" cy="27" r="1.2" fill="#38bdf8"/>
+            <!-- 錣護頸層疊 (Shikoro Neck Guards) -->
+            <path d="M13 30 Q24 35 35 30" stroke="#c5a059" stroke-width="2" fill="none"/>
+            <path d="M15 34 Q24 39 33 34" stroke="#991b1b" stroke-width="2" fill="none"/>
+          </svg>
+        </div>
+        <span style="font-size:0.75rem;color:#f59e0b;font-weight:bold;margin-top:2px;" id="player-level">Lv.1</span>
       </div>
 
       <div class="char-info-block">
@@ -133,6 +156,7 @@
                 <span id="current-zone-sub" style="font-size: 0.8rem; color: #a8a29e;">落魄浪人之歷練</span>
               </div>
               <div class="zone-selector">
+                <button id="btn-open-world-map" class="btn-world-map" onclick="window.game.openWorldMap()" data-i18n="btnWorldMap">🗺️ 天下地圖</button>
                 <label for="zone-select" style="font-size:0.85rem;color:#ccc;" data-i18n="zoneSelectLabel">疆界:</label>
                 <select id="zone-select" class="zone-select-dropdown" onchange="window.game.changeZone(parseInt(this.value))">
                   <option value="1">第 1 幕・尾張竹林</option>
@@ -348,29 +372,29 @@
 
           <!-- 鍛造名刀 Gacha -->
           <div class="forge-card">
-            <h3>⚒️ 刀匠踏鞴鍛造</h3>
+            <h3 data-i18n="forgeTitle">⚒️ 刀匠踏鞴鍛造</h3>
             <div class="forge-actions-grid">
               <div class="gacha-box">
-                <h4>傳統踏鞴鍛打</h4>
-                <div class="gacha-desc">以傳統折返鍛打技藝鑄刀。<br>消耗：<b>25 玉鋼</b> + <b>100 金幣</b><br>機率產出：凡鐵、業物、良業物</div>
-                <button class="btn-forge" onclick="window.game.forgeSword('standard')">🔥 開始鍛造</button>
+                <h4 data-i18n="forgeStandardTitle">傳統踏鞴鍛打</h4>
+                <div class="gacha-desc" data-i18n="forgeStandardDesc">以傳統折返鍛打技藝鑄刀。<br>消耗：<b>25 玉鋼</b> + <b>100 金小判</b><br>機率產出：凡鐵、業物、良業物</div>
+                <button class="btn-forge" onclick="window.game.forgeSword('standard')" data-i18n="forgeStandardBtn">🔥 開始鍛造</button>
               </div>
               <div class="gacha-box" style="border-color:#ef4444;">
-                <h4 style="color:#ef4444;">名匠淬火秘鍛</h4>
-                <div class="gacha-desc">三條宗近、千子村正親手淬火。<br>消耗：<b>80 玉鋼</b> + <b>500 金幣</b><br>極高機率產出【大業物】與【天下五劍】！</div>
-                <button class="btn-forge master" onclick="window.game.forgeSword('master')">⚡ 秘境神鍛</button>
+                <h4 style="color:#ef4444;" data-i18n="forgeMasterTitle">名匠淬火秘鍛</h4>
+                <div class="gacha-desc" data-i18n="forgeMasterDesc">三條宗近、千子村正親手淬火。<br>消耗：<b>80 玉鋼</b> + <b>500 金小判</b><br>極高機率產出【大業物】與【天下五劍】！</div>
+                <button class="btn-forge master" onclick="window.game.forgeSword('master')" data-i18n="forgeMasterBtn">⚡ 秘境神鍛</button>
               </div>
             </div>
 
             <!-- 熔煉多餘名刀 -->
-            <h3 style="margin-top:20px;">🔥 刀劍熔融分解</h3>
-            <div style="font-size:0.85rem;color:#a8a29e;margin-bottom:8px;">將淘汰的多餘刀刃熔煉為大量玉鋼與金小判：</div>
+            <h3 style="margin-top:20px;" data-i18n="forgeSmeltTitle">🔥 刀劍熔融分解</h3>
+            <div style="font-size:0.85rem;color:#a8a29e;margin-bottom:8px;" data-i18n="forgeSmeltDesc">將淘汰的多餘刀刃熔煉為大量玉鋼與金小判：</div>
             <div id="smelt-swords-list" class="smelt-list-box"></div>
           </div>
 
           <!-- 磨刀石研磨強化 -->
           <div class="forge-card">
-            <h3>✨ 砥石研磨鋒利度</h3>
+            <h3 data-i18n="sharpenTitle">✨ 砥石研磨鋒利度</h3>
             <div class="sharpen-target-box" id="sharpen-weapon-target">
               <!-- 當前佩刀預覽 -->
             </div>
@@ -378,30 +402,30 @@
             <div class="whetstone-options">
               <div class="whetstone-row">
                 <div>
-                  <div style="font-weight:bold;color:#a8a29e;">🪨 荒砥石 (攻擊力 +15)</div>
-                  <div style="font-size:0.8rem;color:#78716c;">粗磨修補刃口 | 剩餘: <span id="count-whetstone-rough" style="color:#fff;">0</span></div>
+                  <div style="font-weight:bold;color:#a8a29e;" data-i18n="whetstoneRoughTitle">🪨 荒砥石 (攻擊力 +15)</div>
+                  <div style="font-size:0.8rem;color:#78716c;"><span data-i18n="whetstoneRoughDesc">粗磨修補刃口 | 剩餘: </span><span id="count-whetstone-rough" style="color:#fff;">0</span></div>
                 </div>
-                <button class="btn-sharpen" onclick="window.game.sharpenWeapon('mat_whetstone_rough')">研磨</button>
+                <button class="btn-sharpen" onclick="window.game.sharpenWeapon('mat_whetstone_rough')" data-i18n="sharpenBtn">研磨</button>
               </div>
 
               <div class="whetstone-row">
                 <div>
-                  <div style="font-weight:bold;color:#4ade80;">🧱 中砥石 (攻擊力 +15)</div>
-                  <div style="font-size:0.8rem;color:#78716c;">平滑肉置刃線 | 剩餘: <span id="count-whetstone-mid" style="color:#fff;">0</span></div>
+                  <div style="font-weight:bold;color:#4ade80;" data-i18n="whetstoneMidTitle">🧱 中砥石 (攻擊力 +15)</div>
+                  <div style="font-size:0.8rem;color:#78716c;"><span data-i18n="whetstoneMidDesc">平滑肉置刃線 | 剩餘: </span><span id="count-whetstone-mid" style="color:#fff;">0</span></div>
                 </div>
-                <button class="btn-sharpen" onclick="window.game.sharpenWeapon('mat_whetstone_mid')">研磨</button>
+                <button class="btn-sharpen" onclick="window.game.sharpenWeapon('mat_whetstone_mid')" data-i18n="sharpenBtn">研磨</button>
               </div>
 
               <div class="whetstone-row">
                 <div>
-                  <div style="font-weight:bold;color:#38bdf8;">✨ 天然仕上砥石 (攻擊力 +15)</div>
-                  <div style="font-size:0.8rem;color:#78716c;">青幽水石極致研磨 | 剩餘: <span id="count-whetstone-fine" style="color:#fff;">0</span></div>
+                  <div style="font-weight:bold;color:#38bdf8;" data-i18n="whetstoneFineTitle">✨ 天然仕上砥石 (攻擊力 +15)</div>
+                  <div style="font-size:0.8rem;color:#78716c;"><span data-i18n="whetstoneFineDesc">青幽水石極致研磨 | 剩餘: </span><span id="count-whetstone-fine" style="color:#fff;">0</span></div>
                 </div>
-                <button class="btn-sharpen" onclick="window.game.sharpenWeapon('mat_whetstone_fine')">研磨</button>
+                <button class="btn-sharpen" onclick="window.game.sharpenWeapon('mat_whetstone_fine')" data-i18n="sharpenBtn">研磨</button>
               </div>
             </div>
 
-            <div style="margin-top:16px;background:#15161b;padding:12px;border-radius:6px;font-size:0.85rem;color:#888;">
+            <div style="margin-top:16px;background:#15161b;padding:12px;border-radius:6px;font-size:0.85rem;color:#888;" data-i18n="sharpenTip">
               💡 <b>名刀研磨訣竅</b>：每次研磨使武器強化等級 +1，攻擊力永久提升 15 點。砥石可在擊殺關卡敵人或首領時隨機拾取。
             </div>
           </div>
@@ -413,14 +437,14 @@
       <div id="tab-dojo" class="tab-pane">
         <div class="dojo-header-banner">
           <div>
-            <h3 style="color:#fff;">⛩️ 武士三大流派心法</h3>
-            <div style="font-size:0.85rem;color:#a8a29e;">每提升 1 級境界可獲得 2 點天賦點，自由加點強化各派專長</div>
+            <h3 style="color:#fff;" data-i18n="dojoTitle">⛩️ 武士三大流派心法</h3>
+            <div style="font-size:0.85rem;color:#a8a29e;" data-i18n="dojoSub">每提升 1 級境界可獲得 2 點天賦點，自由加點強化各派專長</div>
           </div>
           <div style="display:flex;align-items:center;gap:16px;">
             <div style="font-size:1.1rem;color:#fbbf24;font-weight:bold;">
-              剩餘天賦點: <span id="dojo-skill-points">0</span>
+              <span data-i18n="dojoPointsLabel">剩餘天賦點:</span> <span id="dojo-skill-points">0</span>
             </div>
-            <button class="btn-setting" onclick="window.game.resetSkills()">重置天賦 (100金)</button>
+            <button class="btn-setting" onclick="window.game.resetSkills()" data-i18n="dojoResetBtn">重置天賦 (100金)</button>
           </div>
         </div>
 
@@ -434,10 +458,10 @@
               <ul class="school-bonus-list">
                 <li>每級提升 <b>+2% 會心率</b></li>
                 <li>每級提升 <b>+5% 會心傷害加成</b></li>
-                <li>習得階級：<b id="skill-shinkage-level" style="color:#38bdf8;">Lv.0</b></li>
+                <li><span data-i18n="dojoRankLabel">習得階級：</span><b id="skill-shinkage-level" style="color:#38bdf8;">Lv.0</b></li>
               </ul>
             </div>
-            <button class="btn-invest-skill" onclick="window.game.investSkill('shinkage')">領悟新陰流 (+1)</button>
+            <button class="btn-invest-skill" onclick="window.game.investSkill('shinkage')" data-i18n="dojoInvestShinkage">領悟新陰流 (+1)</button>
           </div>
 
           <!-- 示現流 -->
@@ -449,10 +473,10 @@
               <ul class="school-bonus-list">
                 <li>每級提升 <b>+5% 基礎攻擊力</b></li>
                 <li>每級提升 <b>+3% 無視敵人防禦</b></li>
-                <li>習得階級：<b id="skill-jigen-level" style="color:#ef4444;">Lv.0</b></li>
+                <li><span data-i18n="dojoRankLabel">習得階級：</span><b id="skill-jigen-level" style="color:#ef4444;">Lv.0</b></li>
               </ul>
             </div>
-            <button class="btn-invest-skill" style="background:#b91c1c;" onclick="window.game.investSkill('jigen')">領悟示現流 (+1)</button>
+            <button class="btn-invest-skill" style="background:#b91c1c;" onclick="window.game.investSkill('jigen')" data-i18n="dojoInvestJigen">領悟示現流 (+1)</button>
           </div>
 
           <!-- 天然理心流 -->
@@ -464,10 +488,10 @@
               <ul class="school-bonus-list">
                 <li>每級提升 <b>+8% 武士最大體力</b></li>
                 <li>每級提升 <b>+5 點物理防禦力</b></li>
-                <li>習得階級：<b id="skill-rishin-level" style="color:#10b981;">Lv.0</b></li>
+                <li><span data-i18n="dojoRankLabel">習得階級：</span><b id="skill-rishin-level" style="color:#10b981;">Lv.0</b></li>
               </ul>
             </div>
-            <button class="btn-invest-skill" style="background:#166534;" onclick="window.game.investSkill('rishin')">領悟理心流 (+1)</button>
+            <button class="btn-invest-skill" style="background:#166534;" onclick="window.game.investSkill('rishin')" data-i18n="dojoInvestRishin">領悟理心流 (+1)</button>
           </div>
         </div>
       </div>
@@ -479,15 +503,15 @@
           <!-- 輪迴英雄總覽卡 -->
           <div class="reincarnation-hero">
             <div class="reincarnation-info">
-              <h3>🌀 劍心輪迴・宿命轉生</h3>
-              <p>破繭重生，勘破生死之境。將凡胎肉身化為宿命魂火，在輪迴神龕中換取永恆不滅之劍聖神力！</p>
+              <h3 data-i18n="prestigeTitle">🌀 劍心輪迴・宿命轉生</h3>
+              <p data-i18n="prestigeSub">破繭重生，勘破生死之境。將凡胎肉身化為宿命魂火，在輪迴神龕中換取永恆不滅之劍聖神力！</p>
               <div class="reincarnation-stats-bar">
-                <div class="re-stat">輪迴次數: <span id="prestige-count" style="color:#fbbf24;font-weight:bold;">0</span> 次</div>
-                <div class="re-stat">持有魂火: <span id="prestige-karma" style="color:#38bdf8;font-weight:bold;">0</span> 🔥</div>
-                <div class="re-stat">本次可領: <span id="prestige-gain-preview" style="color:#4ade80;font-weight:bold;">+0</span> 🔥</div>
+                <div class="re-stat"><span data-i18n="prestigeCountLabel">輪迴次數:</span> <span id="prestige-count" style="color:#fbbf24;font-weight:bold;">0</span></div>
+                <div class="re-stat"><span data-i18n="prestigeKarmaLabel">持有魂火:</span> <span id="prestige-karma" style="color:#38bdf8;font-weight:bold;">0</span> 🔥</div>
+                <div class="re-stat"><span data-i18n="prestigeGainLabel">本次可領:</span> <span id="prestige-gain-preview" style="color:#4ade80;font-weight:bold;">+0</span> 🔥</div>
               </div>
             </div>
-            <button id="btn-do-reincarnate" class="btn-reincarnate" onclick="window.game.reincarnate()">
+            <button id="btn-do-reincarnate" class="btn-reincarnate" onclick="window.game.reincarnate()" data-i18n="prestigeBtn">
               🌀 啟動劍心輪迴
             </button>
           </div>
@@ -495,18 +519,18 @@
           <!-- 輪迴繼承與規則說明 -->
           <div class="reincarnation-notice">
             <div class="notice-col">
-              <span style="color:#4ade80;font-weight:bold;">✅ 輪迴保留（永不遺失）：</span>
-              <div>所有名刀與強化等級、圖鑑全收集、已點亮之輪迴神龕天賦、歷史大結局繪卷。</div>
+              <span style="color:#4ade80;font-weight:bold;" data-i18n="prestigeKeepTitle">✅ 輪迴保留（永不遺失）：</span>
+              <div data-i18n="prestigeKeepDesc">所有名刀與強化等級、圖鑑全收集、已點亮之輪迴神龕天賦、歷史大結局繪卷。</div>
             </div>
             <div class="notice-col">
-              <span style="color:#f59e0b;font-weight:bold;">🔄 輪迴重置（換取新生）：</span>
-              <div>角色等級重置（受輪迴宿慧天賦保留）、關卡進度重置、故事線重開（可自由重選其他分歧路線！）。</div>
+              <span style="color:#f59e0b;font-weight:bold;" data-i18n="prestigeResetTitle">🔄 輪迴重置（換取新生）：</span>
+              <div data-i18n="prestigeResetDesc">角色等級重置（受輪迴宿慧天賦保留）、關卡進度重置、故事線重開（可自由重選其他分歧路線！）。</div>
             </div>
           </div>
 
           <!-- 輪迴天賦神龕 (8 大永久神力) -->
           <div class="prestige-altar-box">
-            <h4 style="color:#fbbf24;margin-bottom:14px;font-size:1.15rem;display:flex;align-items:center;gap:8px;">
+            <h4 style="color:#fbbf24;margin-bottom:14px;font-size:1.15rem;display:flex;align-items:center;gap:8px;" data-i18n="prestigeAltarHeader">
               ⛩️ 輪迴天賦神龕（永久全域加成・跨轉生繼承）
             </h4>
             <div id="prestige-perks-grid" class="prestige-perks-grid">
@@ -567,13 +591,13 @@
 
       <!-- ================= 6. 行囊裝備分頁 ================= -->
       <div id="tab-inventory" class="tab-pane">
-        <div class="inv-section-title">🗡️ 當前佩戴名刀</div>
+        <div class="inv-section-title" data-i18n="invCurrentWeapon">🗡️ 當前佩戴名刀</div>
         <div id="equip-weapon-display" style="margin-bottom:20px;"></div>
 
-        <div class="inv-section-title">🎒 行囊名刀庫存（點擊更換佩戴）</div>
+        <div class="inv-section-title" data-i18n="invSwordsList">🎒 行囊名刀庫存（點擊更換佩戴）</div>
         <div id="inventory-swords-grid" class="inventory-grid"></div>
 
-        <div class="inv-section-title" style="margin-top:20px;">🍱 戰國乾糧與增益秘藥</div>
+        <div class="inv-section-title" style="margin-top:20px;" data-i18n="invConsumablesList">🍱 戰國乾糧與增益秘藥</div>
         <div id="inventory-consumables-grid" class="consumables-grid"></div>
       </div>
 
@@ -581,11 +605,11 @@
       <div id="tab-codex" class="tab-pane">
         <div class="codex-banner">
           <div>
-            <h3 style="color:#fff;">📜 名刀鑑賞圖鑑 (Sword Codex)</h3>
-            <div style="font-size:0.85rem;color:#a8a29e;">收錄日本歷史上最負盛名之天下五劍、名匠傑作與傳奇妖刀</div>
+            <h3 style="color:#fff;" data-i18n="codexTitle">📜 名刀鑑賞圖鑑 (Sword Codex)</h3>
+            <div style="font-size:0.85rem;color:#a8a29e;" data-i18n="codexSub">收錄日本歷史上最負盛名之天下五劍、名匠傑作與傳奇妖刀</div>
           </div>
           <div style="font-size:1.1rem;color:#38bdf8;font-weight:bold;">
-            解鎖進度: <span id="codex-progress">0 / 22</span>
+            <span data-i18n="codexProgressLabel">解鎖進度:</span> <span id="codex-progress">0 / 22</span>
           </div>
         </div>
 
@@ -612,42 +636,42 @@
 
           <div class="settings-row">
             <div>
-              <div style="font-weight:bold;color:#fff;">和風音效</div>
-              <div style="font-size:0.8rem;color:#888;">拔刀聲、斬鐵聲與金屬交擊音效</div>
+              <div style="font-weight:bold;color:#fff;" data-i18n="settingSoundTitle">和風音效</div>
+              <div style="font-size:0.8rem;color:#888;" data-i18n="settingSoundDesc">拔刀聲、斬鐵聲與金屬交擊音效</div>
             </div>
             <button id="btn-toggle-sound" class="btn-setting" onclick="toggleSound()">🔊 音效：開啟</button>
           </div>
 
           <div class="settings-row">
             <div>
-              <div style="font-weight:bold;color:#fff;">手動儲存進度</div>
-              <div style="font-size:0.8rem;color:#888;">遊戲每 10 秒自動存檔一次</div>
+              <div style="font-weight:bold;color:#fff;" data-i18n="settingManualSaveTitle">手動儲存進度</div>
+              <div style="font-size:0.8rem;color:#888;" data-i18n="settingManualSaveDesc">遊戲每 10 秒自動存檔一次</div>
             </div>
-            <button class="btn-setting" onclick="window.game.save(); alert('✅ 遊戲進度已手動儲存！');">💾 立即保存</button>
+            <button class="btn-setting" onclick="window.game.manualSave()" data-i18n="settingManualSaveBtn">💾 立即保存</button>
           </div>
 
           <div class="settings-row">
             <div>
-              <div style="font-weight:bold;color:#fff;">匯出存檔代碼</div>
-              <div style="font-size:0.8rem;color:#888;">複製存檔代碼至其他裝置遊玩</div>
+              <div style="font-weight:bold;color:#fff;" data-i18n="settingExportTitle">匯出存檔代碼</div>
+              <div style="font-size:0.8rem;color:#888;" data-i18n="settingExportDesc">複製存檔代碼至其他裝置遊玩</div>
             </div>
-            <button class="btn-setting" onclick="window.game.exportSave()">📋 複製代碼</button>
+            <button class="btn-setting" onclick="window.game.exportSave()" data-i18n="settingExportBtn">📋 複製代碼</button>
           </div>
 
           <div class="settings-row">
             <div>
-              <div style="font-weight:bold;color:#fff;">匯入存檔代碼</div>
-              <div style="font-size:0.8rem;color:#888;">貼上備份存檔碼以恢復進度</div>
+              <div style="font-weight:bold;color:#fff;" data-i18n="settingImportTitle">匯入存檔代碼</div>
+              <div style="font-size:0.8rem;color:#888;" data-i18n="settingImportDesc">貼上備份存檔碼以恢復進度</div>
             </div>
-            <button class="btn-setting" onclick="window.game.importSave()">📥 貼上匯入</button>
+            <button class="btn-setting" onclick="window.game.importSave()" data-i18n="settingImportBtn">📥 貼上匯入</button>
           </div>
 
           <div class="settings-row">
             <div>
-              <div style="font-weight:bold;color:#ef4444;">武者修行初期化</div>
-              <div style="font-size:0.8rem;color:#888;">消去本地紀錄，浪人從頭開始新旅程</div>
+              <div style="font-weight:bold;color:#ef4444;" data-i18n="settingResetTitle">武者修行初期化</div>
+              <div style="font-size:0.8rem;color:#888;" data-i18n="settingResetDesc">消去本地紀錄，浪人從頭開始新旅程</div>
             </div>
-            <button class="btn-setting danger" onclick="window.game.resetGame()">⚠️ 重置遊戲</button>
+            <button class="btn-setting danger" onclick="window.game.resetGame()" data-i18n="settingResetBtn">⚠️ 重置遊戲</button>
           </div>
 
           <div style="margin-top:24px;text-align:center;font-size:0.8rem;color:#666;">
@@ -663,29 +687,29 @@
           <!-- 頂部引言 -->
           <div class="community-hero">
             <div class="hero-text">
-              <h3>🏮 浪人茶屋・天下俠客留言壁</h3>
-              <p>路過歇息的武士與浪人，皆可在此品茶論劍、留下心得、流派討論與寶貴反饋！</p>
+              <h3 data-i18n="communityTitle">🏮 浪人茶屋・天下俠客留言壁</h3>
+              <p data-i18n="communitySub">路過歇息的武士與浪人，皆可在此品茶論劍、留下心得、流派討論與寶貴反饋！</p>
             </div>
           </div>
 
           <!-- 遊戲內免登入快速意向投票 -->
           <div class="poll-card">
-            <h4>📊 浪人意向投票：您最期待後續加入什麼新內容？</h4>
+            <h4 data-i18n="pollTitle">📊 浪人意向投票：您最期待後續加入什麼新內容？</h4>
             <div class="poll-options-grid">
               <button class="poll-btn" onclick="voteFeature(1, this)">
-                <span>🗡️ 更多傳奇名刀（村雨丸、雷切等）</span>
+                <span data-i18n="pollOpt1">🗡️ 更多傳奇名刀（村雨丸、雷切等）</span>
                 <span id="poll-cnt-1" style="color:#fbbf24;font-weight:bold;">12 票</span>
               </button>
               <button class="poll-btn" onclick="voteFeature(2, this)">
-                <span>⚔️ 大名合戰（勢力戰攻城）</span>
+                <span data-i18n="pollOpt2">⚔️ 大名合戰（勢力戰攻城）</span>
                 <span id="poll-cnt-2" style="color:#fbbf24;font-weight:bold;">19 票</span>
               </button>
               <button class="poll-btn" onclick="voteFeature(3, this)">
-                <span>🥋 更多劍道流派（二天一流、無念流）</span>
+                <span data-i18n="pollOpt3">🥋 更多劍道流派（二天一流、無念流）</span>
                 <span id="poll-cnt-3" style="color:#fbbf24;font-weight:bold;">15 票</span>
               </button>
               <button class="poll-btn" onclick="voteFeature(4, this)">
-                <span>🐕 侍從寵物（柴犬、忍鷹、戰馬）</span>
+                <span data-i18n="pollOpt4">🐕 侍從寵物（柴犬、忍鷹、戰馬）</span>
                 <span id="poll-cnt-4" style="color:#fbbf24;font-weight:bold;">24 票</span>
               </button>
             </div>
@@ -693,8 +717,8 @@
 
           <!-- 100% 免登入即時留言板 -->
           <div class="teahouse-comment-wall">
-            <h4>💬 浪人茶屋・天下諸士寄書板</h4>
-            <div class="teahouse-banner">
+            <h4 data-i18n="commentWallTitle">💬 浪人茶屋・天下諸士寄書板</h4>
+            <div class="teahouse-banner" data-i18n="commentWallBanner">
               🍵 <b>茶屋寄書</b>：直接輸入武士名號與心得，按下「🏮 奉納寄書」，即可直接刻印於茶屋銘木板，與天下諸士切磋！
             </div>
 
@@ -777,23 +801,23 @@
         <div id="modal-sword-passive" style="color:#4ade80;background:#111;padding:8px;border-radius:4px;margin:8px 0;font-size:0.85rem;">被動特性</div>
         <div id="modal-sword-lore" style="font-size:0.8rem;color:#888;font-style:italic;">歷史背景典故</div>
       </div>
-      <button class="btn-modal-close" onclick="document.getElementById('forge-result-modal').classList.remove('active')">納刀入鞘</button>
+      <button class="btn-modal-close" onclick="document.getElementById('forge-result-modal').classList.remove('active')" data-i18n="forgeModalBtn">納刀入鞘</button>
     </div>
   </div>
 
   <!-- 離線收益結算 Modal -->
   <div id="offline-modal" class="modal-overlay">
     <div class="modal-scroll-card">
-      <div style="font-size:3rem;margin-bottom:8px;">🏮</div>
-      <div class="modal-title">浪人雲遊歷練結算</div>
+      <div style="font-size:3rem;margin-bottom:8px;">🌙</div>
+      <div class="modal-title" data-i18n="offlineModalTitle">🌙 宿場歇息・放置修業結算</div>
       <div class="modal-body">
-        在您閉關離線的 <b id="offline-time" style="color:#fbbf24;">0 分鐘</b> 裡，浪人持續在戰場奮戰：<br><br>
-        ⚔️ 斬獲敵人：<b id="offline-kills">0</b> 名<br>
-        🪙 搜得金小判：+<b id="offline-gold" style="color:#fbbf24;">0</b><br>
-        💎 提煉玉鋼：+<b id="offline-steel" style="color:#60a5fa;">0</b><br>
-        ⛩️ 累積修業：+<b id="offline-exp" style="color:#4ade80;">0</b> 經驗值
+        <span data-i18n="offlineModalText">在您閉關離線期間，浪人意志持續在亂世奮戰修行：</span><br><br>
+        <span data-i18n="offlineModalKills">⚔️ 斬獲敵人：</span><b id="offline-kills">0</b><br>
+        <span data-i18n="offlineModalGold">🪙 搜得金小判：</span><b id="offline-gold" style="color:#fbbf24;">0</b><br>
+        <span data-i18n="offlineModalSteel">💎 提煉玉鋼：</span><b id="offline-steel" style="color:#60a5fa;">0</b><br>
+        <span data-i18n="offlineModalExp">⛩️ 累積修業：</span><b id="offline-exp" style="color:#4ade80;">0</b>
       </div>
-      <button class="btn-modal-close" onclick="document.getElementById('offline-modal').classList.remove('active')">欣然領取</button>
+      <button class="btn-modal-close" onclick="document.getElementById('offline-modal').classList.remove('active')" data-i18n="offlineModalBtn">欣然領取</button>
     </div>
   </div>
 
@@ -801,15 +825,35 @@
   <div id="ending-modal" class="modal-overlay">
     <div class="modal-scroll-card ending-card-modal">
       <div id="ending-modal-icon" style="font-size:3.5rem;margin-bottom:8px;">🏆</div>
-      <div id="ending-modal-title" class="modal-title" style="color:#fbbf24;font-size:1.4rem;">史詩天命終章</div>
+      <div id="ending-modal-title" class="modal-title" style="color:#fbbf24;font-size:1.4rem;" data-i18n="endingModalTitle">史詩天命終章</div>
       <div id="ending-modal-tagline" style="color:#38bdf8;font-size:0.95rem;margin-bottom:14px;font-weight:bold;"></div>
       <div id="ending-modal-epilogue" class="modal-body" style="text-align:left;line-height:1.8;white-space:pre-line;background:rgba(15,12,20,0.7);padding:14px;border-radius:6px;border:1px solid rgba(212,175,55,0.25);"></div>
       <div style="margin:16px 0;background:rgba(251,191,36,0.1);padding:10px;border-radius:6px;border:1px dashed #fbbf24;color:#fbbf24;font-size:0.9rem;">
-        🎁 獲得歷史通關天命獎勵：<b id="ending-modal-reward"></b>
+        <span data-i18n="endingModalReward">🎁 獲得歷史通關天命獎勵：</span><b id="ending-modal-reward"></b>
       </div>
-      <button class="btn-modal-close" onclick="document.getElementById('ending-modal').classList.remove('active')">
+      <button class="btn-modal-close" onclick="document.getElementById('ending-modal').classList.remove('active')" data-i18n="endingModalBtn">
         銘記天命・繼續前行
       </button>
+    </div>
+  </div>
+
+  <!-- 天下全圖・諸國遊歷 Modal (World Map) -->
+  <div id="world-map-modal" class="modal-overlay">
+    <div class="modal-scroll-card world-map-card">
+      <div class="world-map-header">
+        <div style="font-size:2.6rem;line-height:1;">🗾</div>
+        <div class="modal-title" data-i18n="worldMapTitle">🗾 天下全圖・諸國遊歷</div>
+        <p class="world-map-sub" data-i18n="worldMapSub">走訪戰國名勝，歷練劍道宗師；策馬前往已解鎖之國度。</p>
+        <div class="world-map-legend">
+          <span class="wm-legend-item"><span class="wm-dot current"></span> <span data-i18n="mapLegendCurrent">📍 當前征戰</span></span>
+          <span class="wm-legend-item"><span class="wm-dot cleared"></span> <span data-i18n="mapLegendCleared">✅ 已踏破</span></span>
+          <span class="wm-legend-item"><span class="wm-dot locked"></span> <span data-i18n="mapLegendLocked">🔒 妖霧封鎖</span></span>
+        </div>
+      </div>
+      <div id="world-map-nodes-container" class="world-map-nodes-grid">
+        <!-- 動態渲染 7 大令制國度卡片 -->
+      </div>
+      <button class="btn-modal-close" onclick="document.getElementById('world-map-modal').classList.remove('active')" data-i18n="modalClose">閉合</button>
     </div>
   </div>
 
