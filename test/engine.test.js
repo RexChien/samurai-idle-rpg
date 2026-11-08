@@ -1,699 +1,293 @@
-const { describe, it, beforeEach, afterEach } = require('node:test');
+const test = require('node:test');
 const assert = require('node:assert/strict');
-const fs = require('fs');
+const fs = require('node:fs');
+const path = require('node:path');
 
-function createMockElement(id = '') {
-  const listeners = {};
-  const el = {
-    id,
-    textContent: '',
-    innerHTML: '',
-    value: '1',
-    disabled: false,
-    options: [{ value: '1', textContent: 'Zone 1' }],
-    children: [],
-    style: { width: '0%', display: 'block', opacity: '1', cursor: 'pointer', background: '', borderColor: '', color: '', pointerEvents: 'auto' },
-    classList: {
-      _classes: new Set(),
-      add(c) { this._classes.add(c); },
-      remove(c) { this._classes.delete(c); },
-      contains(c) { return this._classes.has(c); },
-      toggle(c) { if (this.contains(c)) this.remove(c); else this.add(c); }
-    },
-    scrollLeft: 0,
-    clientWidth: 800,
-    scrollWidth: 1600,
-    scrollBy(options) {
-      if (options && typeof options.left === 'number') {
-        this.scrollLeft += options.left;
-      }
-    },
-    scrollIntoView(options) {
-      this._scrolledIntoView = true;
-    },
-    setAttribute(k, v) { this[k] = v; },
-    getAttribute(k) { return this[k] || null; },
-    appendChild(child) {
-      this.children.push(child);
-      child.parentNode = this;
-      return child;
-    },
-    removeChild(child) {
-      const idx = this.children.indexOf(child);
-      if (idx >= 0) this.children.splice(idx, 1);
-      return child;
-    },
-    remove() {
-      if (this.parentNode && this.parentNode.removeChild) {
-        this.parentNode.removeChild(this);
-      }
-    },
-    get firstChild() {
-      return this.children[0] || null;
-    },
-    addEventListener(event, fn) {
-      if (!listeners[event]) listeners[event] = [];
-      listeners[event].push(fn);
-    },
-    removeEventListener(event, fn) {
-      if (listeners[event]) {
-        const idx = listeners[event].indexOf(fn);
-        if (idx >= 0) listeners[event].splice(idx, 1);
-      }
-    },
-    dispatch(event, e = {}) {
-      if (listeners[event]) {
-        listeners[event].forEach(fn => fn(e));
-      }
-    },
-    querySelectorAll() { return []; }
-  };
-  return el;
+// Setup mock browser window, document, and localStorage environment
+class MockLocalStorage {
+  constructor() { this.store = {}; }
+  getItem(key) { return this.store[key] !== undefined ? this.store[key] : null; }
+  setItem(key, val) { this.store[key] = String(val); }
+  removeItem(key) { delete this.store[key]; }
+  clear() { this.store = {}; }
 }
 
-let activeGames = [];
-
-function setupMockEnvironment(clearStorage = true) {
-  const elements = new Map();
-
-  global.window = global;
-  global.window.__TESTING__ = true;
-  global.window._listeners = {};
-  global.window.addEventListener = (event, fn) => {
-    if (!global.window._listeners[event]) global.window._listeners[event] = [];
-    global.window._listeners[event].push(fn);
-  };
-  global.window.removeEventListener = (event, fn) => {
-    if (global.window._listeners && global.window._listeners[event]) {
-      const idx = global.window._listeners[event].indexOf(fn);
-      if (idx >= 0) global.window._listeners[event].splice(idx, 1);
-    }
-  };
-  global.window.dispatchEvent = (event) => {};
-
-  if (clearStorage || !global.localStorage) {
-    global.localStorage = {
-      _data: {},
-      getItem(k) { return this._data[k] || null; },
-      setItem(k, v) { this._data[k] = String(v); },
-      removeItem(k) { delete this._data[k]; },
-      clear() { this._data = {}; }
+class MockElement {
+  constructor(id = '', tag = 'div') {
+    this.id = id;
+    this.tagName = tag.toUpperCase();
+    this.classList = {
+      _set: new Set(),
+      add(...tokens) { tokens.forEach(t => this._set.add(t)); },
+      remove(...tokens) { tokens.forEach(t => this._set.delete(t)); },
+      contains(t) { return this._set.has(t); }
     };
+    this.style = {};
+    this.innerHTML = '';
+    this.innerText = '';
+    this.dataset = {};
+    this.children = [];
+    this.parentNode = null;
   }
-
-  global.document = {
-    readyState: 'complete',
-    documentElement: { lang: 'zh-TW' },
-    title: '',
-    getElementById(id) {
-      if (!elements.has(id)) {
-        elements.set(id, createMockElement(id));
-      }
-      return elements.get(id);
-    },
-    querySelector(selector) {
-      if (selector === '.tab-nav') {
-        return this.getElementById('main-tab-nav');
-      }
-      if (selector === '.tab-nav-prev') {
-        return this.getElementById('tab-nav-prev');
-      }
-      if (selector === '.tab-nav-next') {
-        return this.getElementById('tab-nav-next');
-      }
-      if (selector.startsWith('#')) {
-        return this.getElementById(selector.slice(1));
-      }
-      if (!elements.has(selector)) {
-        elements.set(selector, createMockElement(selector));
-      }
-      return elements.get(selector);
-    },
-    createElement(tag) {
-      return createMockElement(tag);
-    },
-    querySelectorAll(selector) {
-      return [];
-    },
-    addEventListener() {},
-    body: createMockElement('body')
-  };
-
-  global.alert = () => {};
-  global.confirm = () => true;
-
-  global.window.samuraiAudio = {
-    playSlash: () => {},
-    playCrit: () => {},
-    playClash: () => {},
-    playSharpen: () => {},
-    playHammer: () => {},
-    playLevelUp: () => {},
-    playBossBoom: () => {},
-    playAchievementFanfare: () => {},
-    ensureContext: () => {},
-    toggle: () => {},
-    enabled: true
-  };
-
-  // Load all game data and scripts
-  eval(fs.readFileSync('data/i18n.js', 'utf8'));
-  eval(fs.readFileSync('data/swords.js', 'utf8'));
-  eval(fs.readFileSync('data/items.js', 'utf8'));
-  eval(fs.readFileSync('data/enemies.js', 'utf8'));
-  eval(fs.readFileSync('data/story.js', 'utf8'));
-  eval(fs.readFileSync('data/prestige.js', 'utf8'));
-  eval(fs.readFileSync('data/achievements.js', 'utf8'));
-  eval(fs.readFileSync('src/game.js', 'utf8'));
+  appendChild(child) {
+    child.parentNode = this;
+    this.children.push(child);
+    return child;
+  }
+  removeChild(child) {
+    const idx = this.children.indexOf(child);
+    if (idx !== -1) this.children.splice(idx, 1);
+    child.parentNode = null;
+    return child;
+  }
+  addEventListener() {}
 }
 
-describe('Game Engine & Mechanics (src/game.js)', () => {
-  let game;
-
-  beforeEach(() => {
-    setupMockEnvironment(true);
-    game = new SamuraiGame();
-    activeGames.push(game);
-  });
-
-  afterEach(() => {
-    while (activeGames.length > 0) {
-      const g = activeGames.pop();
-      if (g && g.destroy) g.destroy();
+const mockDoc = {
+  elements: new Map(),
+  getElementById(id) {
+    if (!this.elements.has(id)) {
+      this.elements.set(id, new MockElement(id));
     }
+    return this.elements.get(id);
+  },
+  createElement(tag) {
+    return new MockElement('', tag);
+  },
+  querySelectorAll(sel) {
+    return [];
+  },
+  querySelector(sel) {
+    return new MockElement();
+  },
+  addEventListener() {}
+};
+
+global.window = global;
+global.window.addEventListener = () => {};
+global.document = mockDoc;
+global.localStorage = new MockLocalStorage();
+global.navigator = { clipboard: { writeText: () => Promise.resolve() } };
+
+function loadScript(relPath) {
+  const filePath = path.join(__dirname, '..', relPath);
+  const code = fs.readFileSync(filePath, 'utf8');
+  eval(code);
+}
+
+// Load scripts
+loadScript('data/gear.js');
+loadScript('data/classes.js');
+loadScript('data/campaign.js');
+loadScript('data/rewards.js');
+loadScript('src/audio.js');
+loadScript('src/market_chat.js');
+loadScript('src/game.js');
+
+test('5. Audio Engine (src/audio.js)', async (t) => {
+  const audio = new window.SamuraiAudioEngine();
+  assert.equal(audio.isMuted, false);
+
+  const muted = audio.toggleMute();
+  assert.equal(muted, true);
+  assert.equal(audio.isMuted, true);
+
+  audio.toggleMute();
+  assert.equal(audio.isMuted, false);
+
+  // Calling sound methods should not throw even in Node headless
+  audio.playDiabloDing();
+  audio.playDropSound('legendary');
+  audio.playSlashSound(true);
+  audio.playEquipSound();
+  audio.playCoinSound();
+  audio.playAchievementFanfare();
+});
+
+test('6. Market & Chat Manager (src/market_chat.js)', async (t) => {
+  const game = new window.SamuraiGame();
+  const market = game.marketChat;
+
+  await t.test('initializes default market listings and chat history', () => {
+    assert.ok(market.listings.length > 0);
+    assert.ok(market.chatMessages.length > 0);
   });
 
-  it('initializes default player state correctly', () => {
-    assert.equal(game.player.level, 1);
-    assert.equal(game.player.gold, 100);
-    assert.equal(game.player.steel, 30);
-    assert.ok(game.player.equipped.weapon, 'Must start with an equipped weapon');
-    assert.equal(game.player.equipped.weapon.id, 'sword_01');
-    assert.equal(game.player.story.faction, 'unaligned');
-    assert.equal(game.player.story.currentAct, 1);
-    assert.equal(game.player.prestige.reincarnationCount, 0);
-    assert.equal(game.player.prestige.karma, 0);
+  await t.test('allows adding chat message and broadcasting legendary drops', () => {
+    market.addChatMessage('劍聖玩家', '大家好！', false);
+    const lastMsg = market.chatMessages[market.chatMessages.length - 1];
+    assert.equal(lastMsg.text, '大家好！');
+
+    const fakeGear = window.generateGear('weapon', 'legendary', 10);
+    market.broadcastLoot('宮本武藏', fakeGear);
+    const broadcastMsg = market.chatMessages[market.chatMessages.length - 1];
+    assert.ok(broadcastMsg.text.includes('傳奇降臨'));
+    assert.equal(broadcastMsg.isSystem, true);
   });
 
-  it('calculates player combat stats correctly with weapon and perks', () => {
-    const baseStats = game.getCalculatedStats();
-    assert.ok(baseStats.atk >= 25, `Base ATK should be >= 25, got ${baseStats.atk}`);
-    assert.ok(baseStats.maxHp >= 300, `Base HP should be >= 300, got ${baseStats.maxHp}`);
-    assert.ok(baseStats.speed > 0, `Speed should be positive, got ${baseStats.speed}`);
+  await t.test('allows player to list and buy items on marketplace', () => {
+    const gear = window.generateGear('armor', 'rare', 5);
+    game.addGearToInventory(gear);
+    const initialInvCount = game.player.inventory.length;
 
-    // Invest into Shinkage dojo skill (+2% crit, +5% crit dmg)
-    game.player.skills.shinkage = 2;
-    const boostedStats = game.getCalculatedStats();
-    assert.equal(boostedStats.crit, baseStats.crit + 4);
-    assert.equal(boostedStats.critDmg, baseStats.critDmg + 10);
-  });
+    market.listMyGear(gear.uid, 5000);
+    assert.equal(game.player.inventory.length, initialInvCount - 1);
+    assert.equal(market.myListings.length, 1);
+    assert.equal(market.myListings[0].price, 5000);
 
-  it('applies faction passive bonuses to stats', () => {
-    const unalignedStats = game.getCalculatedStats();
-
-    // Shogunate faction (+35% HP, +30% DEF)
-    game.player.story.faction = 'shogunate';
-    const shogunateStats = game.getCalculatedStats();
-    assert.ok(shogunateStats.maxHp > unalignedStats.maxHp, 'Shogunate should grant bonus HP');
-    assert.ok(shogunateStats.def > unalignedStats.def, 'Shogunate should grant bonus DEF');
-
-    // Ishin faction (+35% ATK, +20% Speed)
-    game.player.story.faction = 'ishin';
-    const ishinStats = game.getCalculatedStats();
-    assert.ok(ishinStats.atk > unalignedStats.atk, 'Ishin should grant bonus ATK');
-    assert.ok(ishinStats.speed > unalignedStats.speed, 'Ishin should grant bonus Speed');
-
-    // Shura faction (+75% CRIT DMG, +40% Armor Pen)
-    game.player.story.faction = 'shura';
-    const shuraStats = game.getCalculatedStats();
-    assert.ok(shuraStats.critDmg > unalignedStats.critDmg, 'Shura should grant bonus CRIT DMG');
-    assert.ok(shuraStats.armorPen >= unalignedStats.armorPen + 40, 'Shura should grant bonus Armor Pen');
-  });
-
-  it('simulates combat attack and enemy defeat', () => {
-    game.spawnEnemy();
-    const enemy = game.currentEnemy;
-    assert.ok(enemy, 'Enemy should be spawned');
-    enemy.hp = 9999;
-    enemy.maxHp = 9999;
-    const initialEnemyHp = enemy.hp;
-
-    // Player attacks
-    game.attack(true);
-    assert.ok(enemy.hp < initialEnemyHp, 'Enemy HP should decrease after attack');
-
-    // Defeat enemy
-    enemy.hp = 0;
-    const prevGold = game.player.gold;
-    const prevExp = game.player.exp;
-    const prevKills = game.zoneKillProgress;
-    game.handleEnemyDefeated();
-
-    assert.ok(game.player.gold > prevGold, 'Player should gain gold upon defeating enemy');
-    assert.ok(game.player.exp > prevExp, 'Player should gain EXP upon defeating enemy');
-    assert.equal(game.zoneKillProgress, prevKills + 1, 'Zone kill progress should increment');
-  });
-
-  it('whetstone sharpening enhances weapon attack power and level', () => {
-    const weapon = game.player.equipped.weapon;
-    const initialRefine = weapon.refine || 0;
-    game.player.items.mat_whetstone_rough = 1;
-
-    game.sharpenWeapon('mat_whetstone_rough');
-    assert.equal(weapon.refine, initialRefine + 1);
-    assert.equal(game.player.items.mat_whetstone_rough, 0);
-  });
-
-  it('story act completion advances acts and records milestones', () => {
-    game.completeAct(1);
-    assert.ok(game.player.story.completedActs.includes(1), 'Act 1 should be completed');
-    assert.equal(game.player.story.currentAct, 2, 'Current act should advance to 2');
-  });
-
-  it('prestige reincarnation resets level and zone while preserving karma and swords', () => {
-    game.player.level = 20;
-    game.player.stats.highestZone = 4;
-    game.player.stats.bossKills = 5;
-    game.player.gold = 5000;
-    game.player.story.faction = 'shura';
-
-    const swordsBefore = game.player.swordsInventory.length;
-    const karmaEarned = window.PRESTIGE_DATA.calculateKarmaEarned(game.player);
-    assert.ok(karmaEarned > 0);
-
-    // Perform Reincarnation
-    game.reincarnate();
-
-    assert.equal(game.player.level, 1, 'Level should reset to 1 (with 0 wisdom perk)');
-    assert.equal(game.player.stats.currentZone, 1, 'Zone should reset to 1');
-    assert.equal(game.player.story.faction, 'unaligned', 'Faction should reset to unaligned');
-    assert.equal(game.player.prestige.reincarnationCount, 1, 'Reincarnation count should increment');
-    assert.equal(game.player.prestige.karma, karmaEarned, 'Karma should be awarded');
-    assert.equal(game.player.swordsInventory.length, swordsBefore, 'Swords should be preserved');
-  });
-
-  it('prestige perks can be purchased and leveled up', () => {
-    game.player.prestige.karma = 500;
-    const cost = window.PRESTIGE_DATA.getPerkCost('perk_atk', 0);
-
-    game.upgradePrestigePerk('perk_atk');
-    assert.equal(game.player.prestige.perks.perk_atk, 1);
-    assert.equal(game.player.prestige.karma, 500 - cost);
-  });
-
-  it('save and load preserves full game state', () => {
-    game.player.level = 15;
-    game.player.gold = 12345;
-    game.player.steel = 678;
-    game.player.story.faction = 'shogunate';
-
-    game.save();
-    const savedStr = global.localStorage.getItem(game.SAVE_KEY);
-    assert.ok(savedStr, 'Save string must exist in localStorage');
-
-    // Create a new game instance without wiping storage and verify load
-    const newGame = new SamuraiGame();
-    activeGames.push(newGame);
-    newGame.load();
-    assert.equal(newGame.player.level, 15);
-    assert.equal(newGame.player.gold, 12345);
-    assert.equal(newGame.player.steel, 678);
-    assert.equal(newGame.player.story.faction, 'shogunate');
-  });
-
-  it('export and import save data via Base64 code round-trip', () => {
-    game.player.level = 42;
-    game.player.gold = 99999;
-    const exportedCode = btoa(encodeURIComponent(JSON.stringify(game.player)));
-    assert.ok(exportedCode.length > 50);
-
-    const decoded = JSON.parse(decodeURIComponent(atob(exportedCode)));
-    assert.equal(decoded.level, 42);
-    assert.equal(decoded.gold, 99999);
-  });
-
-  it('switches languages smoothly without crashing', () => {
-    window.setLanguage('en');
-    assert.equal(window.getLang(), 'en');
-
-    window.setLanguage('ja');
-    assert.equal(window.getLang(), 'ja');
-
-    window.setLanguage('zh-TW');
-    assert.equal(window.getLang(), 'zh-TW');
-  });
-
-  it('tracks achievement progress accurately across game activities', () => {
-    const achKill1 = window.ACHIEVEMENTS_DATA.find(a => a.id === 'ach_kill_1');
-    const achBoss1 = window.ACHIEVEMENTS_DATA.find(a => a.id === 'ach_boss_1');
-    const achLevel10 = window.ACHIEVEMENTS_DATA.find(a => a.id === 'ach_level_10');
-
-    // Initially 0 kills, 0 boss kills, level 1
-    assert.equal(game.getAchievementProgress(achKill1).isCompleted, false);
-    assert.equal(game.getAchievementProgress(achBoss1).isCompleted, false);
-    assert.equal(game.getAchievementProgress(achLevel10).isCompleted, false);
-
-    // After 1 kill
-    game.player.stats.totalKills = 1;
-    const progKill1 = game.getAchievementProgress(achKill1);
-    assert.equal(progKill1.current, 1);
-    assert.equal(progKill1.isCompleted, true);
-    assert.equal(progKill1.isClaimed, false);
-
-    // After reaching level 10
-    game.player.level = 10;
-    const progLevel10 = game.getAchievementProgress(achLevel10);
-    assert.equal(progLevel10.current, 10);
-    assert.equal(progLevel10.isCompleted, true);
-  });
-
-  it('allows claiming completed achievements and grants rewards correctly', () => {
-    const achKill1 = window.ACHIEVEMENTS_DATA.find(a => a.id === 'ach_kill_1');
-    game.player.stats.totalKills = 1;
-
+    // Buy an item from market
+    game.player.gold = 50000;
+    const targetListing = market.listings[0];
+    const listingId = targetListing.id;
+    const price = targetListing.price;
     const initialGold = game.player.gold;
-    const initialSteel = game.player.steel;
 
-    game.claimAchievement('ach_kill_1');
+    market.buyListing(listingId);
+    assert.equal(game.player.gold, initialGold - price);
+  });
 
-    assert.ok(game.player.achievements.claimed.includes('ach_kill_1'));
-    assert.equal(game.player.gold, initialGold + achKill1.reward.gold);
-    assert.equal(game.player.steel, initialSteel + achKill1.reward.steel);
+  game.destroy();
+});
 
-    // Claiming again should have no effect
+test('7. Core Game Engine (src/game.js)', async (t) => {
+  const game = new window.SamuraiGame();
+
+  await t.test('initializes default player with 0-bill pure client architecture', () => {
+    assert.equal(game.player.name, '無雙武士');
+    assert.equal(game.player.level, 1);
+    assert.equal(game.player.classId, 'kensei');
+    assert.ok(game.player.gold > 0);
+    assert.ok(game.player.equipped.weapon);
+  });
+
+  await t.test('calculates combat stats incorporating gear and class passives', () => {
+    const stats = game.getCalculatedStats();
+    assert.ok(stats.atk > 0);
+    assert.ok(stats.def > 0);
+    assert.ok(stats.hp > 0);
+    assert.ok(stats.power > 0);
+    assert.ok(stats.critRate >= 5);
+  });
+
+  await t.test('executes combat tick and damages enemy', () => {
+    game.spawnNextEnemy();
+    const initHp = game.currentEnemy.hp;
+    game.autoCombatTick();
+    assert.ok(game.currentEnemy.hp < initHp);
+  });
+
+  await t.test('smart equip detects better gear in inventory and equips it on command', () => {
+    const superiorWeapon = window.generateGear('weapon', 'ancient', 30);
+    game.addGearToInventory(superiorWeapon);
+    game.checkSmartEquip();
+
+    assert.ok(game.smartEquipTarget);
+    assert.equal(game.smartEquipTarget.uid, superiorWeapon.uid);
+
+    game.equipSmartTarget();
+    assert.equal(game.player.equipped.weapon.uid, superiorWeapon.uid);
+    assert.equal(game.smartEquipTarget, null);
+  });
+
+  await t.test('decomposes junk gear and upgrades equipment', () => {
+    const junkGear = window.generateGear('boots', 'common', 1);
+    game.addGearToInventory(junkGear);
+    const initialIron = game.player.iron;
+
+    game.decomposeSingleGear(junkGear.uid);
+    assert.ok(game.player.iron > initialIron);
+
+    // Upgrade weapon
+    game.player.iron = 100;
+    game.player.gold = 50000;
+    const initialUpgradeLevel = game.player.equipped.weapon.upgradeLevel || 0;
+    game.upgradeGear(game.player.equipped.weapon.uid);
+    assert.equal(game.player.equipped.weapon.upgradeLevel, initialUpgradeLevel + 1);
+  });
+
+  await t.test('allows talent allocation and free reset with 0 cost', () => {
+    game.player.talentPoints = 5;
+    game.addTalentPoint('kensei_crit');
+    assert.equal(game.player.talents.kensei_crit, 1);
+    assert.equal(game.player.talentPoints, 4);
+
+    // Free reset
+    game.resetTalents();
+    assert.equal(game.player.talents.kensei_crit, 0);
+    assert.equal(game.player.talentPoints, 5);
+  });
+
+  await t.test('claims daily sign-in reward once per day', () => {
+    game.player.dailySignIn.lastClaimDate = '';
+    game.player.dailySignIn.claimedDays = 0;
+    const initialGold = game.player.gold;
+
+    game.claimDailyReward();
+    assert.equal(game.player.dailySignIn.claimedDays, 1);
+    assert.ok(game.player.gold > initialGold);
+
+    // Trying again on same day should be blocked
     const goldAfterFirst = game.player.gold;
-    game.claimAchievement('ach_kill_1');
+    game.claimDailyReward();
     assert.equal(game.player.gold, goldAfterFirst);
   });
 
-  it('claimAllAchievements collects all completed unclaimed achievements', () => {
-    game.player.stats.totalKills = 50; // satisfies ach_kill_1 and ach_kill_50
-    game.player.stats.bossKills = 1;   // satisfies ach_boss_1
-    game.player.level = 10;           // satisfies ach_level_10
+  await t.test('unlocks Diablo 3 style achievements and claims rewards', () => {
+    game.player.statsTracked.totalKills = 15;
+    game.checkAchievements();
 
-    const initialGold = game.player.gold;
-    const initialSteel = game.player.steel;
+    assert.ok(game.player.achievements['kill_10']);
+    assert.equal(game.player.achievements['kill_10'].unlocked, true);
+    assert.equal(game.player.achievements['kill_10'].claimed, false);
 
-    game.claimAllAchievements();
-
-    assert.ok(game.player.achievements.claimed.includes('ach_kill_1'));
-    assert.ok(game.player.achievements.claimed.includes('ach_kill_50'));
-    assert.ok(game.player.achievements.claimed.includes('ach_boss_1'));
-    assert.ok(game.player.achievements.claimed.includes('ach_level_10'));
-    assert.ok(game.player.gold > initialGold);
-    assert.ok(game.player.steel > initialSteel);
+    const goldBeforeClaim = game.player.gold;
+    game.claimAchievement('kill_10');
+    assert.equal(game.player.achievements['kill_10'].claimed, true);
+    assert.ok(game.player.gold > goldBeforeClaim);
   });
 
-  it('filterAchievements switches category filter without throwing errors', () => {
-    game.filterAchievements('combat');
-    assert.equal(game.activeAchFilter, 'combat');
+  await t.test('calculates offline idle gains when user returns', () => {
+    game.player.lastSaveTime = Date.now() - 3600 * 1000; // 1 hour offline
+    const killsBefore = game.player.statsTracked.totalKills;
+    const goldBefore = game.player.gold;
 
-    game.filterAchievements('swords');
-    assert.equal(game.activeAchFilter, 'swords');
-
-    game.filterAchievements('all');
-    assert.equal(game.activeAchFilter, 'all');
+    game.processOfflineProgress();
+    assert.ok(game.player.statsTracked.totalKills > killsBefore);
+    assert.ok(game.player.gold > goldBefore);
   });
 
-  it('triggers Diablo 3 style center achievement banner and sound fanfare when unlocking achievements', () => {
-    let fanfarePlayed = false;
-    global.window.samuraiAudio.playAchievementFanfare = () => { fanfarePlayed = true; };
+  await t.test('supports Google Identity profile binding', () => {
+    // Mock JWT payload: {"name":"真田幸村","email":"sanada@sengoku.jp","sub":"12345"}
+    const payload = Buffer.from(JSON.stringify({
+      name: '真田幸村',
+      email: 'sanada@sengoku.jp',
+      sub: '12345'
+    })).toString('base64');
+    const fakeToken = `header.${payload}.signature`;
 
-    const ach = window.ACHIEVEMENTS_DATA[0];
-    game.showAchievementToast(ach);
-
-    assert.equal(fanfarePlayed, true, 'playAchievementFanfare should be called');
-    const container = document.getElementById('achievement-toast-container');
-    assert.ok(container.children.length > 0, 'Container should hold the banner');
-    const banner = container.children[0];
-    assert.equal(banner.className, 'd3-achievement-banner');
-    assert.ok(banner.innerHTML.includes('d3-ach-flare'), 'Banner should include radial flare');
-    assert.ok(banner.innerHTML.includes('d3-ach-sheen'), 'Banner should include light sheen streak');
-    assert.ok(banner.innerHTML.includes('d3-ach-crest-wrap'), 'Banner should include crest medallion');
+    game.handleGoogleLogin({ credential: fakeToken });
+    assert.equal(game.player.name, '真田幸村');
+    assert.equal(game.player.googleProfile.email, 'sanada@sengoku.jp');
   });
 
-  it('starts in tactile manual mode (autoSlashEnabled = false) and manual strike grants extra gold', () => {
-    assert.equal(game.autoSlashEnabled, false, 'Should start in manual slash mode');
-    game.spawnEnemy();
-    const initialGold = game.player.gold;
-
-    // Execute manual strike
-    game.attack(true);
-
-    assert.ok(game.player.gold > initialGold, 'Manual strike should award gold');
-    assert.equal(game.comboCount, 1, 'Combo count should increment');
-
-    // Toggle auto slash
-    game.toggleAutoSlash();
-    assert.equal(game.autoSlashEnabled, true);
-    game.toggleAutoSlash();
-    assert.equal(game.autoSlashEnabled, false);
-  });
-
-  it('localizes enemy names and combat logs into Japanese and English', () => {
-    // Enemy translation check
-    const banditEnemy = { name: "持棒野盜", title: "雜寇" };
-    const jaEnemy = window.getEnemyText(banditEnemy, "ja");
-    assert.equal(jaEnemy.name, "棒持ちの野盗");
-    assert.equal(jaEnemy.title, "雑魚");
-
-    const enEnemy = window.getEnemyText(banditEnemy, "en");
-    assert.equal(enEnemy.name, "Club-Wielding Bandit");
-    assert.equal(enEnemy.title, "Thug");
-
-    // Boss translation check
-    const bossGouen = { name: "破戒僧・豪圓", title: "【第一幕 守門狂僧】" };
-    const jaBoss = window.getEnemyText(bossGouen, "ja");
-    assert.equal(jaBoss.name, "破戒僧・豪円");
-    assert.equal(jaBoss.title, "【第一幕 守門の狂僧】");
-
-    const enBoss = window.getEnemyText(bossGouen, "en");
-    assert.equal(enBoss.name, "Fallen Monk Gouen");
-    assert.equal(enBoss.title, "【Act I Gatekeeper Monk】");
-
-    // Combat log localization check
-    window.setLanguage("ja");
-    const logBox = document.getElementById("combat-log-container");
-    logBox.children = [];
-    game.spawnEnemy();
-    game.attack(true);
-    assert.ok(logBox.children.length > 0, "Combat log should receive entry");
-    const lastLog = logBox.children[logBox.children.length - 1].innerHTML;
-    // In JA, manual strike log contains "疾風抜刀" or "刃光一閃" or "討伐"
-    assert.ok(lastLog.includes("疾風抜刀") || lastLog.includes("刃光一閃") || lastLog.includes("討伐"), "Log should contain Japanese combat terms");
-    // Should NOT contain untranslated Chinese strike prefix
-    assert.ok(!lastLog.includes("玩家疾風拔刀"), "Log should not contain untranslated Traditional Chinese strike prefix");
-
-    // Reset back to zh-TW
-    window.setLanguage("zh-TW");
-  });
-
-  it('persists unlocked achievements in save data and does not duplicate toasts on reload', () => {
-    const prevTesting = window.__TESTING__;
-    window.__TESTING__ = false;
-
-    let toastCount = 0;
-    game.showAchievementToast = () => { toastCount++; };
-
-    // Player achieves 1 kill
-    game.player.stats.totalKills = 1;
-    game.checkAchievements(false);
-
-    assert.equal(toastCount, 1, 'Should trigger toast on first achievement completion');
-    assert.ok(game.player.achievements.unlocked.includes('ach_kill_1'), 'Should record achievement ID in unlocked array');
-
-    // Verify it was immediately saved to localStorage
-    const savedData = JSON.parse(localStorage.getItem(game.SAVE_KEY));
-    assert.ok(savedData.achievements.unlocked.includes('ach_kill_1'), 'Unlocked achievements must be saved to localStorage');
-
-    // Calling checkAchievements again during the same or subsequent actions should NOT re-toast
-    game.checkAchievements(false);
-    assert.equal(toastCount, 1, 'Should not re-toast already unlocked achievement');
-
-    // Simulate reloading the game from saved localStorage
-    const newGame = new SamuraiGame();
-    newGame.showAchievementToast = () => { toastCount++; };
-    newGame.load();
-    assert.ok(newGame.player.achievements.unlocked.includes('ach_kill_1'), 'New game instance should load unlocked array');
-
-    // On start (silent check), no toasts should be displayed
-    newGame.checkAchievements(true);
-    assert.equal(toastCount, 1, 'Startup silent check should not trigger any toast');
-
-    // During subsequent gameplay checks in the new session, existing achievements must not re-toast
-    newGame.checkAchievements(false);
-    assert.equal(toastCount, 1, 'Subsequent checks should still not re-toast previously unlocked achievement');
-
-    window.__TESTING__ = prevTesting;
-  });
-
-  it('all enemies and bosses have unique visual avatars and game.updateBattleUI updates enemy avatar', () => {
-    const game = new SamuraiGame();
-    assert.ok(Array.isArray(window.ZONES_DATA));
-    
-    // Check all 21 regular enemies and 7 bosses have avatar icons
-    for (const z of window.ZONES_DATA) {
-      assert.ok(z.boss.avatar && z.boss.avatar.length > 0, `Zone ${z.id} boss must have avatar`);
-      for (const e of z.enemies) {
-        assert.ok(e.avatar && e.avatar.length > 0, `Zone ${z.id} enemy ${e.name} must have avatar`);
-      }
-    }
-
-    // Spawn enemy and verify currentEnemy.avatar is populated
-    game.spawnEnemy(false);
-    assert.ok(game.currentEnemy.avatar, 'Spawned enemy must have avatar');
-    game.updateBattleUI();
-    const avatarEl = document.getElementById('enemy-avatar');
-    assert.equal(avatarEl.textContent, game.currentEnemy.avatar);
-
-    // Spawn boss and verify boss avatar & boss-glow
-    game.spawnEnemy(true);
-    assert.ok(game.currentEnemy.avatar, 'Spawned boss must have avatar');
-    game.updateBattleUI();
-    assert.equal(avatarEl.textContent, game.currentEnemy.avatar);
-    assert.ok(avatarEl.classList.contains('boss-glow'), 'Boss avatar must have boss-glow class');
-  });
-
-  it('world map openWorldMap renders all 7 zones and travelToZone moves player correctly', () => {
-    const game = new SamuraiGame();
-    game.player.stats.highestZone = 3;
-    game.player.stats.currentZone = 1;
-
-    // Test openWorldMap
-    game.openWorldMap();
-    const container = document.getElementById('world-map-nodes-container');
-    assert.ok(container.innerHTML.length > 0, 'World map container should have rendered HTML');
-    assert.ok(document.getElementById('world-map-modal').classList.contains('active'), 'Modal should be active');
-
-    // Test travel to unlocked zone 2
-    game.travelToZone(2);
-    assert.equal(game.player.stats.currentZone, 2, 'Player should have traveled to Zone 2');
-    assert.equal(game.inBossFight, false);
-    assert.equal(game.zoneKillProgress, 0);
-
-    // Test travel to locked zone 5 (should be blocked)
-    let alerted = false;
-    const oldAlert = global.alert;
-    global.alert = () => { alerted = true; };
-    game.travelToZone(5);
-    assert.equal(alerted, true, 'Traveling to locked zone should alert');
-    assert.equal(game.player.stats.currentZone, 2, 'Zone should remain 2 after failed travel');
-    global.alert = oldAlert;
-  });
-
-  it('verifies comprehensive translation keys are present across zh-TW, en, and ja', () => {
-    const requiredKeys = [
-      'btnWorldMap', 'worldMapTitle', 'worldMapSub', 'worldMapCurrent', 'worldMapTravel',
-      'worldMapLocked', 'worldMapReqLevel', 'worldMapBoss', 'worldMapDrops',
-      'offlineModalTitle', 'offlineModalText', 'offlineModalKills', 'offlineModalGold',
-      'offlineModalSteel', 'offlineModalExp', 'offlineModalBtn', 'offlineUnitMins',
-      'forgeModalSmith', 'forgeModalHamon', 'forgeModalAtk', 'forgeModalCrit', 'forgeModalBtn',
-      'endingModalTitle', 'endingModalReward', 'endingModalBtn',
-      'forgeTitle', 'forgeStandardTitle', 'forgeStandardBtn', 'forgeMasterTitle', 'forgeMasterBtn',
-      'sharpenTitle', 'sharpenCurrentAtk', 'sharpenNextAtk', 'sharpenBtn', 'sharpenTip',
-      'whetstoneRoughTitle', 'whetstoneMidTitle', 'whetstoneFineTitle', 'smeltEmptyHint', 'smeltBtnText',
-      'dojoTitle', 'dojoSub', 'dojoPointsLabel', 'dojoResetBtn', 'dojoInvestShinkage', 'dojoInvestJigen', 'dojoInvestRishin', 'dojoRankLabel',
-      'invCurrentWeapon', 'invSwordsList', 'invConsumablesList', 'invAtkLabel', 'invCritLabel', 'invSpeedLabel',
-      'codexTitle', 'codexSub', 'codexProgressLabel',
-      'prestigeTitle', 'prestigeSub', 'prestigeCountLabel', 'prestigeKarmaLabel', 'prestigeGainLabel', 'prestigeBtn',
-      'prestigeKeepTitle', 'prestigeKeepDesc', 'prestigeResetTitle', 'prestigeResetDesc', 'prestigeAltarHeader',
-      'settingSoundTitle', 'settingSoundDesc', 'settingManualSaveTitle', 'settingManualSaveDesc', 'settingManualSaveBtn',
-      'settingExportTitle', 'settingExportDesc', 'settingExportBtn', 'settingImportTitle', 'settingImportDesc', 'settingImportBtn',
-      'settingResetTitle', 'settingResetDesc', 'settingResetBtn',
-      'communityTitle', 'communitySub', 'pollTitle', 'pollOpt1', 'pollOpt2', 'pollOpt3', 'pollOpt4', 'commentWallTitle', 'commentWallBanner',
-      'promptCopySave', 'promptPasteSave', 'alertManualSaveOk', 'initialCombatLog', 'autoSlashOn', 'autoSlashOff'
-    ];
-
-    for (const lang of ['zh-TW', 'en', 'ja']) {
-      const dict = window.I18N.translations[lang];
-      assert.ok(dict, `I18N.translations[${lang}] must exist`);
-      for (const k of requiredKeys) {
-        assert.ok(dict[k] !== undefined && dict[k].length > 0, `Key "${k}" must exist and be non-empty in ${lang}`);
-      }
-    }
-  });
-
-  it('supports desktop mouse drag, wheel scroll, and arrow buttons for tab navigation', () => {
-    const tabNav = document.querySelector('.tab-nav');
-    const prevBtn = document.querySelector('.tab-nav-prev');
-    const nextBtn = document.querySelector('.tab-nav-next');
-
-    assert.ok(tabNav, 'tabNav element must exist');
-    assert.ok(prevBtn, 'prevBtn element must exist');
-    assert.ok(nextBtn, 'nextBtn element must exist');
-
-    // 1. Initial arrow state at left edge (scrollLeft = 0)
-    tabNav.scrollLeft = 0;
-    tabNav.clientWidth = 500;
-    tabNav.scrollWidth = 1500;
-    game.updateTabNavArrows();
-    assert.equal(prevBtn.style.pointerEvents, 'none', 'Prev button should be disabled at scrollLeft = 0');
-    assert.equal(nextBtn.style.pointerEvents, 'auto', 'Next button should be enabled when content overflows');
-
-    // 2. Scroll forward using scrollTabNav(1)
-    game.scrollTabNav(1);
-    assert.ok(tabNav.scrollLeft > 0, 'scrollTabNav(1) must increase scrollLeft');
-
-    // 3. Arrow state in the middle
-    game.updateTabNavArrows();
-    assert.equal(prevBtn.style.pointerEvents, 'auto', 'Prev button should be enabled in the middle');
-    assert.equal(nextBtn.style.pointerEvents, 'auto', 'Next button should be enabled in the middle');
-
-    // 4. Scroll backwards using scrollTabNav(-1)
-    const midScroll = tabNav.scrollLeft;
-    game.scrollTabNav(-1);
-    assert.ok(tabNav.scrollLeft < midScroll, 'scrollTabNav(-1) must decrease scrollLeft');
-
-    // 5. Test mouse wheel event handling
-    game.setupTabNavControls();
-    tabNav.scrollLeft = 100;
-    let prevented = false;
-    tabNav.dispatch('wheel', {
-      deltaY: 50,
-      deltaX: 0,
-      preventDefault: () => { prevented = true; }
+  await t.test('switches among all 5 core tabs cleanly', () => {
+    const tabs = ['battle', 'gear', 'talents', 'market', 'achievements'];
+    tabs.forEach(tName => {
+      game.switchTab(tName);
+      assert.equal(game.activeTab, tName);
     });
-    assert.ok(tabNav.scrollLeft > 100, 'Wheel deltaY should increase horizontal scrollLeft');
-    assert.equal(prevented, true, 'Wheel event default action should be prevented for horizontal scroll');
-
-    // 6. Test normal click does not prevent default and allows tab switching
-    let clickPrevented = false;
-    tabNav.dispatch('mousedown', { button: 0, pageX: 200 });
-    // no move, just mouseup
-    if (global.window._listeners && global.window._listeners['mouseup']) {
-      global.window._listeners['mouseup'].forEach(fn => fn({}));
-    }
-    tabNav.dispatch('click', {
-      preventDefault: () => { clickPrevented = true; },
-      stopPropagation: () => {}
-    });
-    assert.equal(clickPrevented, false, 'Normal click must not be prevented');
-
-    // 7. Test intentional drag > 20px cancels accidental click on mouseup
-    let dragClickPrevented = false;
-    const realNow = Date.now;
-    let fakeTime = realNow();
-    Date.now = () => fakeTime;
-    tabNav.dispatch('mousedown', { button: 0, pageX: 200, pageY: 100 });
-    fakeTime += 350; // Hold drag for > 250ms
-    if (global.window._listeners && global.window._listeners['mousemove']) {
-      global.window._listeners['mousemove'].forEach(fn => fn({ pageX: 260, pageY: 100, preventDefault: () => {} }));
-    }
-    if (global.window._listeners && global.window._listeners['mouseup']) {
-      global.window._listeners['mouseup'].forEach(fn => fn({}));
-    }
-    tabNav.dispatch('click', {
-      preventDefault: () => { dragClickPrevented = true; },
-      stopPropagation: () => {}
-    });
-    Date.now = realNow;
-    assert.equal(dragClickPrevented, true, 'Intentional drag must prevent accidental button click');
-
-    // 8. Test switchTab updates active tab
-    game.switchTab('story');
-    assert.equal(game.activeTab, 'story');
   });
+
+  await t.test('saves and loads game state cleanly', () => {
+    game.player.name = '宮本十兵衛';
+    game.player.gold = 888888;
+    game.save();
+
+    const newGame = new window.SamuraiGame();
+    assert.equal(newGame.player.name, '宮本十兵衛');
+    assert.equal(newGame.player.gold, 888888);
+    newGame.destroy();
+  });
+
+  game.destroy();
 });
-
-
-
