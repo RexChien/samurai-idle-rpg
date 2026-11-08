@@ -309,6 +309,7 @@ class SamuraiGame {
       this.currentEnemy = {
         name: b.name,
         title: b.title,
+        avatar: b.avatar || "👑",
         rawName: b.name,
         rawTitle: b.title,
         maxHp: b.hp,
@@ -336,6 +337,7 @@ class SamuraiGame {
       this.currentEnemy = {
         name: tpl.name,
         title: tpl.title,
+        avatar: tpl.avatar || "👹",
         rawName: tpl.name,
         rawTitle: tpl.title,
         maxHp: hp,
@@ -693,11 +695,11 @@ class SamuraiGame {
   sharpenWeapon(whetstoneId) {
     const weapon = this.player.equipped.weapon;
     if (!weapon) {
-      alert("請先配備名刀！");
+      alert(window.t ? window.t("msgWeaponNeeded") : "請先配備名刀！");
       return;
     }
     if (!this.player.items[whetstoneId] || this.player.items[whetstoneId] <= 0) {
-      alert("磨刀石不足！");
+      alert(window.t ? window.t("msgWhetstoneNeeded") : "磨刀石不足！");
       return;
     }
 
@@ -724,7 +726,7 @@ class SamuraiGame {
     let costGold = (type === "master") ? 500 : 100;
 
     if (this.player.steel < costSteel || this.player.gold < costGold) {
-      alert(`鍛造資源不足！需要 ${costSteel} 玉鋼與 ${costGold} 金小判。`);
+      alert(window.t ? window.t("msgForgeLackRes", { steel: costSteel, gold: costGold }) : `鍛造資源不足！需要 ${costSteel} 玉鋼與 ${costGold} 金小判。`);
       return;
     }
 
@@ -772,7 +774,7 @@ class SamuraiGame {
 
     const sword = this.player.swordsInventory[idx];
     if (this.player.equipped.weapon && this.player.equipped.weapon.instanceId === instanceId) {
-      alert("無法熔煉當前裝備中的佩刀！請先更換其他刀刃。");
+      alert(window.t ? window.t("msgEquippedCantSmelt") : "無法熔煉當前裝備中的佩刀！請先更換其他刀刃。");
       return;
     }
 
@@ -812,7 +814,7 @@ class SamuraiGame {
   // 流派升級加點
   investSkill(skillName) {
     if (this.player.skillPoints <= 0) {
-      alert("天賦點數不足！請通過歷練提升角色等級獲取點數。");
+      alert(window.t ? window.t("msgSkillPointsLack") : "天賦點數不足！請通過歷練提升角色等級獲取點數。");
       return;
     }
     this.player.skillPoints--;
@@ -827,9 +829,10 @@ class SamuraiGame {
   resetSkills() {
     const totalSpent = this.player.skills.shinkage + this.player.skills.jigen + this.player.skills.rishin;
     if (totalSpent === 0) return;
-    if (confirm("是否花費 100 金小判洗鍊重置所有流派天賦點？")) {
+    const confirmPrompt = window.t ? window.t("msgResetSkillConfirm") : "是否花費 100 金小判洗鍊重置所有流派天賦點？";
+    if (confirm(confirmPrompt)) {
       if (this.player.gold < 100) {
-        alert("金小判不足 100！");
+        alert(window.t ? window.t("msgGoldLack100") : "金小判不足 100！");
         return;
       }
       this.player.gold -= 100;
@@ -845,7 +848,7 @@ class SamuraiGame {
   // 切換戰役關卡
   changeZone(zoneId) {
     if (zoneId > this.player.stats.highestZone) {
-      alert("該戰役區域尚未解鎖！請先擊破前一區域的守關頭目。");
+      alert(window.t ? window.t("msgZoneLocked") : "該戰役區域尚未解鎖！請先擊破前一區域的守關頭目。");
       return;
     }
     this.player.stats.currentZone = zoneId;
@@ -853,6 +856,119 @@ class SamuraiGame {
     this.zoneKillProgress = 0;
     this.spawnEnemy();
     this.updateBattleUI();
+  }
+
+  // 打開天下地圖 (World Map)
+  openWorldMap() {
+    const modal = document.getElementById("world-map-modal");
+    if (!modal) return;
+    const container = document.getElementById("world-map-nodes-container");
+    if (!container) return;
+
+    const lang = window.getLang ? window.getLang() : "zh-TW";
+    const highestZone = this.player.stats.highestZone || 1;
+    const currentZone = this.player.stats.currentZone || 1;
+
+    container.innerHTML = (window.ZONES_DATA || []).map(z => {
+      const isUnlocked = z.id <= highestZone;
+      const isCurrent = z.id === currentZone;
+      const isCleared = z.id < highestZone;
+
+      const zText = window.getZoneText ? window.getZoneText(z.id, lang) : z;
+      const zoneName = zText.name || z.name;
+      const zoneSub = zText.sub || z.subtitle;
+      const bossName = (zText.boss) ? zText.boss : (z.boss ? z.boss.name : "???");
+      const bossAvatar = (z.boss && z.boss.avatar) ? z.boss.avatar : "👹";
+
+      // 掉落物預覽
+      let dropsText = "—";
+      if (z.boss) {
+        const dropSw = z.boss.dropSword ? (window.SWORDS_DATA ? window.SWORDS_DATA.find(s => s.id === z.boss.dropSword) : null) : null;
+        const dropItem = z.boss.dropItem ? (window.ITEMS_DATA && window.ITEMS_DATA.consumables ? window.ITEMS_DATA.consumables.find(i => i.id === z.boss.dropItem) : null) : null;
+        const swName = dropSw ? (window.getSwordText ? window.getSwordText(dropSw, lang).name : dropSw.name) : "";
+        const itName = dropItem ? (window.getItemText ? window.getItemText(dropItem, lang).name : dropItem.name) : (z.boss.dropItem || "");
+        dropsText = [swName, itName].filter(Boolean).join(" / ") || "—";
+      }
+
+      let cardClass = "wm-node-card";
+      if (isCurrent) cardClass += " current";
+      else if (isCleared) cardClass += " cleared";
+      else if (!isUnlocked) cardClass += " locked";
+
+      let statusBadge = "";
+      if (isCurrent) statusBadge = `<span class="wm-node-badge">${window.t ? window.t("mapLegendCurrent") : "📍 當前征戰"}</span>`;
+      else if (isCleared) statusBadge = `<span class="wm-node-badge">${window.t ? window.t("mapLegendCleared") : "✅ 已踏破"}</span>`;
+      else if (!isUnlocked) statusBadge = `<span class="wm-node-badge">${window.t ? window.t("mapLegendLocked") : "🔒 妖霧封鎖"}</span>`;
+
+      let actionBtn = "";
+      if (isCurrent) {
+        actionBtn = `<button class="wm-travel-btn current" disabled>${window.t ? window.t("worldMapCurrent") : "📍 當前駐足"}</button>`;
+      } else if (isUnlocked) {
+        actionBtn = `<button class="wm-travel-btn active" onclick="window.game.travelToZone(${z.id})">${window.t ? window.t("worldMapTravel") : "🏇 策馬遷往"}</button>`;
+      } else {
+        const reqLvl = window.t ? window.t("worldMapReqLevel", { level: z.requiredLevel || 1 }) : `需等級 Lv.${z.requiredLevel || 1}`;
+        actionBtn = `<button class="wm-travel-btn locked" disabled>${window.t ? window.t("worldMapLocked") : "🔒 封鎖中"} (${reqLvl})</button>`;
+      }
+
+      const bossLabel = window.t ? window.t("worldMapBoss", { boss: `${bossAvatar} ${bossName}` }) : `守關首領：${bossAvatar} ${bossName}`;
+      const dropsLabel = window.t ? window.t("worldMapDrops", { drops: dropsText }) : `掉落遺珍：${dropsText}`;
+
+      return `
+        <div class="${cardClass}">
+          <div>
+            <div class="wm-node-top">
+              <span style="font-size:0.8rem;color:#e2e8f0;font-weight:bold;">${lang === 'en' ? `Act ${z.id}` : `第 ${z.id} 幕`}</span>
+              ${statusBadge}
+            </div>
+            <div class="wm-node-name">${zoneName}</div>
+            <div class="wm-node-sub">${zoneSub}</div>
+            <div class="wm-node-info-row">
+              <span class="wm-node-boss-tag">${bossLabel}</span>
+            </div>
+            <div class="wm-node-info-row">
+              <span class="wm-node-drops-tag">${dropsLabel}</span>
+            </div>
+          </div>
+          <div class="wm-node-actions">
+            ${actionBtn}
+          </div>
+        </div>
+      `;
+    }).join("");
+
+    modal.classList.add("active");
+  }
+
+  // 策馬移動前往指定區域
+  travelToZone(zoneId) {
+    if (zoneId > (this.player.stats.highestZone || 1)) {
+      const lockAlert = window.t ? window.t("msgZoneLocked") : "該戰役區域尚未解鎖！請先擊破前一區域的守關頭目。";
+      alert(lockAlert);
+      return;
+    }
+
+    this.player.stats.currentZone = zoneId;
+    this.inBossFight = false;
+    this.zoneKillProgress = 0;
+    this.spawnEnemy();
+    this.updateBattleUI();
+
+    const zoneSelect = document.getElementById("zone-select");
+    if (zoneSelect) zoneSelect.value = zoneId;
+
+    if (window.samuraiAudio && typeof window.samuraiAudio.playClick === "function") {
+      window.samuraiAudio.playClick();
+    } else if (window.samuraiAudio && typeof window.samuraiAudio.playSharpen === "function") {
+      window.samuraiAudio.playSharpen();
+    }
+
+    const lang = window.getLang ? window.getLang() : "zh-TW";
+    const zText = window.getZoneText ? window.getZoneText(zoneId, lang) : { name: `第 ${zoneId} 幕` };
+    const travelMsg = window.t ? window.t("logTravel", { zone: zText.name || `第 ${zoneId} 幕` }) : `🏇 策馬奔馳！你跨過崇山峻嶺，抵達了【${zText.name}】！`;
+    this.addCombatLog(travelMsg);
+
+    const modal = document.getElementById("world-map-modal");
+    if (modal) modal.classList.remove("active");
   }
 
   // 手動挑戰首領
@@ -1016,17 +1132,23 @@ class SamuraiGame {
   showForgeResultModal(sword) {
     const modal = document.getElementById("forge-result-modal");
     if (!modal) return;
-    document.getElementById("modal-sword-name").textContent = sword.name;
+    const lang = window.getLang ? window.getLang() : "zh-TW";
+    const swText = window.getSwordText ? window.getSwordText(sword, lang) : sword;
+    document.getElementById("modal-sword-name").textContent = swText.name || sword.name;
     document.getElementById("modal-sword-name").style.color = sword.color;
-    document.getElementById("modal-sword-tier").textContent = `【${sword.tierName}】${sword.type}（${sword.era || "日本名刀"}）`;
+    document.getElementById("modal-sword-tier").textContent = `【${swText.tierName || sword.tierName}】${swText.type || sword.type}（${swText.era || sword.era || "日本名刀"}）`;
     document.getElementById("modal-sword-tier").style.color = sword.color;
     const modalVisual = document.getElementById("modal-sword-visual");
     if (modalVisual) modalVisual.innerHTML = sword.svg || "";
-    document.getElementById("modal-sword-smith").textContent = `刀工：${sword.smith} | 刃文：${sword.hamon || "直刃"}`;
-    document.getElementById("modal-sword-atk").textContent = `基礎攻擊：+${sword.baseAtk}`;
-    document.getElementById("modal-sword-crit").textContent = `會心率：+${sword.crit}%`;
-    document.getElementById("modal-sword-passive").textContent = sword.passive;
-    document.getElementById("modal-sword-lore").textContent = sword.lore;
+    const smithLabel = window.t ? window.t("forgeModalSmith") : "名匠：";
+    const hamonLabel = window.t ? window.t("forgeModalHamon") : "刃文：";
+    document.getElementById("modal-sword-smith").textContent = `${smithLabel}${swText.smith || sword.smith} | ${hamonLabel}${swText.hamon || sword.hamon || "直刃"}`;
+    const atkLabel = window.t ? window.t("forgeModalAtk") : "基礎攻擊：";
+    const critLabel = window.t ? window.t("forgeModalCrit") : "會心率：";
+    document.getElementById("modal-sword-atk").textContent = `${atkLabel}+${sword.baseAtk}`;
+    document.getElementById("modal-sword-crit").textContent = `${critLabel}+${sword.crit}%`;
+    document.getElementById("modal-sword-passive").textContent = swText.passive || sword.passive;
+    document.getElementById("modal-sword-lore").textContent = swText.lore || sword.lore;
 
     modal.classList.add("active");
   }
@@ -1036,8 +1158,8 @@ class SamuraiGame {
     const modal = document.getElementById("offline-modal");
     if (!modal) return;
     const mins = Math.floor(sec / 60);
-    const hours = (mins / 60).toFixed(1);
-    document.getElementById("offline-time").textContent = `${mins} 分鐘 (${hours} 小時)`;
+    const timeStr = window.t ? window.t("offlineUnitMins", { time: mins }) : `${mins} 分鐘`;
+    document.getElementById("offline-time").textContent = timeStr;
     document.getElementById("offline-kills").textContent = kills;
     document.getElementById("offline-gold").textContent = gold;
     document.getElementById("offline-steel").textContent = steel;
@@ -1056,6 +1178,12 @@ class SamuraiGame {
       console.error("Save failed:", e);
       return false;
     }
+  }
+
+  manualSave() {
+    this.save();
+    const msg = window.t ? window.t("alertManualSaveOk") : "💾 修業進度已完好保存於本地卷軸！";
+    alert(msg);
   }
 
   load() {
@@ -1146,14 +1274,14 @@ class SamuraiGame {
     this.save();
     const jsonStr = btoa(encodeURIComponent(JSON.stringify(this.player)));
     navigator.clipboard.writeText(jsonStr).then(() => {
-      alert("✅ 存檔代碼已成功複製至剪貼簿！可妥善保管。");
+      alert(window.t ? window.t("msgSaveCopied") : "✅ 存檔代碼已成功複製至剪貼簿！可妥善保管。");
     }).catch(() => {
-      prompt("請手動複製存檔代碼：", jsonStr);
+      prompt(window.t ? window.t("promptCopySave") : "請手動複製存檔代碼：", jsonStr);
     });
   }
 
   importSave() {
-    const input = prompt("請貼上存檔代碼：");
+    const input = prompt(window.t ? window.t("promptPasteSave") : "請貼上存檔代碼：");
     if (!input) return;
     try {
       const jsonStr = decodeURIComponent(atob(input.trim()));
@@ -1161,19 +1289,21 @@ class SamuraiGame {
       if (parsed && parsed.level) {
         this.player = parsed;
         this.save();
-        alert("✅ 存檔匯入成功！即將重新載入遊戲。");
+        alert(window.t ? window.t("msgSaveLoaded") : "✅ 存檔匯入成功！即將重新載入遊戲。");
         window.location.reload();
       } else {
-        alert("❌ 存檔格式不正確！");
+        alert(window.t ? window.t("msgSaveInvalid") : "❌ 存檔格式不正確！");
       }
     } catch (e) {
-      alert("❌ 存檔代碼無效，解析失敗！");
+      alert(window.t ? window.t("msgSaveInvalid") : "❌ 存檔代碼無效，解析失敗！");
     }
   }
 
   resetGame() {
-    if (confirm("⚠️ 警告：確定要重置所有遊戲進度嗎？所有刀劍、劍理與玉鋼將重歸虛無！")) {
-      if (confirm("最後確認：真的要重新開始修行？")) {
+    const warn1 = window.t ? window.t("msgResetGameWarning") : "⚠️ 警告：確定要重置所有遊戲進度嗎？所有刀劍、劍理與玉鋼將重歸虛無！";
+    const warn2 = window.t ? window.t("msgResetGameFinal") : "最後確認：真的要重新開始修行？";
+    if (confirm(warn1)) {
+      if (confirm(warn2)) {
         localStorage.removeItem(this.SAVE_KEY);
         window.location.reload();
       }
@@ -1293,6 +1423,16 @@ class SamuraiGame {
       const enemyTitleEl = document.getElementById("enemy-title");
       if (enemyTitleEl) enemyTitleEl.textContent = `【${eText.title || e.title}】`;
 
+      const enemyAvatarEl = document.getElementById("enemy-avatar");
+      if (enemyAvatarEl) {
+        enemyAvatarEl.textContent = e.avatar || (e.isBoss ? "👑" : "👹");
+        if (e.isBoss) {
+          enemyAvatarEl.classList.add("boss-glow");
+        } else {
+          enemyAvatarEl.classList.remove("boss-glow");
+        }
+      }
+
       const enemyHpPercent = Math.max(0, Math.min(100, Math.floor((e.hp / e.maxHp) * 100)));
       const enemyBar = document.getElementById("enemy-hp-fill") || document.getElementById("enemy-hp-bar");
       if (enemyBar) {
@@ -1394,16 +1534,20 @@ class SamuraiGame {
     document.getElementById("count-whetstone-fine").textContent = this.player.items.mat_whetstone_fine || 0;
 
     // 當前武器磨刀預覽
+    const lang = window.getLang ? window.getLang() : "zh-TW";
     const weapon = this.player.equipped.weapon;
     const sharpenBox = document.getElementById("sharpen-weapon-target");
     if (weapon) {
+      const swText = window.getSwordText ? window.getSwordText(weapon, lang) : weapon;
+      const curAtkLabel = window.t ? window.t("sharpenCurrentAtk") : "當前攻擊力：";
+      const nextAtkLabel = window.t ? window.t("sharpenNextAtk") : "研磨後：";
       sharpenBox.innerHTML = `
         <div style="color:${weapon.color};font-weight:bold;font-size:1.15em;">
-          【${weapon.tierName}】${weapon.name} ${weapon.refine > 0 ? `+${weapon.refine}` : ""}
+          【${swText.tierName || weapon.tierName}】${swText.name || weapon.name} ${weapon.refine > 0 ? `+${weapon.refine}` : ""}
         </div>
         <div style="font-size:0.9em;color:#a8a29e;margin-top:4px;">
-          當前攻擊力：+${weapon.baseAtk + weapon.refine * 15}
-          <span style="color:#4ade80;">➡️ 研磨後：+${weapon.baseAtk + (weapon.refine + 1) * 15} (+15)</span>
+          ${curAtkLabel}+${weapon.baseAtk + weapon.refine * 15}
+          <span style="color:#4ade80;">➡️ ${nextAtkLabel}+${weapon.baseAtk + (weapon.refine + 1) * 15} (+15)</span>
         </div>
       `;
     }
@@ -1416,19 +1560,24 @@ class SamuraiGame {
       );
 
       if (redundantSwords.length === 0) {
-        smeltList.innerHTML = `<div class="empty-hint">暫無可熔煉之多餘名刀</div>`;
+        const emptyHint = window.t ? window.t("smeltEmptyHint") : "暫無可熔煉之多餘名刀";
+        smeltList.innerHTML = `<div class="empty-hint">${emptyHint}</div>`;
       } else {
-        smeltList.innerHTML = redundantSwords.map(s => `
-          <div class="smelt-card">
-            <div>
-              <span style="color:${s.color};font-weight:bold;">【${s.tierName}】${s.name} ${s.refine > 0 ? `+${s.refine}` : ""}</span>
-              <span style="font-size:0.85em;color:#78716c;margin-left:8px;">${s.type}</span>
+        smeltList.innerHTML = redundantSwords.map(s => {
+          const sText = window.getSwordText ? window.getSwordText(s, lang) : s;
+          const smeltBtnLabel = window.t ? window.t("smeltBtnText", { steel: s.tier * 15, gold: s.tier * 40 }) : `熔煉 (+${s.tier * 15} 玉鋼)`;
+          return `
+            <div class="smelt-card">
+              <div>
+                <span style="color:${s.color};font-weight:bold;">【${sText.tierName || s.tierName}】${sText.name || s.name} ${s.refine > 0 ? `+${s.refine}` : ""}</span>
+                <span style="font-size:0.85em;color:#78716c;margin-left:8px;">${sText.type || s.type}</span>
+              </div>
+              <button class="btn-smelt" onclick="window.game.smeltSword('${s.instanceId}')">
+                ${smeltBtnLabel}
+              </button>
             </div>
-            <button class="btn-smelt" onclick="window.game.smeltSword('${s.instanceId}')">
-              熔煉 (+${s.tier * 15} 玉鋼)
-            </button>
-          </div>
-        `).join("");
+          `;
+        }).join("");
       }
     }
   }
@@ -1448,6 +1597,9 @@ class SamuraiGame {
       swordsGrid.innerHTML = this.player.swordsInventory.map(s => {
         const isEquipped = this.player.equipped.weapon && this.player.equipped.weapon.instanceId === s.instanceId;
         const sText = window.getSwordText ? window.getSwordText(s, lang) : s;
+        const atkLabel = window.t ? window.t("invAtkLabel") : "攻 ";
+        const critLabel = window.t ? window.t("invCritLabel") : "會心 ";
+        const speedLabel = window.t ? window.t("invSpeedLabel") : "速 ";
         return `
           <div class="inv-item-card ${isEquipped ? 'equipped' : ''}" style="border-left: 4px solid ${s.color}">
             <div style="display:flex;justify-content:space-between;align-items:center;">
@@ -1460,9 +1612,9 @@ class SamuraiGame {
               ${s.svg || ""}
             </div>
             <div class="inv-item-details">
-              <span>攻 +${s.baseAtk + s.refine * 15}</span>
-              <span>會心 +${s.crit}%</span>
-              <span>速 x${s.speed.toFixed(2)}</span>
+              <span>${atkLabel}+${s.baseAtk + s.refine * 15}</span>
+              <span>${critLabel}+${s.crit}%</span>
+              <span>${speedLabel}x${s.speed.toFixed(2)}</span>
             </div>
             <div class="inv-item-meta" style="font-size:0.8rem;color:#a8a29e;margin:4px 0;">
               <span>${sText.type}・${sText.smith}</span> | <span>${sText.era || "日本古作"}</span>
@@ -1677,7 +1829,7 @@ class SamuraiGame {
       : `⚔️ 【天命抉擇】你立下誓言，正式投身【${f.name}】！獲得專屬陣營庇佑：${f.passiveDesc}！`;
     this.addCombatLog(`<span style="color:${f.color};font-weight:bold;">${vowMsg}</span>`);
 
-    alert(`📜 【天命立誓】\n你已投身【${f.name}】！\n\n信念：${f.sub}\n專屬庇佑：${f.passiveDesc}`);
+    alert(window.t ? window.t("msgFactionChosen", { name: fText.name, sub: fText.sub, passive: fText.passiveDesc }) : `📜 【天命立誓】\n你已投身【${f.name}】！\n\n信念：${f.sub}\n專屬庇佑：${f.passiveDesc}`);
     this.updateCharacterUI();
     this.updateStoryUI();
     this.updateBattleUI();
@@ -1938,23 +2090,12 @@ class SamuraiGame {
   // 發動劍心輪迴轉生
   reincarnate() {
     if (this.player.level < window.PRESTIGE_DATA.unlockLevel && (this.player.stats.highestZone || 1) < window.PRESTIGE_DATA.unlockZone) {
-      alert(`🌀 劍心尚未歷練圓滿！需要達到等級 ${window.PRESTIGE_DATA.unlockLevel} 或通過第 ${window.PRESTIGE_DATA.unlockZone} 幕（京都三條）方可發動劍心輪迴。`);
+      alert(window.t ? window.t("msgPrestigeLocked") : `🌀 劍心尚未歷練圓滿！需要達到等級 ${window.PRESTIGE_DATA.unlockLevel} 或通過第 ${window.PRESTIGE_DATA.unlockZone} 幕（京都三條）方可發動劍心輪迴。`);
       return;
     }
 
     const karmaEarned = window.PRESTIGE_DATA.calculateKarmaEarned(this.player);
-    const confirmMsg = `🌀 【劍心輪迴・宿命轉生】\n\n` +
-      `本次輪迴將獲得：🔥 ${karmaEarned} 點【輪迴魂火】！\n\n` +
-      `✅ 永久保留：\n` +
-      `• 所有已解鎖名刀與研磨強化等級\n` +
-      `• 名刀鑑賞圖鑑全收集與屬性\n` +
-      `• 輪迴天賦神龕永久強化項目\n` +
-      `• 已解鎖之歷史終章大結局繪卷\n\n` +
-      `🔄 重置內容：\n` +
-      `• 角色等級重置為初始（受輪迴宿慧天賦加成）\n` +
-      `• 當前關卡與金小判重置\n` +
-      `• 故事線陣營重置（可重新選擇其他分歧劇情與收集全結局！）\n\n` +
-      `是否立即啟動劍心輪迴？`;
+    const confirmMsg = window.t ? window.t("msgPrestigeConfirm", { karma: karmaEarned }) : `🌀 確定要進行劍心輪迴轉生嗎？\n\n・本次將獲得：${karmaEarned} 點輪迴魂火\n・等級與關卡將重置，可重新選擇陣營分歧\n・所有名刀、圖鑑與神龕天賦將完整保留！`;
 
     if (!confirm(confirmMsg)) return;
 
@@ -2006,7 +2147,7 @@ class SamuraiGame {
     this.updatePrestigeUI();
     this.save();
 
-    alert(`✨ 轉生成功！\n已獲得 ${karmaEarned} 點輪迴魂火！\n您現在可以在【劍心轉生】分頁點選強大的永久天賦神龕！`);
+    alert(window.t ? window.t("msgPrestigeSuccess", { karma: karmaEarned }) : `✨ 轉生成功！\n已獲得 ${karmaEarned} 點輪迴魂火！\n您現在可以在【劍心轉生】分頁點選強大的永久天賦神龕！`);
   }
 
   // 升級輪迴天賦神龕
@@ -2016,13 +2157,13 @@ class SamuraiGame {
 
     const currentLevel = this.player.prestige.perks[perkId] || 0;
     if (currentLevel >= perk.maxLevel) {
-      alert("此輪迴天賦已修煉至至高大圓滿階級！");
+      alert(window.t ? window.t("msgPerkMax") : "此輪迴天賦已修煉至至高大圓滿階級！");
       return;
     }
 
     const cost = window.PRESTIGE_DATA.getPerkCost(perkId, currentLevel);
     if (this.player.prestige.karma < cost) {
-      alert(`輪迴魂火不足！需要 ${cost} 點魂火，當前持有 ${this.player.prestige.karma} 點。`);
+      alert(window.t ? window.t("msgKarmaLack", { cost, owned: this.player.prestige.karma }) : `輪迴魂火不足！需要 ${cost} 點魂火，當前持有 ${this.player.prestige.karma} 點。`);
       return;
     }
 
