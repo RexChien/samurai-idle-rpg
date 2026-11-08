@@ -961,6 +961,8 @@ class SamuraiGame {
     if (tabName === "dojo") this.updateDojoUI();
     if (tabName === "inventory") this.updateInventoryUI();
     if (tabName === "codex") this.updateCodexUI();
+
+    window.dispatchEvent(new Event('resize'));
   }
 
   // UI 渲染更新整合
@@ -1233,17 +1235,19 @@ class SamuraiGame {
   setupAccessibilityControls() {
     let isHolding = false;
     let holdInterval = null;
+    let lastPointerAttack = 0;
 
-    const startHolding = () => {
+    const startHolding = (e) => {
       if (isHolding) return;
       isHolding = true;
+      lastPointerAttack = Date.now();
       this.attack(true);
       if (holdInterval) clearInterval(holdInterval);
       holdInterval = setInterval(() => {
         if (isHolding) {
           this.attack(true);
         }
-      }, 200);
+      }, 180);
     };
 
     const stopHolding = () => {
@@ -1256,13 +1260,19 @@ class SamuraiGame {
 
     const arena = document.getElementById("battle-stage-arena");
     if (arena) {
-      arena.addEventListener("mousedown", startHolding);
-      window.addEventListener("mouseup", stopHolding);
+      // Modern unified pointer events for Mobile Touch, S-Pen, and Mouse
+      arena.addEventListener("pointerdown", startHolding);
+      window.addEventListener("pointerup", stopHolding);
+      window.addEventListener("pointercancel", stopHolding);
+      arena.addEventListener("pointerleave", stopHolding);
 
-      arena.addEventListener("touchstart", (e) => {
-        startHolding();
-      }, { passive: true });
-      window.addEventListener("touchend", stopHolding);
+      // Filter out duplicate synthetic click event right after pointerdown on mobile
+      arena.addEventListener("click", (e) => {
+        if (Date.now() - lastPointerAttack < 350) {
+          return;
+        }
+        this.attack(true);
+      });
     }
 
     // 鍵盤無障礙支援：按住空白鍵、Z 或 Enter
