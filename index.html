@@ -63,7 +63,7 @@
           <span id="player-faction-badge" class="faction-badge" style="background:#4b5563;color:#e5e7eb;font-size:0.75rem;padding:2px 8px;border-radius:12px;border:1px solid #6b7280;">🌾 無宿浪人</span>
         </div>
         <div class="exp-bar-wrapper">
-          <span>劍理:</span>
+          <span data-i18n="labelSwordExp">劍理:</span>
           <div class="progress-track">
             <div id="player-exp-bar" class="progress-fill" style="width: 0%;"></div>
           </div>
@@ -133,7 +133,7 @@
                 <span id="current-zone-sub" style="font-size: 0.8rem; color: #a8a29e;">落魄浪人之歷練</span>
               </div>
               <div class="zone-selector">
-                <label for="zone-select" style="font-size:0.85rem;color:#ccc;">疆界:</label>
+                <label for="zone-select" style="font-size:0.85rem;color:#ccc;" data-i18n="zoneSelectLabel">疆界:</label>
                 <select id="zone-select" class="zone-select-dropdown" onchange="window.game.changeZone(parseInt(this.value))">
                   <option value="1">第 1 幕・尾張竹林</option>
                   <option value="2">第 2 幕・伏見鳥居</option>
@@ -180,8 +180,6 @@
                   <span id="enemy-hp-text" style="font-size: 0.75rem; color: #d1d5db;">160 / 160</span>
                 </div>
               </div>
-
-              <div class="click-hint-tag" id="click-hint-text">🗡️ 手動居合出刀（支援點擊螢幕/按空白鍵）｜ 亦可隨時切換自律斬擊</div>
             </div>
 
             <!-- 手動居合拔刀與自律切換控制列 -->
@@ -189,7 +187,7 @@
               <button id="btn-manual-strike" class="btn-manual-strike" onclick="window.game && window.game.attack(true)" data-i18n-title="manualSlashTip" title="手動出刀斬敵，累積連擊與劍氣（支援空白鍵 Space）">
                 <span class="strike-blade-icon">🗡️</span>
                 <span class="strike-title" data-i18n="btnManualSlash">居合拔刀斬擊</span>
-                <span class="strike-sub">(點擊 / 空白鍵 Space)</span>
+                <span class="strike-sub" data-i18n="btnManualSlashSub">(點擊 / 空白鍵 Space)</span>
               </button>
               <button id="btn-toggle-autoslash" class="btn-autoslash" onclick="window.game.toggleAutoSlash()">
                 💤 手動出刀模式（點擊開啟自律斬）
@@ -199,7 +197,7 @@
             <!-- 戰鬥底部 (玩家體力 & 首領挑戰) -->
             <div class="stage-footer">
               <div class="player-battle-hp">
-                <span style="font-weight:bold;color:#4ade80;">武士體力:</span>
+                <span style="font-weight:bold;color:#4ade80;" data-i18n="labelPlayerHp">武士體力:</span>
                 <div class="hp-track-player">
                   <div id="player-hp-bar" class="hp-fill-player" style="width: 100%;"></div>
                 </div>
@@ -214,8 +212,8 @@
           <!-- 戰鬥戰報日誌 -->
           <div class="combat-log-card">
             <div class="card-title-bar">
-              <span>📜 討伐戰報記錄</span>
-              <button style="background:none;border:none;color:#999;cursor:pointer;font-size:0.8rem;" onclick="document.getElementById('combat-log-container').innerHTML=''">清空</button>
+              <span data-i18n="combatLogHeader">📜 討伐戰報記錄</span>
+              <button id="btn-clear-combat-log" data-i18n="combatLogClear" style="background:none;border:none;color:#999;cursor:pointer;font-size:0.8rem;" onclick="document.getElementById('combat-log-container').innerHTML=''">清空</button>
             </div>
             <div id="combat-log-container" class="log-scroll-area">
               <div class="log-line">🌸 風吹櫻落，浪人拔出腰間名刀，開始踏上戰國修羅歷練之路...</div>
@@ -972,7 +970,7 @@
 
     function updateSoundUI() {
       const isEnabled = window.samuraiAudio ? window.samuraiAudio.enabled : true;
-      const t = function(k) { return (window.I18N && window.I18N.t) ? window.I18N.t(k) : k; };
+      const t = function(k, params) { return window.t ? window.t(k, params) : k; };
 
       const headerBtn = document.getElementById("btn-header-sound");
       const headerIcon = document.getElementById("header-sound-icon");
@@ -990,7 +988,7 @@
         headerIcon.textContent = isEnabled ? "🔊" : "🔇";
       }
       if (headerLabel) {
-        headerLabel.textContent = t("settingSoundShort") || "音效";
+        headerLabel.textContent = isEnabled ? (t("settingSoundShort") || "音效") : (t("settingSoundOffShort") || "靜音");
       }
 
       const settingsBtn = document.getElementById("btn-toggle-sound");
