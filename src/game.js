@@ -2368,8 +2368,8 @@ class SamuraiGame {
     banner.className = "d3-achievement-banner";
     banner.innerHTML = `
       <div class="d3-ach-flare"></div>
-      <div class="d3-ach-sheen"></div>
       <div class="d3-ach-frame">
+        <div class="d3-ach-sheen"></div>
         <div class="d3-ach-crest-wrap">
           <div class="d3-ach-crest-glow"></div>
           <div class="d3-ach-crest-icon">${ach.icon}</div>
