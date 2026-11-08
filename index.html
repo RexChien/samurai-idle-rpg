@@ -104,42 +104,46 @@
       </div>
     </section>
 
-    <!-- 導航分頁 -->
-    <nav class="tab-nav">
-      <button class="tab-btn active" data-tab="battle" onclick="window.game.switchTab('battle')" data-i18n="tabBattle">
-        ⚔️ 討伐修煉
-      </button>
-      <button class="tab-btn" data-tab="dimensions" onclick="window.game.switchTab('dimensions')" data-i18n="tabDimensions">
-        🌌 劍境維度
-      </button>
-      <button class="tab-btn" data-tab="story" onclick="window.game.switchTab('story')" data-i18n="tabStory">
-        📜 命運繪卷
-      </button>
-      <button class="tab-btn" data-tab="forge" onclick="window.game.switchTab('forge')" data-i18n="tabForge">
-        ⚒️ 名刀鍛造
-      </button>
-      <button class="tab-btn" data-tab="dojo" onclick="window.game.switchTab('dojo')" data-i18n="tabDojo">
-        ⛩️ 流派奧義
-      </button>
-      <button class="tab-btn" data-tab="prestige" onclick="window.game.switchTab('prestige')" data-i18n="tabPrestige">
-        🌀 劍心轉生
-      </button>
-      <button class="tab-btn" data-tab="achievements" onclick="window.game.switchTab('achievements')" data-i18n="tabAchievements">
-        🏆 榮譽成就
-      </button>
-      <button class="tab-btn" data-tab="inventory" onclick="window.game.switchTab('inventory')" data-i18n="tabInventory">
-        🎒 行囊裝備
-      </button>
-      <button class="tab-btn" data-tab="codex" onclick="window.game.switchTab('codex')" data-i18n="tabCodex">
-        📖 名刀鑑賞
-      </button>
-      <button class="tab-btn" data-tab="community" onclick="window.game.switchTab('community')" data-i18n="tabCommunity">
-        🏮 浪人茶屋
-      </button>
-      <button class="tab-btn" data-tab="settings" onclick="window.game.switchTab('settings')" data-i18n="tabSettings">
-        ⚙️ 修行存檔
-      </button>
-    </nav>
+    <!-- 導航分頁 (支援桌面版滑鼠滾輪、拖曳與左右按鈕滾動) -->
+    <div class="tab-nav-wrapper">
+      <button type="button" class="tab-nav-arrow tab-nav-prev" id="tab-nav-prev" aria-label="向左移動" onclick="window.game && window.game.scrollTabNav(-1)">‹</button>
+      <nav class="tab-nav" id="main-tab-nav">
+        <button class="tab-btn active" data-tab="battle" onclick="window.game.switchTab('battle')" data-i18n="tabBattle">
+          ⚔️ 討伐修煉
+        </button>
+        <button class="tab-btn" data-tab="dimensions" onclick="window.game.switchTab('dimensions')" data-i18n="tabDimensions">
+          🌌 劍境維度
+        </button>
+        <button class="tab-btn" data-tab="story" onclick="window.game.switchTab('story')" data-i18n="tabStory">
+          📜 命運繪卷
+        </button>
+        <button class="tab-btn" data-tab="forge" onclick="window.game.switchTab('forge')" data-i18n="tabForge">
+          ⚒️ 名刀鍛造
+        </button>
+        <button class="tab-btn" data-tab="dojo" onclick="window.game.switchTab('dojo')" data-i18n="tabDojo">
+          ⛩️ 流派奧義
+        </button>
+        <button class="tab-btn" data-tab="prestige" onclick="window.game.switchTab('prestige')" data-i18n="tabPrestige">
+          🌀 劍心轉生
+        </button>
+        <button class="tab-btn" data-tab="achievements" onclick="window.game.switchTab('achievements')" data-i18n="tabAchievements">
+          🏆 榮譽成就
+        </button>
+        <button class="tab-btn" data-tab="inventory" onclick="window.game.switchTab('inventory')" data-i18n="tabInventory">
+          🎒 行囊裝備
+        </button>
+        <button class="tab-btn" data-tab="codex" onclick="window.game.switchTab('codex')" data-i18n="tabCodex">
+          📖 名刀鑑賞
+        </button>
+        <button class="tab-btn" data-tab="community" onclick="window.game.switchTab('community')" data-i18n="tabCommunity">
+          🏮 浪人茶屋
+        </button>
+        <button class="tab-btn" data-tab="settings" onclick="window.game.switchTab('settings')" data-i18n="tabSettings">
+          ⚙️ 修行存檔
+        </button>
+      </nav>
+      <button type="button" class="tab-nav-arrow tab-nav-next" id="tab-nav-next" aria-label="向右移動" onclick="window.game && window.game.scrollTabNav(1)">›</button>
+    </div>
 
     <!-- 主內容區 -->
     <main class="tab-content">
