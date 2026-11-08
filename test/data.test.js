@@ -318,4 +318,96 @@ describe('7. Achievements Database (data/achievements.js)', () => {
   });
 });
 
+describe('8. Multilingual Storylines & Audio Mute Control', () => {
+  it('provides complete translations for all 7 Acts across zh-TW, en, and ja', () => {
+    assert.ok(typeof window.getStoryChapterText === 'function', 'getStoryChapterText must be defined');
+
+    for (let act = 1; act <= 7; act++) {
+      for (const lang of ['zh-TW', 'en', 'ja']) {
+        const ch = window.getStoryChapterText(act, lang);
+        assert.ok(ch, `Act ${act} text missing for ${lang}`);
+        assert.ok(ch.title && ch.title.length > 0, `Act ${act} title missing in ${lang}`);
+        assert.ok(ch.summary && ch.summary.length > 0, `Act ${act} summary missing in ${lang}`);
+        assert.ok(Array.isArray(ch.introDialogue) && ch.introDialogue.length > 0, `Act ${act} introDialogue missing in ${lang}`);
+
+        for (const dlg of ch.introDialogue) {
+          assert.ok(dlg.speaker && dlg.speaker.length > 0, `Dialogue speaker missing in Act ${act} (${lang})`);
+          assert.ok(dlg.text && dlg.text.length > 0, `Dialogue text missing in Act ${act} (${lang})`);
+        }
+      }
+    }
+  });
+
+  it('Act 3 destiny choices are translated in all 3 languages', () => {
+    for (const lang of ['zh-TW', 'en', 'ja']) {
+      const ch3 = window.getStoryChapterText(3, lang);
+      assert.ok(ch3.choices, `Act 3 choices missing in ${lang}`);
+      assert.equal(ch3.choices.length, 3, `Act 3 should have 3 choices in ${lang}`);
+      for (const c of ch3.choices) {
+        assert.ok(c.translations && c.translations[lang], `Choice translations missing for ${lang}`);
+        assert.ok(c.translations[lang].name && c.translations[lang].name.length > 0, `Choice name missing in ${lang}`);
+        assert.ok(c.translations[lang].desc && c.translations[lang].desc.length > 0, `Choice desc missing in ${lang}`);
+        assert.ok(c.faction, `Choice faction missing in ${lang}`);
+      }
+    }
+  });
+
+  it('provides complete translations for all 4 grand endings across zh-TW, en, and ja', () => {
+    assert.ok(typeof window.getStoryEndingText === 'function', 'getStoryEndingText must be defined');
+    const endingIds = ['ending_shogunate', 'ending_ishin', 'ending_shura', 'ending_hermit'];
+
+    for (const eid of endingIds) {
+      for (const lang of ['zh-TW', 'en', 'ja']) {
+        const ending = window.getStoryEndingText(eid, lang);
+        assert.ok(ending, `Ending ${eid} missing in ${lang}`);
+        assert.ok(ending.title && ending.title.length > 0, `Ending ${eid} title missing in ${lang}`);
+        assert.ok(ending.tagline && ending.tagline.length > 0, `Ending ${eid} tagline missing in ${lang}`);
+        assert.ok(ending.epilogue && ending.epilogue.length > 0, `Ending ${eid} epilogue missing in ${lang}`);
+        assert.ok(ending.rewardTitle && ending.rewardTitle.length > 0, `Ending ${eid} rewardTitle missing in ${lang}`);
+      }
+    }
+  });
+
+  it('speaker names are translated cleanly using getSpeakerText', () => {
+    assert.ok(typeof window.getSpeakerText === 'function');
+    assert.equal(window.getSpeakerText('你', 'zh-TW'), '你');
+    assert.equal(window.getSpeakerText('你', 'en'), 'You');
+    assert.equal(window.getSpeakerText('你', 'ja'), '貴方');
+
+    assert.equal(window.getSpeakerText('土方歲三', 'zh-TW'), '土方歲三');
+    assert.equal(window.getSpeakerText('土方歲三', 'en'), 'Toshizo Hijikata');
+    assert.equal(window.getSpeakerText('土方歲三', 'ja'), '土方歳三');
+
+    assert.equal(window.getSpeakerText('坂本龍馬', 'en'), 'Ryoma Sakamoto');
+    assert.equal(window.getSpeakerText('坂本龍馬', 'ja'), '坂本龍馬');
+  });
+
+  it('audio engine supports muting, toggling, and localStorage persistence', () => {
+    const audio = new global.SamuraiAudio();
+    assert.equal(audio.enabled, true, 'Default audio should be enabled');
+
+    // Toggle mute
+    const mutedState = audio.toggle(false);
+    assert.equal(mutedState, false);
+    assert.equal(audio.enabled, false);
+    assert.equal(global.localStorage.getItem('SAMURAI_AUDIO_ENABLED'), 'false');
+
+    // New instance should restore muted state from localStorage
+    const audio2 = new global.SamuraiAudio();
+    assert.equal(audio2.enabled, false);
+
+    // Toggle back on
+    const enabledState = audio2.toggle(true);
+    assert.equal(enabledState, true);
+    assert.equal(audio2.enabled, true);
+    assert.equal(global.localStorage.getItem('SAMURAI_AUDIO_ENABLED'), 'true');
+
+    // Toggle without argument flips state
+    const flippedState = audio2.toggle();
+    assert.equal(flippedState, false);
+    assert.equal(audio2.enabled, false);
+    assert.equal(global.localStorage.getItem('SAMURAI_AUDIO_ENABLED'), 'false');
+  });
+});
+
 
