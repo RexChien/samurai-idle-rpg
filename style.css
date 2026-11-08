@@ -2574,3 +2574,428 @@ nav.tab-nav::-webkit-scrollbar {
   font-weight: bold;
   box-shadow: 0 2px 8px rgba(245, 158, 11, 0.3);
 }
+
+
+/* ==========================================================
+   榮譽成就系統樣式 (Achievements System)
+   ========================================================== */
+.achievements-container {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  width: 100%;
+}
+
+.achievements-hero {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: linear-gradient(135deg, rgba(20, 20, 26, 0.95) 0%, rgba(38, 28, 14, 0.95) 50%, rgba(20, 20, 26, 0.95) 100%);
+  border: 1px solid var(--border-gold);
+  border-radius: 8px;
+  padding: 16px 20px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.ach-hero-info {
+  flex: 1;
+  min-width: 260px;
+}
+
+.ach-hero-info h3 {
+  margin: 0 0 4px 0;
+  font-size: 1.3rem;
+  color: #fbbf24;
+  letter-spacing: 1px;
+}
+
+.ach-hero-info p {
+  margin: 0 0 10px 0;
+  font-size: 0.85rem;
+  color: #a8a29e;
+}
+
+.ach-progress-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.ach-progress-label {
+  font-size: 0.85rem;
+  color: #e5e7eb;
+}
+
+.ach-progress-bar-wrap {
+  flex: 1;
+  max-width: 240px;
+  height: 10px;
+  background: rgba(0, 0, 0, 0.6);
+  border: 1px solid #4b5563;
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.ach-progress-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #d97706, #fbbf24);
+  border-radius: 6px;
+  transition: width 0.3s ease;
+}
+
+.ach-percent-badge {
+  font-size: 0.8rem;
+  font-weight: bold;
+  color: #fbbf24;
+  background: rgba(251, 191, 36, 0.15);
+  padding: 2px 8px;
+  border-radius: 10px;
+  border: 1px solid rgba(251, 191, 36, 0.3);
+}
+
+.ach-hero-actions {
+  display: flex;
+  align-items: center;
+}
+
+.btn-claim-all {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: linear-gradient(135deg, #b45309, #d97706);
+  border: 1px solid #f59e0b;
+  color: #fff;
+  font-size: 0.9rem;
+  font-weight: bold;
+  padding: 10px 18px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 12px rgba(217, 119, 6, 0.35);
+}
+
+.btn-claim-all:hover:not(:disabled) {
+  background: linear-gradient(135deg, #d97706, #fbbf24);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px rgba(251, 191, 36, 0.45);
+}
+
+.btn-claim-all:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  filter: grayscale(0.6);
+}
+
+.ach-badge-cnt {
+  background: #ef4444;
+  color: #fff;
+  font-size: 0.75rem;
+  padding: 2px 6px;
+  border-radius: 10px;
+  font-weight: 800;
+  box-shadow: 0 0 6px rgba(239, 68, 68, 0.8);
+}
+
+/* 成就分類切換 */
+.ach-filter-bar {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.ach-filter-btn {
+  background: rgba(20, 20, 26, 0.85);
+  border: 1px solid var(--border-muted);
+  color: #9ca3af;
+  font-size: 0.82rem;
+  padding: 6px 14px;
+  border-radius: 20px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.ach-filter-btn:hover {
+  border-color: #d4af37;
+  color: #fff;
+}
+
+.ach-filter-btn.active {
+  background: linear-gradient(135deg, #451a03, #78350f);
+  border-color: #fbbf24;
+  color: #fbbf24;
+  font-weight: bold;
+  box-shadow: 0 2px 8px rgba(251, 191, 36, 0.2);
+}
+
+/* 成就卡片網格 */
+.achievements-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+  gap: 12px;
+}
+
+.achievement-card {
+  display: flex;
+  gap: 14px;
+  background: rgba(18, 19, 23, 0.92);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+  padding: 14px;
+  position: relative;
+  transition: all 0.25s ease;
+}
+
+.achievement-card:hover {
+  border-color: rgba(212, 175, 55, 0.4);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.4);
+}
+
+.achievement-card.completed {
+  border-color: #f59e0b;
+  background: linear-gradient(135deg, rgba(28, 22, 15, 0.95) 0%, rgba(18, 19, 23, 0.95) 100%);
+  box-shadow: 0 0 12px rgba(245, 158, 11, 0.2);
+}
+
+.achievement-card.claimed {
+  border-color: rgba(16, 185, 129, 0.3);
+  opacity: 0.78;
+}
+
+.ach-icon-box {
+  width: 48px;
+  height: 48px;
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.5);
+  border: 1px solid var(--border-muted);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.6rem;
+  flex-shrink: 0;
+}
+
+.achievement-card.completed .ach-icon-box {
+  border-color: #fbbf24;
+  background: rgba(251, 191, 36, 0.1);
+  box-shadow: 0 0 8px rgba(251, 191, 36, 0.3);
+}
+
+.achievement-card.claimed .ach-icon-box {
+  border-color: #10b981;
+}
+
+.ach-info-box {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.ach-header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}
+
+.ach-name {
+  font-size: 0.95rem;
+  font-weight: bold;
+  color: #fff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.achievement-card.completed .ach-name {
+  color: #fbbf24;
+}
+
+.achievement-card.claimed .ach-name {
+  color: #a7f3d0;
+}
+
+.ach-desc {
+  font-size: 0.8rem;
+  color: #9ca3af;
+  line-height: 1.35;
+}
+
+.ach-progress-track {
+  width: 100%;
+  height: 6px;
+  background: rgba(0, 0, 0, 0.5);
+  border-radius: 3px;
+  overflow: hidden;
+  margin: 4px 0 2px 0;
+}
+
+.ach-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #3b82f6, #60a5fa);
+  border-radius: 3px;
+  transition: width 0.3s ease;
+}
+
+.achievement-card.completed .ach-progress-fill {
+  background: linear-gradient(90deg, #d97706, #fbbf24);
+}
+
+.achievement-card.claimed .ach-progress-fill {
+  background: #10b981;
+}
+
+.ach-bottom-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 4px;
+  gap: 8px;
+}
+
+.ach-reward-badge {
+  font-size: 0.75rem;
+  color: #fbbf24;
+  background: rgba(0, 0, 0, 0.4);
+  padding: 2px 6px;
+  border-radius: 4px;
+  border: 1px solid rgba(251, 191, 36, 0.2);
+}
+
+.ach-progress-num {
+  font-size: 0.75rem;
+  color: #9ca3af;
+}
+
+.btn-claim-ach {
+  padding: 4px 12px;
+  font-size: 0.78rem;
+  font-weight: bold;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.btn-claim-ach.claimable {
+  background: linear-gradient(135deg, #d97706, #fbbf24);
+  color: #000;
+  border: 1px solid #fef08a;
+  box-shadow: 0 0 10px rgba(251, 191, 36, 0.5);
+  animation: pulse-glow 1.8s infinite;
+}
+
+.btn-claim-ach.claimable:hover {
+  transform: scale(1.05);
+}
+
+.btn-claim-ach.claimed {
+  background: rgba(16, 185, 129, 0.15);
+  color: #10b981;
+  border: 1px solid rgba(16, 185, 129, 0.3);
+  cursor: default;
+}
+
+.btn-claim-ach.locked {
+  background: rgba(255, 255, 255, 0.05);
+  color: #6b7280;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  cursor: default;
+}
+
+/* 成就浮動解鎖通知 (Achievement Toast) */
+#achievement-toast-container {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  z-index: 10000;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  pointer-events: none;
+}
+
+.achievement-toast {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: linear-gradient(135deg, rgba(20, 20, 26, 0.98) 0%, rgba(45, 30, 10, 0.98) 100%);
+  border: 2px solid #fbbf24;
+  border-radius: 8px;
+  padding: 10px 16px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.7), 0 0 15px rgba(251, 191, 36, 0.4);
+  color: #fff;
+  min-width: 280px;
+  max-width: 380px;
+  animation: slide-toast-in 0.35s ease forwards;
+  pointer-events: auto;
+}
+
+@keyframes slide-toast-in {
+  from {
+    opacity: 0;
+    transform: translateX(60px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.achievement-toast.fade-out {
+  opacity: 0;
+  transform: translateY(-20px);
+  transition: all 0.4s ease;
+}
+
+.toast-icon {
+  font-size: 1.8rem;
+}
+
+.toast-content {
+  display: flex;
+  flex-direction: column;
+}
+
+.toast-title {
+  font-size: 0.75rem;
+  color: #fbbf24;
+  font-weight: bold;
+  letter-spacing: 1px;
+}
+
+.toast-name {
+  font-size: 0.9rem;
+  font-weight: bold;
+  color: #fff;
+}
+
+@media (max-width: 768px) {
+  .achievements-grid {
+    grid-template-columns: 1fr;
+  }
+  .achievements-hero {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .ach-hero-actions {
+    justify-content: stretch;
+  }
+  .btn-claim-all {
+    width: 100%;
+    justify-content: center;
+  }
+  #achievement-toast-container {
+    top: 10px;
+    right: 10px;
+    left: 10px;
+  }
+  .achievement-toast {
+    min-width: 0;
+    width: 100%;
+  }
+}
