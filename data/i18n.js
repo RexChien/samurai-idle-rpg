@@ -182,7 +182,22 @@ window.I18N = {
       msgPrestigeConfirm: "🌀 確定要進行劍心輪迴轉生嗎？\n\n・本次將獲得：{karma} 點輪迴魂火\n・等級與關卡將重置，可重新選擇陣營分歧\n・所有名刀、圖鑑與神龕天賦將完整保留！",
       msgPrestigeSuccess: "✨ 轉生成功！\n已獲得 {karma} 點輪迴魂火！\n您現在可以在【劍心轉生】分頁點選強大的永久天賦神龕！",
       msgPerkMax: "此輪迴天賦已修煉至至高大圓滿階級！",
-      msgKarmaLack: "輪迴魂火不足！需要 {cost} 點魂火，當前持有 {owned} 點。"
+      msgKarmaLack: "輪迴魂火不足！需要 {cost} 點魂火，當前持有 {owned} 點。",
+
+      // 故事與音效 UI
+      btnVowFaction: "立誓投身此道",
+      storyStatusCompleted: "✅ 已突破",
+      storyStatusCurrent: "⚔️ 討伐中",
+      storyStatusLocked: "🔒 未開闢",
+      endingLockedTitle: "【未勘破之歷史迷霧】",
+      endingLockedTag: "達成第 7 幕特定陣營終局解鎖",
+      endingLockedDesc: "需於本幕或轉生後選擇相應命運路線，並在江戶天守閣擊破天下無雙。",
+      endingRewardKarma: "輪迴魂火",
+      endingHeaderHistoryClue: "🏮 【{name}專屬歷史線索】",
+      settingSoundOn: "🔊 音效：開啟",
+      settingSoundOff: "🔇 音效：靜音",
+      settingSoundShort: "音效",
+      soundToggleTip: "音效開關"
     },
 
     "en": {
@@ -360,7 +375,22 @@ window.I18N = {
       msgPrestigeConfirm: "🌀 Are you sure you wish to reincarnate?\n\n・You will gain: {karma} Karma Embers\n・Level and zones reset, allowing a new story path\n・All swords, codex, and permanent perks are retained!",
       msgPrestigeSuccess: "✨ Reincarnation Complete!\nGained {karma} Karma Embers!\nYou can now empower permanent perks in the Reincarnation tab!",
       msgPerkMax: "This perk has reached its maximum level!",
-      msgKarmaLack: "Insufficient Karma Embers! Requires {cost} Embers, currently holding {owned}."
+      msgKarmaLack: "Insufficient Karma Embers! Requires {cost} Embers, currently holding {owned}.",
+
+      // Story & Sound UI
+      btnVowFaction: "Vow to this Path",
+      storyStatusCompleted: "✅ Cleared",
+      storyStatusCurrent: "⚔️ In Battle",
+      storyStatusLocked: "🔒 Locked",
+      endingLockedTitle: "【Veil of History Unbroken】",
+      endingLockedTag: "Unlock by clearing Act 7 with this faction",
+      endingLockedDesc: "Pledge to this path in Act 3 and defeat the Peerless Swordmaster at Edo Castle Keep.",
+      endingRewardKarma: "Karma",
+      endingHeaderHistoryClue: "🏮 【{name} Lore Clue】",
+      settingSoundOn: "🔊 Sound: Enabled",
+      settingSoundOff: "🔇 Sound: Muted",
+      settingSoundShort: "Sound",
+      soundToggleTip: "Toggle Sound"
     },
 
     "ja": {
@@ -538,7 +568,22 @@ window.I18N = {
       msgPrestigeConfirm: "🌀 剣心輪廻・宿命転生を行いますか？\n\n・獲得魂火：{karma} 点\n・レベルと地域は初期化され、別の陣営を選択可能になります\n・すべての名刀、図鑑、神龕天賦は失われません！",
       msgPrestigeSuccess: "✨ 転生成就！\n魂火 {karma} 点を獲得しました！\n【剣心転生】画面で永久天賦神龕を強化できます！",
       msgPerkMax: "この神龕天賦はすでに極限まで鍛え上げられています！",
-      msgKarmaLack: "魂火が不足しています！{cost} 点必要ですが、現在 {owned} 点です。"
+      msgKarmaLack: "魂火が不足しています！{cost} 点必要ですが、現在 {owned} 点です。",
+
+      // 故事與音效 UI
+      btnVowFaction: "この道に誓いを立てる",
+      storyStatusCompleted: "✅ 突破済",
+      storyStatusCurrent: "⚔️ 討伐中",
+      storyStatusLocked: "🔒 未開放",
+      endingLockedTitle: "【未だ見ぬ歴史の霧】",
+      endingLockedTag: "第7幕特定陣営クリアで開放",
+      endingLockedDesc: "この運命路線を選び、江戸天守にて天下無双を撃破せよ。",
+      endingRewardKarma: "魂火",
+      endingHeaderHistoryClue: "🏮 【{name}専用歴史の手がかり】",
+      settingSoundOn: "🔊 効果音：有効",
+      settingSoundOff: "🔇 効果音：消音",
+      settingSoundShort: "効果音",
+      soundToggleTip: "効果音の切替"
     }
   },
 
@@ -804,6 +849,12 @@ window.setLanguage = function(lang) {
     el.innerHTML = window.t(key);
   });
 
+  // 更新 title 屬性
+  document.querySelectorAll("[data-i18n-title]").forEach(el => {
+    const key = el.getAttribute("data-i18n-title");
+    el.setAttribute("title", window.t(key));
+  });
+
   // 更新 placeholder
   document.querySelectorAll("[data-i18n-placeholder]").forEach(el => {
     const key = el.getAttribute("data-i18n-placeholder");
@@ -812,6 +863,11 @@ window.setLanguage = function(lang) {
 
   // 更新 document title
   document.title = window.t("docTitle");
+
+  // 同步更新音效按鈕狀態與文字
+  if (typeof window.updateSoundUI === "function") {
+    window.updateSoundUI();
+  }
 
   // 若遊戲已實例化，刷新所有動態介面
   if (window.game) {
@@ -1629,9 +1685,9 @@ window.getItemText = function(item, lang) {
 
 window.getActText = function(actNum, lang) {
   lang = lang || window.getLang();
-  if (lang === "zh-TW") {
-    const ch = (window.STORY_DATA && window.STORY_DATA.chapters) ? window.STORY_DATA.chapters.find(c => c.act === actNum) : null;
-    return ch ? { title: ch.title, summary: ch.summary } : { title: `第 ${actNum} 幕`, summary: "" };
+  if (window.getStoryChapterText) {
+    const ch = window.getStoryChapterText(actNum, lang);
+    if (ch && ch.title) return { title: ch.title, summary: ch.summary };
   }
   const entry = window.I18N.chapters[actNum] && window.I18N.chapters[actNum][lang];
   if (entry) return { title: entry.title, summary: entry.summary };
