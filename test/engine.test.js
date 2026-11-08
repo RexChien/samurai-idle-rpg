@@ -3,6 +3,7 @@ const assert = require('node:assert/strict');
 const fs = require('fs');
 
 function createMockElement(id = '') {
+  const listeners = {};
   const el = {
     id,
     textContent: '',
@@ -11,13 +12,24 @@ function createMockElement(id = '') {
     disabled: false,
     options: [{ value: '1', textContent: 'Zone 1' }],
     children: [],
-    style: { width: '0%', display: 'block', opacity: '1', cursor: 'pointer', background: '', borderColor: '', color: '' },
+    style: { width: '0%', display: 'block', opacity: '1', cursor: 'pointer', background: '', borderColor: '', color: '', pointerEvents: 'auto' },
     classList: {
       _classes: new Set(),
       add(c) { this._classes.add(c); },
       remove(c) { this._classes.delete(c); },
       contains(c) { return this._classes.has(c); },
       toggle(c) { if (this.contains(c)) this.remove(c); else this.add(c); }
+    },
+    scrollLeft: 0,
+    clientWidth: 800,
+    scrollWidth: 1600,
+    scrollBy(options) {
+      if (options && typeof options.left === 'number') {
+        this.scrollLeft += options.left;
+      }
+    },
+    scrollIntoView(options) {
+      this._scrolledIntoView = true;
     },
     setAttribute(k, v) { this[k] = v; },
     getAttribute(k) { return this[k] || null; },
@@ -39,8 +51,21 @@ function createMockElement(id = '') {
     get firstChild() {
       return this.children[0] || null;
     },
-    addEventListener() {},
-    removeEventListener() {},
+    addEventListener(event, fn) {
+      if (!listeners[event]) listeners[event] = [];
+      listeners[event].push(fn);
+    },
+    removeEventListener(event, fn) {
+      if (listeners[event]) {
+        const idx = listeners[event].indexOf(fn);
+        if (idx >= 0) listeners[event].splice(idx, 1);
+      }
+    },
+    dispatch(event, e = {}) {
+      if (listeners[event]) {
+        listeners[event].forEach(fn => fn(e));
+      }
+    },
     querySelectorAll() { return []; }
   };
   return el;
@@ -53,6 +78,18 @@ function setupMockEnvironment(clearStorage = true) {
 
   global.window = global;
   global.window.__TESTING__ = true;
+  global.window._listeners = {};
+  global.window.addEventListener = (event, fn) => {
+    if (!global.window._listeners[event]) global.window._listeners[event] = [];
+    global.window._listeners[event].push(fn);
+  };
+  global.window.removeEventListener = (event, fn) => {
+    if (global.window._listeners && global.window._listeners[event]) {
+      const idx = global.window._listeners[event].indexOf(fn);
+      if (idx >= 0) global.window._listeners[event].splice(idx, 1);
+    }
+  };
+  global.window.dispatchEvent = (event) => {};
 
   if (clearStorage || !global.localStorage) {
     global.localStorage = {
@@ -73,6 +110,24 @@ function setupMockEnvironment(clearStorage = true) {
         elements.set(id, createMockElement(id));
       }
       return elements.get(id);
+    },
+    querySelector(selector) {
+      if (selector === '.tab-nav') {
+        return this.getElementById('main-tab-nav');
+      }
+      if (selector === '.tab-nav-prev') {
+        return this.getElementById('tab-nav-prev');
+      }
+      if (selector === '.tab-nav-next') {
+        return this.getElementById('tab-nav-next');
+      }
+      if (selector.startsWith('#')) {
+        return this.getElementById(selector.slice(1));
+      }
+      if (!elements.has(selector)) {
+        elements.set(selector, createMockElement(selector));
+      }
+      return elements.get(selector);
     },
     createElement(tag) {
       return createMockElement(tag);
@@ -627,6 +682,54 @@ describe('Game Engine & Mechanics (src/game.js)', () => {
         assert.ok(dict[k] !== undefined && dict[k].length > 0, `Key "${k}" must exist and be non-empty in ${lang}`);
       }
     }
+  });
+
+  it('supports desktop mouse drag, wheel scroll, and arrow buttons for tab navigation', () => {
+    const tabNav = document.querySelector('.tab-nav');
+    const prevBtn = document.querySelector('.tab-nav-prev');
+    const nextBtn = document.querySelector('.tab-nav-next');
+
+    assert.ok(tabNav, 'tabNav element must exist');
+    assert.ok(prevBtn, 'prevBtn element must exist');
+    assert.ok(nextBtn, 'nextBtn element must exist');
+
+    // 1. Initial arrow state at left edge (scrollLeft = 0)
+    tabNav.scrollLeft = 0;
+    tabNav.clientWidth = 500;
+    tabNav.scrollWidth = 1500;
+    game.updateTabNavArrows();
+    assert.equal(prevBtn.style.pointerEvents, 'none', 'Prev button should be disabled at scrollLeft = 0');
+    assert.equal(nextBtn.style.pointerEvents, 'auto', 'Next button should be enabled when content overflows');
+
+    // 2. Scroll forward using scrollTabNav(1)
+    game.scrollTabNav(1);
+    assert.ok(tabNav.scrollLeft > 0, 'scrollTabNav(1) must increase scrollLeft');
+
+    // 3. Arrow state in the middle
+    game.updateTabNavArrows();
+    assert.equal(prevBtn.style.pointerEvents, 'auto', 'Prev button should be enabled in the middle');
+    assert.equal(nextBtn.style.pointerEvents, 'auto', 'Next button should be enabled in the middle');
+
+    // 4. Scroll backwards using scrollTabNav(-1)
+    const midScroll = tabNav.scrollLeft;
+    game.scrollTabNav(-1);
+    assert.ok(tabNav.scrollLeft < midScroll, 'scrollTabNav(-1) must decrease scrollLeft');
+
+    // 5. Test mouse wheel event handling
+    game.setupTabNavControls();
+    tabNav.scrollLeft = 100;
+    let prevented = false;
+    tabNav.dispatch('wheel', {
+      deltaY: 50,
+      deltaX: 0,
+      preventDefault: () => { prevented = true; }
+    });
+    assert.ok(tabNav.scrollLeft > 100, 'Wheel deltaY should increase horizontal scrollLeft');
+    assert.equal(prevented, true, 'Wheel event default action should be prevented for horizontal scroll');
+
+    // 6. Test switchTab updates active tab
+    game.switchTab('story');
+    assert.equal(game.activeTab, 'story');
   });
 });
 
