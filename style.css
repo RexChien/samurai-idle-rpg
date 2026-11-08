@@ -3450,23 +3450,27 @@ nav.tab-nav::-webkit-scrollbar {
   position: absolute;
   top: 0;
   left: -120%;
-  width: 80%;
+  width: 70%;
   height: 100%;
-  background: linear-gradient(105deg, transparent 20%, rgba(255, 255, 255, 0.5) 48%, rgba(251, 191, 36, 0.6) 52%, transparent 80%);
+  background: linear-gradient(105deg, transparent 20%, rgba(255, 255, 255, 0.45) 48%, rgba(251, 191, 36, 0.55) 52%, transparent 80%);
   transform: skewX(-25deg);
   pointer-events: none;
   z-index: 10;
-  animation: d3SheenSweep 1.6s 0.2s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+  opacity: 0;
+  animation: d3SheenSweep 1.4s 0.15s cubic-bezier(0.25, 1, 0.5, 1) forwards;
 }
 
 @keyframes d3SheenSweep {
-  0% { left: -120%; }
-  100% { left: 180%; }
+  0% { left: -120%; opacity: 0; }
+  15% { opacity: 1; }
+  85% { opacity: 1; }
+  100% { left: 200%; opacity: 0; }
 }
 
 /* 主框體：暗黑破壞神黑金浮雕外觀 (D3 Plaque Body) */
 .d3-ach-frame {
   position: relative;
+  overflow: hidden;
   display: flex;
   align-items: center;
   gap: 16px;
