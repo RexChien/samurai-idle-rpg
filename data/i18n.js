@@ -33,6 +33,22 @@ window.I18N = {
       equipTierDefault: "凡鐵",
 
       // 導航分頁
+            tabAchievements: "🏆 榮譽成就",
+      achTitle: "🏆 武士榮譽成就殿堂",
+      achSub: "在漫長的劍道旅途中刻下屬於你的不朽功勳，領取金小判、玉鋼與輪迴魂火！",
+      achProgressLabel: "成就達成進度:",
+      achFilterAll: "全部",
+      achFilterCombat: "⚔️ 討伐武勳",
+      achFilterSwords: "🗡️ 名刀淬火",
+      achFilterGrowth: "⛩️ 劍道境界",
+      achFilterDestiny: "🌀 天命輪迴",
+      achClaimBtn: "✨ 領取獎勵",
+      achClaimAllBtn: "🎁 一鍵領取所有完成獎勵",
+      achClaimed: "✅ 已領取",
+      achInProgress: "進行中",
+      achToastUnlocked: "🏆 成就達成！",
+      achClaimAllSuccess: "🎉 成功領取了 {count} 項成就獎勵！獲得金小判 +{gold}、玉鋼 +{steel}、魂火 +{karma}！",
+      achNoClaimable: "目前暫無已完成未領取的成就獎勵！",
       tabBattle: "⚔️ 討伐修煉",
       tabStory: "📜 命運繪卷",
       tabForge: "⚒️ 名刀鍛造",
@@ -195,6 +211,22 @@ window.I18N = {
       equipTierDefault: "Common",
 
       // Navigation Tabs
+            tabAchievements: "🏆 Achievements",
+      achTitle: "🏆 Samurai Hall of Achievements",
+      achSub: "Immortalize your martial deeds across your journey to claim Gold, Tamahagane, and Karma Embers!",
+      achProgressLabel: "Achievements Unlocked:",
+      achFilterAll: "All",
+      achFilterCombat: "⚔️ Combat",
+      achFilterSwords: "🗡️ Swordsmith",
+      achFilterGrowth: "⛩️ Mastery",
+      achFilterDestiny: "🌀 Destiny",
+      achClaimBtn: "✨ Claim Reward",
+      achClaimAllBtn: "🎁 Claim All Completed Rewards",
+      achClaimed: "✅ Claimed",
+      achInProgress: "In Progress",
+      achToastUnlocked: "🏆 Achievement Unlocked!",
+      achClaimAllSuccess: "🎉 Claimed {count} achievements! Gained +{gold} Gold, +{steel} Steel, +{karma} Karma!",
+      achNoClaimable: "No unclaimed achievements right now!",
       tabBattle: "⚔️ Battle & Trials",
       tabStory: "📜 Destiny Chronicle",
       tabForge: "⚒️ Blade Smithing",
@@ -357,6 +389,22 @@ window.I18N = {
       equipTierDefault: "凡鉄",
 
       // ナビゲーションタブ
+            tabAchievements: "🏆 栄誉実績",
+      achTitle: "🏆 侍の栄誉実績殿堂",
+      achSub: "果てなき剣道の旅路にて不朽の武勲を刻み、小判・玉鋼・輪廻魂火を受け取れ！",
+      achProgressLabel: "実績達成進捗:",
+      achFilterAll: "全て",
+      achFilterCombat: "⚔️ 討伐武勲",
+      achFilterSwords: "🗡️ 名刀鍛冶",
+      achFilterGrowth: "⛩️ 剣道境界",
+      achFilterDestiny: "🌀 天命輪廻",
+      achClaimBtn: "✨ 報酬受取",
+      achClaimAllBtn: "🎁 達成報酬を一括受取",
+      achClaimed: "✅ 受取済",
+      achInProgress: "進行中",
+      achToastUnlocked: "🏆 実績達成！",
+      achClaimAllSuccess: "🎉 {count} 個の実績報酬を受け取りました！小判 +{gold}、玉鋼 +{steel}、魂火 +{karma} 獲得！",
+      achNoClaimable: "現在受け取り可能な実績報酬はありません！",
       tabBattle: "⚔️ 討伐修練",
       tabStory: "📜 運命絵巻",
       tabForge: "⚒️ 名刀鍛冶",
@@ -1589,4 +1637,14 @@ window.getActText = function(actNum, lang) {
   if (entry) return { title: entry.title, summary: entry.summary };
   const ch = (window.STORY_DATA && window.STORY_DATA.chapters) ? window.STORY_DATA.chapters.find(c => c.act === actNum) : null;
   return ch ? { title: ch.title, summary: ch.summary } : { title: `Act ${actNum}`, summary: "" };
+};
+
+
+window.getAchievementText = function(ach, lang) {
+  if (!ach) return {};
+  lang = lang || window.getLang();
+  if (ach.translations && ach.translations[lang]) {
+    return ach.translations[lang];
+  }
+  return ach.translations ? ach.translations["zh-TW"] : { name: ach.name, desc: ach.desc };
 };
