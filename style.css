@@ -2505,3 +2505,72 @@ nav.tab-nav::-webkit-scrollbar {
   }
 }
 
+
+
+/* ==========================================================
+   多國語系切換器 (Language Switcher UI)
+   ========================================================== */
+.lang-switch-container {
+  display: flex;
+  align-items: center;
+  background: rgba(15, 16, 20, 0.85);
+  border: 1px solid rgba(212, 175, 55, 0.35);
+  border-radius: 20px;
+  padding: 2px 4px;
+  gap: 3px;
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.5);
+}
+
+.lang-btn {
+  background: transparent;
+  border: none;
+  color: #9ca3af;
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 3px 8px;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.lang-btn:hover {
+  color: #f3f4f6;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.lang-btn.active {
+  background: linear-gradient(135deg, #d4af37, #92400e);
+  color: #ffffff;
+  box-shadow: 0 1px 6px rgba(212, 175, 55, 0.4);
+}
+
+.lang-setting-buttons {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.lang-btn-setting {
+  padding: 6px 14px;
+  font-size: 0.85rem;
+  border-radius: 6px;
+  border: 1px solid #4b5563;
+  background: #1f2937;
+  color: #d1d5db;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.lang-btn-setting:hover {
+  border-color: #d4af37;
+  color: #fff;
+}
+
+.lang-btn-setting.active {
+  background: linear-gradient(135deg, #b45309, #d4af37) !important;
+  color: #ffffff !important;
+  border-color: #f59e0b !important;
+  font-weight: bold;
+  box-shadow: 0 2px 8px rgba(245, 158, 11, 0.3);
+}
