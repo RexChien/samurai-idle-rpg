@@ -21,6 +21,7 @@ class SamuraiAudio {
   }
 
   setupMobileUnlock() {
+    if (typeof window === "undefined" || typeof window.addEventListener !== "function") return;
     const unlock = () => {
       this.ensureContext();
       if (this.ctx && this.ctx.state === 'running') {
@@ -275,6 +276,106 @@ class SamuraiAudio {
     osc.start(t);
     osc.stop(t + 0.5);
   }
+
+  // 8. 暗黑破壞神風格榮譽成就史詩號角與金鐘 (Diablo 3 Epic Achievement Fanfare)
+  playAchievementFanfare() {
+    if (!this.enabled || !this.ctx) return;
+    this.ensureContext();
+    const t = this.ctx.currentTime;
+
+    // A. 沉穩重磅破魔太鼓低音震盪 (Deep Resonant Gong & Impact Boom)
+    const gong = this.ctx.createOscillator();
+    const gongGain = this.ctx.createGain();
+    gong.type = "sine";
+    gong.frequency.setValueAtTime(130, t);
+    gong.frequency.exponentialRampToValueAtTime(36, t + 0.9);
+
+    gongGain.gain.setValueAtTime(0.7, t);
+    gongGain.gain.exponentialRampToValueAtTime(0.001, t + 0.9);
+
+    gong.connect(gongGain);
+    gongGain.connect(this.ctx.destination);
+    gong.start(t);
+    gong.stop(t + 0.9);
+
+    // 金屬銅鐘底蘊 (Bronze Bell Resonance)
+    const bellBase = this.ctx.createOscillator();
+    const bellBaseGain = this.ctx.createGain();
+    bellBase.type = "triangle";
+    bellBase.frequency.setValueAtTime(260, t);
+    bellBase.frequency.exponentialRampToValueAtTime(130, t + 1.2);
+
+    bellBaseGain.gain.setValueAtTime(0.4, t);
+    bellBaseGain.gain.exponentialRampToValueAtTime(0.001, t + 1.2);
+
+    bellBase.connect(bellBaseGain);
+    bellBaseGain.connect(this.ctx.destination);
+    bellBase.start(t);
+    bellBase.stop(t + 1.2);
+
+    // B. 暗黑風格凱旋銅管號角和弦 (Majestic Brass Fanfare Progression)
+    // 4 個前進音程步進：F3/C4 -> G3/D4 -> C4/G4 -> 終曲 F4/C5/A5 輝煌長音
+    const chords = [
+      { delay: 0.00, notes: [174.61, 261.63], dur: 0.22, vol: 0.25 },
+      { delay: 0.14, notes: [196.00, 293.66], dur: 0.22, vol: 0.28 },
+      { delay: 0.28, notes: [261.63, 392.00], dur: 0.26, vol: 0.32 },
+      { delay: 0.44, notes: [349.23, 440.00, 523.25, 698.46], dur: 1.8, vol: 0.45 }
+    ];
+
+    chords.forEach(c => {
+      const noteTime = t + c.delay;
+      c.notes.forEach((freq, idx) => {
+        const osc = this.ctx.createOscillator();
+        const filter = this.ctx.createBiquadFilter();
+        const gain = this.ctx.createGain();
+
+        osc.type = idx % 2 === 0 ? "sawtooth" : "triangle";
+        osc.frequency.setValueAtTime(freq, noteTime);
+
+        filter.type = "lowpass";
+        filter.frequency.setValueAtTime(900, noteTime);
+        filter.frequency.exponentialRampToValueAtTime(3200, noteTime + 0.08);
+        filter.frequency.exponentialRampToValueAtTime(1200, noteTime + c.dur);
+        filter.Q.value = 2.5;
+
+        gain.gain.setValueAtTime(0.001, noteTime);
+        gain.gain.linearRampToValueAtTime(c.vol / c.notes.length, noteTime + 0.04);
+        gain.gain.exponentialRampToValueAtTime(0.001, noteTime + c.dur);
+
+        osc.connect(filter);
+        filter.connect(gain);
+        gain.connect(this.ctx.destination);
+
+        osc.start(noteTime);
+        osc.stop(noteTime + c.dur);
+      });
+    });
+
+    // C. 燦爛金色星塵金鈴音 (Celestial Golden Bell Chimes)
+    const chimes = [1046.5, 1318.5, 1567.98, 2093.0, 2637.0, 3135.96]; // C6, E6, G6, C7, E7, G7
+    chimes.forEach((freq, idx) => {
+      const chimeTime = t + 0.52 + idx * 0.07;
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+
+      osc.type = "sine";
+      osc.frequency.setValueAtTime(freq, chimeTime);
+
+      gain.gain.setValueAtTime(0.18, chimeTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, chimeTime + 0.8);
+
+      osc.connect(gain);
+      gain.connect(this.ctx.destination);
+
+      osc.start(chimeTime);
+      osc.stop(chimeTime + 0.8);
+    });
+  }
 }
 
-window.samuraiAudio = new SamuraiAudio();
+if (typeof window !== "undefined") {
+  window.samuraiAudio = new SamuraiAudio();
+}
+if (typeof global !== "undefined") {
+  global.SamuraiAudio = SamuraiAudio;
+}
