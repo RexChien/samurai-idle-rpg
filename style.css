@@ -384,16 +384,16 @@ nav.tab-nav::-webkit-scrollbar {
 }
 
 .enemy-avatar-box {
-  width: 140px;
-  height: 140px;
-  margin: 0 auto 12px auto;
+  width: 120px;
+  height: 120px;
+  margin: 0 auto 8px auto;
   border-radius: 50%;
   border: 3px solid var(--crimson);
   background: radial-gradient(circle, #4a1518 0%, #160709 100%);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 4rem;
+  font-size: 3.4rem;
   box-shadow: 0 0 25px var(--crimson-glow);
   animation: floatEnemy 3s ease-in-out infinite alternate;
 }
@@ -482,18 +482,9 @@ nav.tab-nav::-webkit-scrollbar {
   letter-spacing: 2px;
 }
 
-/* 點擊提示 */
+/* 舊版點擊提示（已被底部手動斬擊控制列取代） */
 .click-hint-tag {
-  position: absolute;
-  bottom: 12px;
-  left: 50%;
-  transform: translateX(-50%);
-  font-size: 0.85rem;
-  color: var(--text-muted);
-  background: rgba(0,0,0,0.6);
-  padding: 3px 12px;
-  border-radius: 12px;
-  pointer-events: none;
+  display: none !important;
 }
 
 /* 傷害飄字 */
@@ -3401,7 +3392,7 @@ nav.tab-nav::-webkit-scrollbar {
 
 #achievement-toast-container {
   position: fixed;
-  top: 13%;
+  top: 16px;
   left: 50%;
   transform: translateX(-50%);
   z-index: 99999;
@@ -3416,7 +3407,7 @@ nav.tab-nav::-webkit-scrollbar {
 .d3-achievement-banner {
   position: relative;
   width: 100%;
-  pointer-events: auto;
+  pointer-events: none;
   border-radius: 8px;
   overflow: visible;
   animation: d3BannerEntrance 0.7s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
@@ -3688,7 +3679,7 @@ nav.tab-nav::-webkit-scrollbar {
     justify-content: center;
   }
   #achievement-toast-container {
-    top: 10%;
+    top: 12px;
     width: 95%;
   }
   .d3-ach-frame {
