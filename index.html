@@ -546,21 +546,32 @@
         h = canvas.height = window.innerHeight;
       });
 
-      const petals = [];
-      const TOTAL_PETALS = 40;
+      const isMobile = window.innerWidth <= 768;
+      const TOTAL_PETALS = isMobile ? 20 : 36;
+      let isSakuraPaused = false;
 
+      const petals = [];
       for (let i = 0; i < TOTAL_PETALS; i++) {
         petals.push({
           x: Math.random() * w,
           y: Math.random() * h,
-          size: Math.random() * 8 + 6,
-          speedX: Math.random() * 1.5 - 0.2,
-          speedY: Math.random() * 1.2 + 0.8,
+          size: Math.random() * 7 + 5,
+          speedX: Math.random() * 1.4 - 0.2,
+          speedY: Math.random() * 1.1 + 0.7,
           rotation: Math.random() * 360,
           rotationSpeed: Math.random() * 2 - 1,
-          opacity: Math.random() * 0.5 + 0.3
+          opacity: Math.random() * 0.45 + 0.25
         });
       }
+
+      document.addEventListener("visibilitychange", () => {
+        isSakuraPaused = document.hidden;
+        if (!isSakuraPaused) {
+          w = canvas.width = window.innerWidth;
+          h = canvas.height = window.innerHeight;
+          requestAnimationFrame(animateSakura);
+        }
+      });
 
       function drawPetal(p) {
         ctx.save();
@@ -576,6 +587,7 @@
       }
 
       function animateSakura() {
+        if (isSakuraPaused) return;
         ctx.clearRect(0, 0, w, h);
         for (let p of petals) {
           p.x += p.speedX;
@@ -601,6 +613,7 @@
       const canvas = document.getElementById("slash-canvas");
       const ctx = canvas.getContext("2d");
       let slashes = [];
+      let isSlashPaused = false;
 
       function resize() {
         if (!canvas || !canvas.parentElement) return;
@@ -613,8 +626,16 @@
       setTimeout(resize, 100);
       setTimeout(resize, 500);
 
+      document.addEventListener("visibilitychange", () => {
+        isSlashPaused = document.hidden;
+        if (!isSlashPaused) {
+          resize();
+          requestAnimationFrame(animateSlash);
+        }
+      });
+
       window.renderSlashEffect = function(isCrit) {
-        if (!canvas) return;
+        if (!canvas || isSlashPaused) return;
         const w = canvas.width;
         const h = canvas.height;
 
@@ -636,6 +657,7 @@
       };
 
       function animateSlash() {
+        if (isSlashPaused) return;
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         for (let i = slashes.length - 1; i >= 0; i--) {
           const s = slashes[i];
