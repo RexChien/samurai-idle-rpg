@@ -10,35 +10,35 @@
   const curStance = $derived(FIVE_RINGS_STANCES[player.stance] || FIVE_RINGS_STANCES.earth);
   const consumables = $derived(gameStore.getConsumableList());
 
-  let activeSubMenu = $state<'log' | 'skills' | 'items' | 'stances'>('log');
+  let activeSubMenu = $state<'none' | 'skills' | 'items' | 'stances'>('none');
 
   function handleAttack() {
-    activeSubMenu = 'log';
+    activeSubMenu = 'none';
     gameStore.cmdAttack();
   }
 
   function handleCastSkill(skillId: string) {
-    activeSubMenu = 'log';
+    activeSubMenu = 'none';
     gameStore.cmdSkill(skillId);
   }
 
   function handleOverdrive() {
-    activeSubMenu = 'log';
+    activeSubMenu = 'none';
     gameStore.cmdBushidoOverdrive();
   }
 
   function handleDefend() {
-    activeSubMenu = 'log';
+    activeSubMenu = 'none';
     gameStore.cmdDefend();
   }
 
   function handleUseItem(itemId: 'dango' | 'matcha' | 'sake' | 'elixir') {
-    activeSubMenu = 'log';
+    activeSubMenu = 'none';
     gameStore.cmdUseItem(itemId);
   }
 
   function handleAllOut() {
-    activeSubMenu = 'log';
+    activeSubMenu = 'none';
     gameStore.cmdAllOutAttack();
   }
 
@@ -55,194 +55,231 @@
 <svelte:window onkeydown={handleKeydown} />
 
 <div class="tab-world-battle">
-  <!-- 上半部：《新武士道列傳》全彩 2D 開放世界地圖（含三人小隊跟隨與 JRPG 城鎮對話框） -->
+  <!-- 上半部：《新武士道列傳》大型多人全彩開放世界地圖（含巨型 TV GAME 對話框） -->
   <WorldMapCanvas />
 
-  <!-- 下半部：《新武士道列傳》傳統 JRPG 橫向回合指令制戰場 -->
-  <div class="jrpg-battle-container">
-    <!-- 戰場頂部狀態與首領遭遇列 -->
-    <div class="jrpg-stage-header">
-      <div class="stage-title-group">
-        <span class="round-pill">⚔️ 第 {battle.round} 回合</span>
-        <span class="stance-pill" title={curStance.counterDesc}>
-          {curStance.icon} 當前架勢：{curStance.name}
+  <!-- 下半部：SFC《Final Fantasy VI》質感橫向戰場舞台 ＋ 皇家藍三欄金屬指令視窗 -->
+  <div class="ff6-battle-console">
+    <!-- 頂部戰場資訊列 -->
+    <div class="ff6-top-strip">
+      <div class="strip-left">
+        <span class="ff6-badge">🕹️ SFC FF6 SIDE-VIEW BATTLE</span>
+        <span class="round-tag">第 {battle.round} 回合</span>
+        <span class="stance-tag" title={curStance.counterDesc}>
+          {curStance.icon} 當前架勢：【{curStance.name}】（{curStance.counterDesc}）
         </span>
       </div>
-      <div class="stage-quick-actions">
-        <button class="btn btn-outline btn-sm" onclick={() => (activeSubMenu = activeSubMenu === 'stances' ? 'log' : 'stances')}>
-          ☯️ 切換五輪架勢
-        </button>
+      <div class="strip-actions">
         <button class="btn btn-outline btn-sm" onclick={() => gameStore.restAtTownInn()}>
           🍵 茶屋宿屋全回復 (20兩)
         </button>
         <button class="btn btn-crimson btn-sm" onclick={() => gameStore.spawnEncounterGroup(true)}>
-          👑 挑戰區域首領
+          👑 召喚區域首領決戰
         </button>
       </div>
     </div>
 
-    <!-- 橫向視覺戰鬥舞台：左側敵軍陣列 vs 右側我方三人小隊 -->
-    <div class="jrpg-battle-stage">
-      {#if battle.skillBanner}
-        <div class="jrpg-skill-cutin">
-          {battle.skillBanner}
-        </div>
-      {/if}
+    <!-- SFC《FF6》橫向全景戰場舞台：左側妖魔陣列 vs 右側我方三人小隊直接站立於戰場地面 -->
+    <div class="ff6-scenic-battlefield">
+      <!-- 遠景赤月、富士山與朱紅鳥居剪影 -->
+      <div class="scenic-sky-layer">
+        <div class="scenic-moon"></div>
+        <div class="scenic-fuji"></div>
+        <div class="scenic-torii">⛩️</div>
+      </div>
+      <!-- 透視戰場地面 -->
+      <div class="scenic-ground-plane"></div>
 
-      <!-- 左側：敵方妖魔陣列 (可點擊切換鎖定目標) -->
-      <div class="enemy-formation">
+      <!-- 頂部中央 FF6 經典藍框招式／戰況宣告視窗 -->
+      <div class="ff6-top-announcement-window">
+        {#if battle.skillBanner}
+          <span class="skill-cast-text">✨ {battle.skillBanner}</span>
+        {:else if battle.logs.length > 0}
+          <span class="latest-battle-msg">{battle.logs[0]}</span>
+        {:else}
+          <span class="latest-battle-msg">⚔️ 拔刀對峙中！請選擇下方指令或按【空白鍵】發動全員總攻！</span>
+        {/if}
+      </div>
+
+      <!-- 左側戰場：敵方百鬼妖魔陣列（站立於戰場地面上，點擊可鎖定目標） -->
+      <div class="ff6-enemies-field">
         {#each battle.enemies as en, idx}
           {@const isSelected = battle.selectedTargetIdx === idx && en.hp > 0}
           {@const stInfo = FIVE_RINGS_STANCES[en.stance] || FIVE_RINGS_STANCES.fire}
           <button
             type="button"
-            class="enemy-unit-card {isSelected ? 'selected-target' : ''} {en.hp <= 0 ? 'defeated' : ''} {en.isBoss ? 'boss-unit' : ''}"
+            class="ff6-enemy-actor pos-{idx} {isSelected ? 'locked-target' : ''} {en.hp <= 0 ? 'actor-ko' : ''} {en.isBoss ? 'actor-boss' : ''}"
             onclick={() => { if (en.hp > 0) gameStore.jrpgBattle.selectedTargetIdx = idx; }}
           >
             {#if isSelected}
-              <div class="target-cursor">🎯 鎖定目標</div>
+              <div class="ff6-target-hand">☞ 鎖定</div>
             {/if}
-            <div class="enemy-sprite-box">
-              <PixelPortrait spriteId={en.avatar} scale={en.isBoss ? 3 : 2} label={en.name} />
+            <div class="actor-sprite-wrap">
+              <PixelPortrait
+                spriteId={en.avatar}
+                scale={en.isBoss ? 3.2 : 2.5}
+                mode="full"
+                facing="right"
+                label={en.name}
+              />
+              <div class="actor-ground-shadow"></div>
             </div>
-            <div class="enemy-unit-info">
-              <div class="enemy-unit-name">
-                <span class="st-mini">{stInfo.icon}</span>
-                Lv.{en.level} {en.name}
+            <div class="actor-foot-plate">
+              <div class="actor-name-row">
+                <span>{stInfo.icon} Lv.{en.level} {en.name}</span>
               </div>
-              <div class="unit-hp-bar">
-                <div class="unit-hp-fill" style="width: {Math.max(0, Math.min(100, (en.hp / en.maxHp) * 100))}%;"></div>
-              </div>
-              <div class="unit-hp-nums">
-                {en.hp > 0 ? `${en.hp.toLocaleString()} / ${en.maxHp.toLocaleString()} HP` : '💀 已擊破'}
+              <div class="actor-hp-track">
+                <div class="actor-hp-fill" style="width: {Math.max(0, Math.min(100, (en.hp / en.maxHp) * 100))}%;"></div>
               </div>
             </div>
           </button>
         {/each}
       </div>
 
-      <div class="vs-divider">⚔️</div>
-
-      <!-- 右側：我方《新武士道列傳》三人同行小隊 -->
-      <div class="party-formation">
-        {#each party as member}
+      <!-- 右側戰場：我方《新武士道列傳》三人同行小隊（斜列站立於戰場右側） -->
+      <div class="ff6-party-field">
+        {#each party as member, pIdx}
           {@const isActing = battle.actingUnitId === member.id}
-          <div class="party-unit-card {isActing ? 'acting-lunge' : ''}">
-            <div class="party-sprite-box">
-              <PixelPortrait spriteId={member.avatar} scale={2} label={member.name} />
+          <div class="ff6-party-actor party-pos-{pIdx} {isActing ? 'acting-step-forward' : ''}">
+            <div class="actor-sprite-wrap">
+              <PixelPortrait
+                spriteId={member.avatar}
+                scale={2.55}
+                mode="full"
+                facing="left"
+                label={member.name}
+              />
+              <div class="actor-ground-shadow hero-shadow"></div>
             </div>
-            <div class="party-bars">
-              <div class="party-name-line">
-                <span class="p-name">{member.name}</span>
-                <span class="p-role">【{member.roleTitle}】</span>
-              </div>
-              <!-- HP 生命條 -->
-              <div class="bar-row">
-                <span class="bar-lbl hp-lbl">HP</span>
-                <div class="bar-track">
-                  <div class="bar-fill hp-fill" style="width: {Math.min(100, (member.hp / member.maxHp) * 100)}%;"></div>
-                </div>
-                <span class="bar-val">{member.hp}/{member.maxHp}</span>
-              </div>
-              <!-- SP 氣力條 -->
-              <div class="bar-row">
-                <span class="bar-lbl sp-lbl">SP</span>
-                <div class="bar-track">
-                  <div class="bar-fill sp-fill" style="width: {Math.min(100, (member.sp / member.maxSp) * 100)}%;"></div>
-                </div>
-                <span class="bar-val">{member.sp}/{member.maxSp}</span>
-              </div>
-              <!-- 主角專屬：武士道列傳招牌【怒氣槽 POW】 -->
-              {#if member.id === 'leader'}
-                <div class="bar-row">
-                  <span class="bar-lbl pow-lbl">怒</span>
-                  <div class="bar-track pow-track">
-                    <div class="bar-fill pow-fill {member.pow >= 100 ? 'pow-max' : ''}" style="width: {Math.min(100, member.pow)}%;"></div>
-                  </div>
-                  <span class="bar-val pow-val">{member.pow}%</span>
-                </div>
-              {/if}
+            <div class="hero-foot-tag">
+              {member.name}
             </div>
           </div>
         {/each}
       </div>
     </div>
 
-    <!-- 底部：傳統 90 年代 JRPG 皇家藍底金框指令面板 + 戰況卷軸 -->
-    <div class="jrpg-command-deck">
-      <!-- 左側：六大武士道戰鬥指令 -->
-      <div class="jrpg-commands-box">
-        <div class="cmd-header">🕹️ 武士道戰鬥指令</div>
-        <div class="cmd-grid">
-          <button class="cmd-btn cmd-attack" onclick={handleAttack}>
-            ⚔️ 拔刀連斬 <span class="cmd-sub">普攻協同 (+SP/怒氣)</span>
+    <!-- 底部：SFC《Final Fantasy VI》經典三欄式皇家藍金屬浮雕視窗組 -->
+    <div class="ff6-bottom-console-deck">
+      <!-- 左視窗：敵軍目標清單與即時戰況卷軸 -->
+      <div class="ff6-window ff6-target-log-window">
+        <div class="ff6-window-title">🎯 敵陣鎖定與戰況紀錄</div>
+        <div class="ff6-enemy-list">
+          {#each battle.enemies as en, idx}
+            {@const isSelected = battle.selectedTargetIdx === idx && en.hp > 0}
+            {@const stInfo = FIVE_RINGS_STANCES[en.stance] || FIVE_RINGS_STANCES.fire}
+            <button
+              type="button"
+              class="ff6-enemy-row {isSelected ? 'selected' : ''} {en.hp <= 0 ? 'dead' : ''}"
+              onclick={() => { if (en.hp > 0) gameStore.jrpgBattle.selectedTargetIdx = idx; }}
+            >
+              <span class="ptr">{isSelected ? '☞' : '　'}</span>
+              <span class="en-name">{stInfo.icon} {en.name}</span>
+              <span class="en-hp">{en.hp > 0 ? `${en.hp.toLocaleString()} HP` : '擊破'}</span>
+            </button>
+          {/each}
+        </div>
+        <div class="ff6-mini-logs">
+          {#each battle.logs.slice(0, 4) as line, i}
+            <div class="ff6-log-line {i === 0 ? 'first' : ''}">{line}</div>
+          {/each}
+        </div>
+      </div>
+
+      <!-- 中視窗：SFC FF6 經典直列式戰鬥指令選單（含金手指游標 ☞） -->
+      <div class="ff6-window ff6-command-menu-window">
+        <div class="ff6-window-title">🕹️ 武士道指令</div>
+        <div class="ff6-cmd-list">
+          <button class="ff6-cmd-item" onclick={handleAttack}>
+            <span class="cmd-ptr">☞</span>
+            <span class="cmd-txt">⚔️ 拔刀連斬</span>
+            <span class="cmd-tag">普攻</span>
           </button>
 
           <button
-            class="cmd-btn {activeSubMenu === 'skills' ? 'cmd-selected' : ''}"
-            onclick={() => (activeSubMenu = activeSubMenu === 'skills' ? 'log' : 'skills')}
+            class="ff6-cmd-item {activeSubMenu === 'skills' ? 'active' : ''}"
+            onclick={() => (activeSubMenu = activeSubMenu === 'skills' ? 'none' : 'skills')}
           >
-            📜 劍技・秘術 <span class="cmd-sub">二天劍技 / 巫女祈禱 / 忍法</span>
+            <span class="cmd-ptr">☞</span>
+            <span class="cmd-txt">📜 劍技・秘術</span>
+            <span class="cmd-tag">奧義</span>
           </button>
 
           <button
-            class="cmd-btn cmd-overdrive {(party[0]?.pow || 0) >= 100 ? 'pow-ready' : 'pow-charging'}"
+            class="ff6-cmd-item overdrive {(party[0]?.pow || 0) >= 100 ? 'ready' : ''}"
             onclick={handleOverdrive}
           >
-            🔥 天覇絕刀 <span class="cmd-sub">怒氣超奧義 ({party[0]?.pow || 0}%/100%)</span>
-          </button>
-
-          <button class="cmd-btn" onclick={handleDefend}>
-            🛡️ 納刀見切 <span class="cmd-sub">減傷 65% 並大回 SP</span>
+            <span class="cmd-ptr">☞</span>
+            <span class="cmd-txt">🔥 天覇絕刀</span>
+            <span class="cmd-tag">{party[0]?.pow || 0}%</span>
           </button>
 
           <button
-            class="cmd-btn {activeSubMenu === 'items' ? 'cmd-selected' : ''}"
-            onclick={() => (activeSubMenu = activeSubMenu === 'items' ? 'log' : 'items')}
+            class="ff6-cmd-item {activeSubMenu === 'stances' ? 'active' : ''}"
+            onclick={() => (activeSubMenu = activeSubMenu === 'stances' ? 'none' : 'stances')}
           >
-            🍡 行囊道具 <span class="cmd-sub">糰子 / 抹茶 / 般若湯</span>
+            <span class="cmd-ptr">☞</span>
+            <span class="cmd-txt">☯️ 五輪架勢</span>
+            <span class="cmd-tag">相剋</span>
           </button>
 
-          <button class="cmd-btn cmd-allout" onclick={handleAllOut}>
-            ⚡ 全員總攻 <span class="cmd-sub">智慧委任作戰 (空白鍵)</span>
+          <button
+            class="ff6-cmd-item {activeSubMenu === 'items' ? 'active' : ''}"
+            onclick={() => (activeSubMenu = activeSubMenu === 'items' ? 'none' : 'items')}
+          >
+            <span class="cmd-ptr">☞</span>
+            <span class="cmd-txt">🍡 行囊道具</span>
+            <span class="cmd-tag">補給</span>
+          </button>
+
+          <button class="ff6-cmd-item" onclick={handleDefend}>
+            <span class="cmd-ptr">☞</span>
+            <span class="cmd-txt">🛡️ 納刀見切</span>
+            <span class="cmd-tag">回氣</span>
+          </button>
+
+          <button class="ff6-cmd-item allout" onclick={handleAllOut}>
+            <span class="cmd-ptr">☞</span>
+            <span class="cmd-txt">⚡ 全員總攻</span>
+            <span class="cmd-tag">空白鍵</span>
           </button>
         </div>
       </div>
 
-      <!-- 右側：子選單（劍技／道具／五輪架勢）或 JRPG 回合戰況實況卷軸 -->
-      <div class="jrpg-subpanel">
+      <!-- 右視窗：SFC FF6 三人小隊狀態表（或展開的劍技／道具／架勢子視窗） -->
+      <div class="ff6-window ff6-party-status-window">
         {#if activeSubMenu === 'skills'}
-          <div class="subpanel-header">
-            <span>📜 選擇要施展的【劍技・巫女祈禱・伊賀忍法】</span>
-            <button class="btn btn-outline btn-sm" onclick={() => (activeSubMenu = 'log')}>返回戰況</button>
+          <div class="ff6-subwindow-header">
+            <span>📜 選擇要施展的【二天劍技・巫女祈禱・伊賀忍法】</span>
+            <button class="ff6-back-btn" onclick={() => (activeSubMenu = 'none')}>✕ 返回狀態欄</button>
           </div>
-          <div class="skills-grid">
+          <div class="ff6-sub-grid">
             {#each JRPG_PARTY_SKILLS as sk}
-              <button class="skill-choice-card" onclick={() => handleCastSkill(sk.id)}>
-                <div class="sk-top">
-                  <span class="sk-title">{sk.icon} {sk.name}</span>
-                  <span class="sk-cost">{sk.spCost} SP</span>
+              <button class="ff6-sub-card" onclick={() => handleCastSkill(sk.id)}>
+                <div class="sub-top">
+                  <span class="sub-name"><span class="ptr">☞</span> {sk.icon} {sk.name}</span>
+                  <span class="sub-cost">{sk.spCost} SP</span>
                 </div>
-                <div class="sk-caster">施展者：【{sk.casterName}】</div>
-                <div class="sk-desc">{sk.desc}</div>
+                <div class="sub-caster">施展者：【{sk.casterName}】</div>
+                <div class="sub-desc">{sk.desc}</div>
               </button>
             {/each}
           </div>
         {:else if activeSubMenu === 'items'}
-          <div class="subpanel-header">
+          <div class="ff6-subwindow-header">
             <span>🍡 選擇要使用的【江戶行囊道具】</span>
-            <button class="btn btn-outline btn-sm" onclick={() => (activeSubMenu = 'log')}>返回戰況</button>
+            <button class="ff6-back-btn" onclick={() => (activeSubMenu = 'none')}>✕ 返回狀態欄</button>
           </div>
-          <div class="items-grid">
+          <div class="ff6-sub-grid">
             {#each consumables as item}
-              <div class="item-choice-card">
-                <div class="item-info">
-                  <div class="item-name">{item.icon} {item.name} <span class="item-cnt">x{item.count}</span></div>
-                  <div class="item-desc">{item.desc}</div>
+              <div class="ff6-sub-card item-card">
+                <div class="sub-top">
+                  <span class="sub-name">{item.icon} {item.name} (持有 x{item.count})</span>
                 </div>
-                <div class="item-btns">
+                <div class="sub-desc">{item.desc}</div>
+                <div class="item-actions">
                   <button class="btn btn-gold btn-sm" disabled={item.count <= 0} onclick={() => handleUseItem(item.id)}>
-                    使用
+                    ☞ 使用道具
                   </button>
                   <button class="btn btn-outline btn-sm" onclick={() => gameStore.buyConsumable(item.id)}>
                     購買 ({item.price}兩)
@@ -252,33 +289,74 @@
             {/each}
           </div>
         {:else if activeSubMenu === 'stances'}
-          <div class="subpanel-header">
-            <span>☯️ 切換宮本武藏《五輪書》架勢（相剋傷害 +35%）</span>
-            <button class="btn btn-outline btn-sm" onclick={() => (activeSubMenu = 'log')}>返回戰況</button>
+          <div class="ff6-subwindow-header">
+            <span>☯️ 切換《五輪書》劍道架勢（克制傷害 +35%）</span>
+            <button class="ff6-back-btn" onclick={() => (activeSubMenu = 'none')}>✕ 返回狀態欄</button>
           </div>
-          <div class="stances-grid">
+          <div class="ff6-sub-grid">
             {#each Object.values(FIVE_RINGS_STANCES) as st}
               <button
-                class="skill-choice-card {player.stance === st.id ? 'active-stance' : ''}"
-                onclick={() => { gameStore.selectStance(st.id); activeSubMenu = 'log'; }}
+                class="ff6-sub-card {player.stance === st.id ? 'active-stance' : ''}"
+                onclick={() => { gameStore.selectStance(st.id); activeSubMenu = 'none'; }}
               >
-                <div class="sk-top">
-                  <span class="sk-title">{st.icon} {st.name}</span>
-                  <span class="sk-cost">{st.counterDesc}</span>
+                <div class="sub-top">
+                  <span class="sub-name"><span class="ptr">☞</span> {st.icon} {st.name}</span>
+                  <span class="sub-cost">{st.counterDesc}</span>
                 </div>
-                <div class="sk-desc">{st.desc}</div>
+                <div class="sub-desc">{st.desc}</div>
               </button>
             {/each}
           </div>
         {:else}
-          <div class="subpanel-header">
-            <span>📜 《新武士道列傳》回合戰況卷軸</span>
-            <span class="log-hint">💡 點擊左側敵人可指定集火目標，或按空白鍵執行「全員總攻」</span>
+          <div class="ff6-window-title">
+            <span>🛡️ 《新武士道列傳》同行三人小隊狀態</span>
+            <span class="status-cols-lbl">HP 生命　/　SP 氣力　/　POW 怒氣</span>
           </div>
-          <div class="battle-log-list">
-            {#each battle.logs as line, idx}
-              <div class="log-entry {idx === 0 ? 'latest-log' : ''}">
-                {line}
+          <div class="ff6-party-table">
+            {#each party as member}
+              <div class="ff6-hero-row">
+                <div class="hero-bust">
+                  <PixelPortrait spriteId={member.avatar} scale={2} mode="bust" label={member.name} />
+                </div>
+                <div class="hero-identity">
+                  <div class="hero-name">{member.name}</div>
+                  <div class="hero-role">【{member.roleTitle}】</div>
+                </div>
+                <div class="hero-gauges">
+                  <!-- HP -->
+                  <div class="gauge-col">
+                    <div class="gauge-top">
+                      <span class="g-lbl hp">HP</span>
+                      <span class="g-num">{member.hp}<span>/{member.maxHp}</span></span>
+                    </div>
+                    <div class="g-bar">
+                      <div class="g-fill hp" style="width: {Math.min(100, (member.hp / member.maxHp) * 100)}%;"></div>
+                    </div>
+                  </div>
+                  <!-- SP -->
+                  <div class="gauge-col">
+                    <div class="gauge-top">
+                      <span class="g-lbl sp">SP</span>
+                      <span class="g-num">{member.sp}<span>/{member.maxSp}</span></span>
+                    </div>
+                    <div class="g-bar">
+                      <div class="g-fill sp" style="width: {Math.min(100, (member.sp / member.maxSp) * 100)}%;"></div>
+                    </div>
+                  </div>
+                  <!-- POW -->
+                  <div class="gauge-col pow-col">
+                    <div class="gauge-top">
+                      <span class="g-lbl pow">怒氣</span>
+                      <span class="g-num pow-num">{member.id === 'leader' ? `${member.pow}%` : '協同'}</span>
+                    </div>
+                    <div class="g-bar">
+                      <div
+                        class="g-fill pow {member.pow >= 100 ? 'max' : ''}"
+                        style="width: {member.id === 'leader' ? Math.min(100, member.pow) : 100}%;"
+                      ></div>
+                    </div>
+                  </div>
+                </div>
               </div>
             {/each}
           </div>
@@ -292,399 +370,631 @@
   .tab-world-battle {
     display: flex;
     flex-direction: column;
-    gap: 12px;
+    gap: 14px;
   }
 
-  /* 傳統 90 年代 JRPG 皇家深藍金框戰鬥容器 */
-  .jrpg-battle-container {
-    background: linear-gradient(180deg, #0d1527, #090d18);
-    border: 2px solid #d97706;
+  /* SFC《Final Fantasy VI》戰鬥主機外框 */
+  .ff6-battle-console {
+    background: #040814;
+    border: 3px solid #cbd5e1;
+    box-shadow: inset 0 0 0 2px #d97706, 0 12px 36px rgba(0, 0, 0, 0.85);
     border-radius: 12px;
     overflow: hidden;
-    box-shadow: 0 8px 28px rgba(0, 0, 0, 0.65);
   }
 
-  .jrpg-stage-header {
-    background: rgba(15, 23, 42, 0.95);
-    border-bottom: 1px solid #334155;
-    padding: 8px 14px;
+  .ff6-top-strip {
+    background: linear-gradient(180deg, #10235c 0%, #071133 100%);
+    border-bottom: 2px solid #cbd5e1;
+    padding: 8px 16px;
     display: flex;
     justify-content: space-between;
     align-items: center;
     flex-wrap: wrap;
-    gap: 8px;
+    gap: 10px;
   }
 
-  .stage-title-group {
+  .strip-left {
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 12px;
     flex-wrap: wrap;
   }
 
-  .round-pill {
+  .ff6-badge {
+    background: #1d4ed8;
+    border: 1px solid #93c5fd;
+    color: #ffffff;
+    font-size: 0.75rem;
+    font-weight: 900;
+    padding: 3px 9px;
+    border-radius: 4px;
+    letter-spacing: 0.8px;
+  }
+
+  .round-tag {
     background: #b45309;
+    border: 1px solid #fde047;
     color: #fff;
     font-weight: 900;
-    font-size: 0.82rem;
+    font-size: 0.88rem;
     padding: 3px 10px;
     border-radius: 6px;
   }
 
-  .stance-pill {
+  .stance-tag {
     color: #fde047;
-    font-weight: 800;
-    font-size: 0.88rem;
+    font-weight: 900;
+    font-size: 0.95rem;
+    text-shadow: 1px 1px 0 #000;
   }
 
-  .stage-quick-actions {
+  .strip-actions {
     display: flex;
     gap: 8px;
-    flex-wrap: wrap;
   }
 
-  .jrpg-battle-stage {
+  /* SFC FF6 橫向全景戰場舞台 */
+  .ff6-scenic-battlefield {
     position: relative;
-    padding: 16px;
-    background:
-      radial-gradient(circle at 25% 40%, rgba(220, 38, 38, 0.14), transparent 55%),
-      radial-gradient(circle at 75% 40%, rgba(56, 189, 248, 0.14), transparent 55%),
-      linear-gradient(180deg, #131c31 0%, #1c2536 65%, #172026 100%);
-    display: grid;
-    grid-template-columns: 1.15fr auto 1.15fr;
-    align-items: center;
-    gap: 14px;
-    border-bottom: 2px solid #b45309;
+    height: 295px;
+    background: linear-gradient(180deg, #090d24 0%, #1b1947 38%, #3b1d4a 60%, #1e3329 61%, #12211a 100%);
+    border-bottom: 3px solid #cbd5e1;
+    overflow: hidden;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    padding: 16px 48px 20px;
   }
 
-  .jrpg-skill-cutin {
+  .scenic-sky-layer {
     position: absolute;
-    top: 10px;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 60%;
+    pointer-events: none;
+  }
+
+  .scenic-moon {
+    position: absolute;
+    top: 22px;
+    left: 18%;
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    background: radial-gradient(circle, #fef08a 0%, #f59e0b 55%, transparent 72%);
+    opacity: 0.85;
+  }
+
+  .scenic-fuji {
+    position: absolute;
+    bottom: 0;
     left: 50%;
     transform: translateX(-50%);
-    background: linear-gradient(90deg, rgba(185, 28, 28, 0.95), rgba(217, 119, 6, 0.95));
-    border: 2px solid #fef08a;
-    color: #fff;
-    font-weight: 900;
-    font-size: 1.05rem;
-    padding: 6px 24px;
-    border-radius: 999px;
-    box-shadow: 0 0 20px rgba(245, 158, 11, 0.7);
-    z-index: 15;
-    white-space: nowrap;
+    width: 380px;
+    height: 115px;
+    background: linear-gradient(180deg, #f8fafc 0%, #cbd5e1 26%, #312e81 55%, #111827 100%);
+    clip-path: polygon(44% 0%, 56% 0%, 100% 100%, 0% 100%);
+    opacity: 0.75;
   }
 
-  .enemy-formation {
+  .scenic-torii {
+    position: absolute;
+    bottom: -4px;
+    left: 34%;
+    font-size: 3.2rem;
+    filter: drop-shadow(0 4px 10px rgba(0, 0, 0, 0.8));
+    opacity: 0.85;
+  }
+
+  .scenic-ground-plane {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 40%;
+    background:
+      radial-gradient(ellipse at 50% 20%, rgba(251, 191, 36, 0.14), transparent 70%),
+      repeating-linear-gradient(
+        180deg,
+        rgba(30, 58, 42, 0.9) 0px,
+        rgba(20, 40, 30, 0.95) 14px,
+        rgba(12, 26, 20, 0.98) 28px
+      );
+    border-top: 2px solid rgba(251, 191, 36, 0.35);
+    pointer-events: none;
+  }
+
+  /* 頂部中央 FF6 招式／訊息宣告視窗 */
+  .ff6-top-announcement-window {
+    position: absolute;
+    top: 12px;
+    left: 50%;
+    transform: translateX(-50%);
+    min-width: 520px;
+    max-width: 82%;
+    background: linear-gradient(180deg, #16389c 0%, #081648 100%);
+    border: 3px solid #e2e8f0;
+    box-shadow: inset 0 0 0 2px #fbbf24, 0 8px 24px rgba(0, 0, 0, 0.85);
+    border-radius: 8px;
+    padding: 8px 24px;
+    text-align: center;
+    z-index: 20;
+  }
+
+  .skill-cast-text {
+    font-size: 1.25rem;
+    font-weight: 900;
+    color: #fde047;
+    text-shadow: 2px 2px 0 #000;
+  }
+
+  .latest-battle-msg {
+    font-size: 1.05rem;
+    font-weight: 800;
+    color: #ffffff;
+    text-shadow: 1.5px 1.5px 0 #000;
+  }
+
+  /* 左側敵軍站位 */
+  .ff6-enemies-field {
+    position: relative;
+    z-index: 10;
+    display: flex;
+    align-items: flex-end;
+    gap: 26px;
+  }
+
+  .ff6-enemy-actor {
+    background: transparent;
+    border: none;
+    cursor: pointer;
     display: flex;
     flex-direction: column;
-    gap: 8px;
-  }
-
-  .enemy-unit-card {
-    background: rgba(15, 23, 42, 0.85);
-    border: 1px solid #475569;
-    border-radius: 8px;
-    padding: 8px 12px;
-    display: flex;
     align-items: center;
-    gap: 12px;
-    color: #fff;
-    cursor: pointer;
-    text-align: left;
     position: relative;
-    transition: all 0.15s;
+    transition: transform 0.18s;
+    padding: 0;
   }
 
-  .enemy-unit-card.selected-target {
-    border: 2px solid #ef4444;
-    background: rgba(127, 29, 29, 0.35);
-    box-shadow: 0 0 12px rgba(239, 68, 68, 0.35);
+  .ff6-enemy-actor.pos-0 { transform: translateY(-12px); }
+  .ff6-enemy-actor.pos-1 { transform: translateY(6px); }
+  .ff6-enemy-actor.pos-2 { transform: translateY(-20px); }
+
+  .ff6-enemy-actor:hover {
+    transform: scale(1.06) translateY(-6px);
   }
 
-  .enemy-unit-card.boss-unit {
-    border-color: #f59e0b;
+  .ff6-enemy-actor.actor-ko {
+    opacity: 0.25;
+    filter: grayscale(1);
   }
 
-  .enemy-unit-card.defeated {
-    opacity: 0.4;
-    filter: grayscale(0.9);
-  }
-
-  .target-cursor {
-    position: absolute;
-    top: 4px;
-    right: 8px;
-    font-size: 0.7rem;
+  .ff6-target-hand {
+    background: rgba(220, 38, 38, 0.95);
+    border: 2px solid #fde047;
+    color: #ffffff;
+    font-size: 0.85rem;
     font-weight: 900;
-    color: #fca5a5;
-  }
-
-  .enemy-sprite-box,
-  .party-sprite-box {
-    width: 48px;
-    height: 54px;
-    background: #090d16;
-    border: 1px solid #475569;
-    border-radius: 8px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-shrink: 0;
-  }
-
-  .enemy-unit-info {
-    flex: 1;
-  }
-
-  .enemy-unit-name {
-    font-size: 0.9rem;
-    font-weight: 800;
-    color: #fef08a;
+    padding: 2px 10px;
+    border-radius: 999px;
     margin-bottom: 4px;
+    box-shadow: 0 0 12px rgba(239, 68, 68, 0.8);
+    animation: bounceTarget 0.6s infinite alternate;
   }
 
-  .unit-hp-bar {
-    height: 9px;
+  @keyframes bounceTarget {
+    from { transform: translateY(0); }
+    to { transform: translateY(-5px); }
+  }
+
+  .actor-sprite-wrap {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .actor-ground-shadow {
+    width: 68px;
+    height: 16px;
+    background: radial-gradient(ellipse, rgba(0, 0, 0, 0.7) 0%, transparent 75%);
+    margin-top: -10px;
+  }
+
+  .hero-shadow {
+    background: radial-gradient(ellipse, rgba(56, 189, 248, 0.45) 0%, rgba(0, 0, 0, 0.7) 60%, transparent 75%);
+  }
+
+  .actor-foot-plate {
+    background: rgba(8, 18, 48, 0.92);
+    border: 1.5px solid #cbd5e1;
+    border-radius: 6px;
+    padding: 4px 10px;
+    min-width: 135px;
+    margin-top: 2px;
+  }
+
+  .ff6-enemy-actor.locked-target .actor-foot-plate {
+    border-color: #fde047;
+    box-shadow: 0 0 12px rgba(250, 204, 21, 0.5);
+  }
+
+  .actor-name-row {
+    font-size: 0.82rem;
+    font-weight: 900;
+    color: #fef08a;
+    text-shadow: 1px 1px 0 #000;
+    margin-bottom: 3px;
+    text-align: center;
+  }
+
+  .actor-hp-track {
+    height: 7px;
     background: #1e293b;
-    border-radius: 5px;
+    border-radius: 4px;
     overflow: hidden;
   }
 
-  .unit-hp-fill {
+  .actor-hp-fill {
     height: 100%;
     background: linear-gradient(90deg, #dc2626, #f87171);
     transition: width 0.2s;
   }
 
-  .unit-hp-nums {
-    font-size: 0.72rem;
-    color: #cbd5e1;
+  /* 右側我方三人小隊 FF6 斜列站位 */
+  .ff6-party-field {
+    position: relative;
+    z-index: 10;
+    display: flex;
+    align-items: flex-end;
+    gap: 22px;
+  }
+
+  .ff6-party-actor {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    transition: transform 0.2s;
+  }
+
+  .ff6-party-actor.party-pos-0 { transform: translateY(4px); }
+  .ff6-party-actor.party-pos-1 { transform: translateY(-16px); }
+  .ff6-party-actor.party-pos-2 { transform: translateY(-34px); }
+
+  .ff6-party-actor.acting-step-forward {
+    transform: translateX(-42px) scale(1.08);
+    filter: drop-shadow(0 0 14px rgba(250, 204, 21, 0.85));
+  }
+
+  .hero-foot-tag {
+    background: linear-gradient(180deg, #16389c, #091852);
+    border: 1.5px solid #fde047;
+    color: #ffffff;
+    font-size: 0.82rem;
+    font-weight: 900;
+    padding: 2px 10px;
+    border-radius: 6px;
+    text-shadow: 1px 1px 0 #000;
     margin-top: 2px;
   }
 
-  .vs-divider {
-    font-size: 1.6rem;
-    opacity: 0.65;
+  /* 底部：SFC《FF6》經典三欄式皇家藍金屬浮雕視窗組 */
+  .ff6-bottom-console-deck {
+    display: grid;
+    grid-template-columns: 1.05fr 0.85fr 1.6fr;
+    gap: 8px;
+    padding: 10px;
+    background: #02050d;
   }
 
-  .party-formation {
+  .ff6-window {
+    background: linear-gradient(180deg, #153596 0%, #091852 58%, #040a26 100%);
+    border: 3px solid #e2e8f0;
+    box-shadow:
+      inset 0 0 0 2px #1d4ed8,
+      inset 0 0 0 3.5px #fbbf24,
+      0 6px 20px rgba(0, 0, 0, 0.8);
+    border-radius: 10px;
+    padding: 12px 14px;
     display: flex;
     flex-direction: column;
     gap: 8px;
   }
 
-  .party-unit-card {
-    background: rgba(15, 32, 75, 0.75);
-    border: 1px solid #3b82f6;
+  .ff6-window-title {
+    font-size: 0.92rem;
+    font-weight: 900;
+    color: #fde047;
+    text-shadow: 1.5px 1.5px 0 #000;
+    padding-bottom: 6px;
+    border-bottom: 1.5px solid rgba(251, 191, 36, 0.4);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .status-cols-lbl {
+    font-size: 0.76rem;
+    color: #93c5fd;
+  }
+
+  /* 左欄：敵軍名單與戰況 */
+  .ff6-enemy-list {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+  }
+
+  .ff6-enemy-row {
+    background: rgba(6, 15, 42, 0.7);
+    border: 1px solid rgba(148, 163, 184, 0.35);
+    border-radius: 6px;
+    padding: 6px 10px;
+    color: #f8fafc;
+    font-size: 0.95rem;
+    font-weight: 800;
+    text-shadow: 1px 1px 0 #000;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    cursor: pointer;
+  }
+
+  .ff6-enemy-row.selected {
+    border-color: #fde047;
+    background: rgba(30, 64, 175, 0.65);
+    color: #fef08a;
+  }
+
+  .ff6-enemy-row.dead {
+    opacity: 0.4;
+    text-decoration: line-through;
+  }
+
+  .ptr {
+    color: #fde047;
+    font-weight: 900;
+    margin-right: 4px;
+  }
+
+  .en-name {
+    flex: 1;
+    text-align: left;
+  }
+
+  .en-hp {
+    color: #fca5a5;
+    font-size: 0.85rem;
+  }
+
+  .ff6-mini-logs {
+    margin-top: auto;
+    border-top: 1px solid rgba(255, 255, 255, 0.14);
+    padding-top: 6px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .ff6-log-line {
+    font-size: 0.8rem;
+    color: #cbd5e1;
+    text-shadow: 1px 1px 0 #000;
+    line-height: 1.35;
+  }
+
+  .ff6-log-line.first {
+    color: #fde047;
+    font-weight: 800;
+  }
+
+  /* 中欄：FF6 經典直列指令選單 */
+  .ff6-cmd-list {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+  }
+
+  .ff6-cmd-item {
+    background: rgba(8, 20, 56, 0.75);
+    border: 1.5px solid rgba(147, 197, 253, 0.4);
+    border-radius: 6px;
+    padding: 6px 10px;
+    color: #ffffff;
+    font-size: 1.02rem;
+    font-weight: 900;
+    text-shadow: 1.5px 1.5px 0 #000;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    transition: all 0.12s;
+  }
+
+  .cmd-ptr {
+    opacity: 0.25;
+    color: #fde047;
+    margin-right: 6px;
+    transition: all 0.12s;
+  }
+
+  .ff6-cmd-item:hover,
+  .ff6-cmd-item.active {
+    background: linear-gradient(90deg, #1d4ed8, #1e3a8a);
+    border-color: #fde047;
+    color: #fef08a;
+  }
+
+  .ff6-cmd-item:hover .cmd-ptr,
+  .ff6-cmd-item.active .cmd-ptr {
+    opacity: 1;
+    transform: translateX(3px);
+  }
+
+  .ff6-cmd-item.overdrive.ready {
+    background: linear-gradient(90deg, #b91c1c, #d97706);
+    border-color: #fef08a;
+    box-shadow: 0 0 12px rgba(250, 204, 21, 0.55);
+  }
+
+  .ff6-cmd-item.allout {
+    background: linear-gradient(90deg, #065f46, #047857);
+    border-color: #6ee7b7;
+  }
+
+  .cmd-txt {
+    flex: 1;
+    text-align: left;
+  }
+
+  .cmd-tag {
+    font-size: 0.75rem;
+    color: #93c5fd;
+    font-weight: 800;
+  }
+
+  /* 右欄：三人小隊狀態列 */
+  .ff6-party-table {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .ff6-hero-row {
+    background: rgba(6, 15, 42, 0.72);
+    border: 1.5px solid rgba(147, 197, 253, 0.35);
     border-radius: 8px;
     padding: 8px 12px;
     display: flex;
     align-items: center;
     gap: 12px;
-    transition: transform 0.2s;
   }
 
-  .party-unit-card.acting-lunge {
-    transform: translateX(-16px);
-    border-color: #fde047;
-    box-shadow: 0 0 14px rgba(250, 204, 21, 0.5);
+  .hero-bust {
+    width: 56px;
+    height: 56px;
+    border: 2px solid #fbbf24;
+    border-radius: 8px;
+    overflow: hidden;
+    flex-shrink: 0;
+    background: #050814;
   }
 
-  .party-bars {
+  .hero-identity {
+    width: 118px;
+    flex-shrink: 0;
+  }
+
+  .hero-name {
+    font-size: 1.05rem;
+    font-weight: 900;
+    color: #ffffff;
+    text-shadow: 1.5px 1.5px 0 #000;
+  }
+
+  .hero-role {
+    font-size: 0.78rem;
+    font-weight: 800;
+    color: #fde047;
+  }
+
+  .hero-gauges {
     flex: 1;
+    display: grid;
+    grid-template-columns: 1.1fr 1fr 0.85fr;
+    gap: 10px;
+  }
+
+  .gauge-col {
     display: flex;
     flex-direction: column;
-    gap: 3px;
+    gap: 4px;
   }
 
-  .party-name-line {
+  .gauge-top {
     display: flex;
-    align-items: center;
-    gap: 6px;
-  }
-
-  .p-name {
-    font-size: 0.9rem;
+    justify-content: space-between;
+    align-items: baseline;
     font-weight: 900;
-    color: #fff;
+    text-shadow: 1px 1px 0 #000;
   }
 
-  .p-role {
-    font-size: 0.75rem;
-    color: #93c5fd;
-    font-weight: 700;
+  .g-lbl {
+    font-size: 0.78rem;
+  }
+  .g-lbl.hp { color: #4ade80; }
+  .g-lbl.sp { color: #38bdf8; }
+  .g-lbl.pow { color: #fbbf24; }
+
+  .g-num {
+    font-size: 0.92rem;
+    color: #ffffff;
   }
 
-  .bar-row {
-    display: flex;
-    align-items: center;
-    gap: 6px;
+  .g-num span {
+    font-size: 0.74rem;
+    color: #94a3b8;
   }
 
-  .bar-lbl {
-    font-size: 0.7rem;
-    font-weight: 900;
-    width: 22px;
+  .pow-num {
+    color: #fde047;
   }
 
-  .hp-lbl { color: #4ade80; }
-  .sp-lbl { color: #38bdf8; }
-  .pow-lbl { color: #fbbf24; }
-
-  .bar-track {
-    flex: 1;
-    height: 7px;
-    background: #0f172a;
+  .g-bar {
+    height: 8px;
+    background: #020617;
+    border: 1px solid #475569;
     border-radius: 4px;
     overflow: hidden;
   }
 
-  .bar-fill {
+  .g-fill {
     height: 100%;
     transition: width 0.2s;
   }
+  .g-fill.hp { background: linear-gradient(90deg, #16a34a, #4ade80); }
+  .g-fill.sp { background: linear-gradient(90deg, #0284c7, #38bdf8); }
+  .g-fill.pow { background: linear-gradient(90deg, #d97706, #fde047); }
+  .g-fill.pow.max { background: linear-gradient(90deg, #dc2626, #fde047); }
 
-  .hp-fill { background: linear-gradient(90deg, #16a34a, #4ade80); }
-  .sp-fill { background: linear-gradient(90deg, #0284c7, #38bdf8); }
-  .pow-fill { background: linear-gradient(90deg, #d97706, #fde047); }
-  .pow-fill.pow-max { background: linear-gradient(90deg, #dc2626, #fde047); }
-
-  .bar-val {
-    font-size: 0.7rem;
-    color: #cbd5e1;
-    min-width: 58px;
-    text-align: right;
-  }
-
-  .pow-val {
-    color: #fde047;
-    font-weight: 800;
-  }
-
-  /* 底部皇家藍底金框指令台 */
-  .jrpg-command-deck {
-    display: grid;
-    grid-template-columns: 1fr 1.4fr;
-    gap: 12px;
-    padding: 14px;
-    background: linear-gradient(180deg, #0c1938, #071026);
-  }
-
-  .jrpg-commands-box {
-    background: rgba(15, 32, 75, 0.9);
-    border: 2px solid #fbbf24;
-    border-radius: 10px;
-    padding: 10px;
-  }
-
-  .cmd-header {
-    font-size: 0.85rem;
-    font-weight: 900;
-    color: #fde047;
-    margin-bottom: 8px;
-    padding-bottom: 4px;
-    border-bottom: 1px solid rgba(251, 191, 36, 0.35);
-  }
-
-  .cmd-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 8px;
-  }
-
-  .cmd-btn {
-    background: linear-gradient(180deg, #1e3a8a, #172554);
-    border: 1.5px solid #60a5fa;
-    border-radius: 8px;
-    padding: 9px 10px;
-    color: #fff;
-    font-size: 0.92rem;
-    font-weight: 900;
-    cursor: pointer;
-    text-align: left;
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-    transition: all 0.15s;
-  }
-
-  .cmd-btn:hover {
-    border-color: #fde047;
-    transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(250, 204, 21, 0.25);
-  }
-
-  .cmd-btn.cmd-attack {
-    background: linear-gradient(135deg, #991b1b, #dc2626);
-    border-color: #fca5a5;
-  }
-
-  .cmd-btn.cmd-overdrive.pow-ready {
-    background: linear-gradient(135deg, #b45309, #ef4444);
-    border-color: #fef08a;
-    box-shadow: 0 0 15px rgba(250, 204, 21, 0.6);
-  }
-
-  .cmd-btn.cmd-overdrive.pow-charging {
-    opacity: 0.72;
-  }
-
-  .cmd-btn.cmd-allout {
-    background: linear-gradient(135deg, #065f46, #059669);
-    border-color: #6ee7b7;
-  }
-
-  .cmd-sub {
-    font-size: 0.7rem;
-    font-weight: 600;
-    color: #cbd5e1;
-  }
-
-  .jrpg-subpanel {
-    background: rgba(10, 20, 48, 0.92);
-    border: 2px solid #fbbf24;
-    border-radius: 10px;
-    padding: 10px 12px;
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-  }
-
-  .subpanel-header {
+  /* 子視窗：劍技／道具／架勢 */
+  .ff6-subwindow-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    flex-wrap: wrap;
-    gap: 6px;
-    font-size: 0.85rem;
+    font-size: 0.95rem;
     font-weight: 900;
     color: #fde047;
+    text-shadow: 1px 1px 0 #000;
     padding-bottom: 6px;
-    border-bottom: 1px solid rgba(251, 191, 36, 0.3);
+    border-bottom: 1.5px solid rgba(251, 191, 36, 0.4);
   }
 
-  .log-hint {
-    font-size: 0.74rem;
-    font-weight: 600;
-    color: #93c5fd;
+  .ff6-back-btn {
+    background: #991b1b;
+    border: 1.5px solid #fca5a5;
+    color: #fff;
+    font-size: 0.8rem;
+    font-weight: 900;
+    padding: 3px 10px;
+    border-radius: 6px;
+    cursor: pointer;
   }
 
-  .skills-grid,
-  .items-grid,
-  .stances-grid {
+  .ff6-sub-grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 8px;
-    max-height: 210px;
+    max-height: 220px;
     overflow-y: auto;
   }
 
-  .skill-choice-card,
-  .item-choice-card {
-    background: #111c38;
-    border: 1px solid #3b82f6;
+  .ff6-sub-card {
+    background: rgba(6, 15, 42, 0.85);
+    border: 1.5px solid #60a5fa;
     border-radius: 8px;
-    padding: 8px 10px;
+    padding: 8px 12px;
     color: #fff;
     text-align: left;
     cursor: pointer;
@@ -693,92 +1003,48 @@
     gap: 3px;
   }
 
-  .skill-choice-card:hover {
+  .ff6-sub-card:hover,
+  .ff6-sub-card.active-stance {
     border-color: #fde047;
-    background: #1e3a8a;
+    background: rgba(30, 58, 138, 0.9);
   }
 
-  .sk-top {
+  .sub-top {
     display: flex;
     justify-content: space-between;
     align-items: center;
   }
 
-  .sk-title,
-  .item-name {
-    font-size: 0.86rem;
+  .sub-name {
+    font-size: 0.95rem;
     font-weight: 900;
     color: #fde047;
   }
 
-  .sk-cost {
-    font-size: 0.75rem;
-    font-weight: 800;
+  .sub-cost {
+    font-size: 0.8rem;
+    font-weight: 900;
     color: #38bdf8;
   }
 
-  .sk-caster {
-    font-size: 0.72rem;
+  .sub-caster {
+    font-size: 0.75rem;
     color: #93c5fd;
   }
 
-  .sk-desc,
-  .item-desc {
-    font-size: 0.74rem;
-    color: #cbd5e1;
+  .sub-desc {
+    font-size: 0.78rem;
+    color: #e2e8f0;
     line-height: 1.35;
   }
 
-  .item-choice-card {
+  .item-card {
     cursor: default;
-    flex-direction: row;
-    justify-content: space-between;
-    align-items: center;
   }
 
-  .item-btns {
+  .item-actions {
     display: flex;
     gap: 6px;
-  }
-
-  .battle-log-list {
-    display: flex;
-    flex-direction: column;
-    gap: 5px;
-    max-height: 195px;
-    overflow-y: auto;
-  }
-
-  .log-entry {
-    font-size: 0.82rem;
-    color: #cbd5e1;
-    padding: 4px 8px;
-    border-radius: 4px;
-    background: rgba(15, 23, 42, 0.55);
-    line-height: 1.4;
-  }
-
-  .log-entry.latest-log {
-    color: #fef08a;
-    font-weight: 700;
-    border-left: 3px solid #f59e0b;
-    background: rgba(245, 158, 11, 0.14);
-  }
-
-  @media (max-width: 900px) {
-    .jrpg-battle-stage {
-      grid-template-columns: 1fr;
-    }
-    .vs-divider {
-      display: none;
-    }
-    .jrpg-command-deck {
-      grid-template-columns: 1fr;
-    }
-    .skills-grid,
-    .items-grid,
-    .stances-grid {
-      grid-template-columns: 1fr;
-    }
+    margin-top: 4px;
   }
 </style>

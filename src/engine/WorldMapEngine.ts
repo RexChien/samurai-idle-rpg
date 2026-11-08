@@ -15,6 +15,9 @@ export interface TownWanderingNPC {
   facing: 'down' | 'up' | 'left' | 'right';
   walkFrame: number;
   bubbleText: string;
+  guildTag?: string;
+  level?: number;
+  isOnlinePlayer?: boolean;
 }
 
 export interface SceneryProp {
@@ -97,13 +100,13 @@ export const MAP_ZONES: MapZoneConfig[] = [
     subtitle: '櫻吹雪與鴨川茶屋之都',
     width: 1440,
     height: 920,
-    grassBase: '#4d9239',
-    grassLight: '#63ab49',
-    grassDark: '#3b782a',
-    roadBase: '#d9bc8c',
-    roadBorder: '#8c7a5b',
-    waterDeep: '#1d78b5',
-    waterShallow: '#42a5e8',
+    grassBase: '#2d5a34',
+    grassLight: '#3f7646',
+    grassDark: '#1d3f23',
+    roadBase: '#b89f78',
+    roadBorder: '#64533b',
+    waterDeep: '#0f4c75',
+    waterShallow: '#3282b8',
     flowerColors: ['#ff8fab', '#ffb3c6', '#fde047', '#ffffff'],
     particleColors: ['#ffb3c6', '#ff8fab', '#ffd6e0'],
     treeKind: 'sakura',
@@ -116,13 +119,13 @@ export const MAP_ZONES: MapZoneConfig[] = [
     subtitle: '千年古杉與翠竹清流',
     width: 1440,
     height: 920,
-    grassBase: '#2d7a46',
-    grassLight: '#3e945a',
-    grassDark: '#1f5c33',
-    roadBase: '#94a3b8',
-    roadBorder: '#475569',
-    waterDeep: '#0e7490',
-    waterShallow: '#22d3ee',
+    grassBase: '#1d4d38',
+    grassLight: '#296b4d',
+    grassDark: '#123526',
+    roadBase: '#7c8b99',
+    roadBorder: '#3b4654',
+    waterDeep: '#0c4a6e',
+    waterShallow: '#0284c7',
     flowerColors: ['#86efac', '#fef08a', '#38bdf8'],
     particleColors: ['#86efac', '#4ade80', '#bbf7d0'],
     treeKind: 'bamboo',
@@ -135,13 +138,13 @@ export const MAP_ZONES: MapZoneConfig[] = [
     subtitle: '秋楓古道與碧海宿場',
     width: 1600,
     height: 920,
-    grassBase: '#6b8e23',
-    grassLight: '#84a938',
-    grassDark: '#526e18',
-    roadBase: '#d4a373',
-    roadBorder: '#8a623e',
-    waterDeep: '#1e6091',
-    waterShallow: '#4ea8de',
+    grassBase: '#4c5c28',
+    grassLight: '#657a37',
+    grassDark: '#36421b',
+    roadBase: '#b88b61',
+    roadBorder: '#6c4d30',
+    waterDeep: '#164e63',
+    waterShallow: '#0891b2',
     flowerColors: ['#f97316', '#ef4444', '#facc15'],
     particleColors: ['#ef4444', '#f97316', '#facc15'],
     treeKind: 'maple',
@@ -154,13 +157,13 @@ export const MAP_ZONES: MapZoneConfig[] = [
     subtitle: '夕照赤富士與金秋芒原',
     width: 1500,
     height: 920,
-    grassBase: '#8c6d32',
-    grassLight: '#a88440',
-    grassDark: '#6e5322',
-    roadBase: '#b88b64',
-    roadBorder: '#6e4e32',
-    waterDeep: '#991b1b',
-    waterShallow: '#f97316',
+    grassBase: '#694e26',
+    grassLight: '#876532',
+    grassDark: '#4a3519',
+    roadBase: '#9c7350',
+    roadBorder: '#573d26',
+    waterDeep: '#7f1d1d',
+    waterShallow: '#dc2626',
     flowerColors: ['#fde047', '#fb923c', '#f87171'],
     particleColors: ['#fb923c', '#fde047', '#ef4444'],
     treeKind: 'pine',
@@ -173,12 +176,12 @@ export const MAP_ZONES: MapZoneConfig[] = [
     subtitle: '金碧東照宮與千年銀杏',
     width: 1500,
     height: 920,
-    grassBase: '#3f8259',
-    grassLight: '#529e6f',
-    grassDark: '#2c6341',
-    roadBase: '#e2e8f0',
-    roadBorder: '#94a3b8',
-    waterDeep: '#0284c7',
+    grassBase: '#285943',
+    grassLight: '#38785b',
+    grassDark: '#1b3d2e',
+    roadBase: '#cbd5e1',
+    roadBorder: '#64748b',
+    waterDeep: '#0369a1',
     waterShallow: '#38bdf8',
     flowerColors: ['#fde047', '#facc15', '#ffffff'],
     particleColors: ['#fde047', '#fef08a', '#fbbf24'],
@@ -192,13 +195,13 @@ export const MAP_ZONES: MapZoneConfig[] = [
     subtitle: '彼岸花海與三途冥川',
     width: 1600,
     height: 920,
-    grassBase: '#31234a',
-    grassLight: '#433163',
-    grassDark: '#211633',
-    roadBase: '#6b5b7b',
-    roadBorder: '#3f334d',
-    waterDeep: '#4c1d95',
-    waterShallow: '#a855f7',
+    grassBase: '#241838',
+    grassLight: '#352352',
+    grassDark: '#160d24',
+    roadBase: '#574866',
+    roadBorder: '#2e2438',
+    waterDeep: '#3b0764',
+    waterShallow: '#7e22ce',
     flowerColors: ['#ef4444', '#f43f5e', '#c084fc'],
     particleColors: ['#38bdf8', '#c084fc', '#f43f5e'],
     treeKind: 'dead_tree',
@@ -304,70 +307,106 @@ export class WorldMapEngine {
 
     if (zoneId === 'kyoto') {
       this.state.pois = [
-        { id: 'shrine_kyoto', name: '出雲分社・祈福大社', type: 'shrine', x: 240, y: 240, icon: '⛩️', desc: '參拜神木可獲得【出雲武運】祝福（全屬性戰力 +15%，持續 5 分鐘）！' },
-        { id: 'npc_yagyu', name: '柳生劍術道場・嚴信', type: 'npc', x: 430, y: 280, icon: 'npc_yagyu', desc: '「練完木刀別忘了去茶屋吃串熱騰騰的三色糰子，張弛有度才是劍聖之道！」' },
-        { id: 'npc_kaede', name: '神女・神無月楓', type: 'npc', x: 290, y: 270, icon: 'samurai_female', desc: '「櫻花盛開的洛中城下町最熱鬧了，願神明護佑您的每一戰。」' },
-        { id: 'npc_komachi', name: '花見糰子茶屋・小町', type: 'npc', x: 560, y: 520, icon: 'npc_town_girl', desc: '「歡迎光臨！剛烤好的醬油糰子跟宇治抹茶，武士大人要來一份嗎？」' },
-        { id: 'forge_kunitomo', name: '國友鐵齋・鍛冶工坊', type: 'town', x: 680, y: 280, icon: 'npc_tessai', desc: '「哈哈哈！天外隕鐵與百鍊玉鋼都在爐裡燒紅啦，快來打造傳奇神兵！」' },
-        { id: 'npc_hayate', name: '鴨川大橋巡守・疾風', type: 'npc', x: 790, y: 490, icon: 'npc_hayate', desc: '「跨過這座朱紅太鼓橋往東就是試刀林，町裡的孩子們都很崇拜您呢！」' },
+        { id: 'shrine_kyoto', name: '出雲分社・祈福大社', type: 'shrine', x: 240, y: 240, icon: '⛩️', desc: '「神前之鈴清脆作響……誠心參拜大社神木，即可獲得【出雲武運】（全隊全屬性 +15% 並完整記錄冒險卷軸）！」' },
+        { id: 'npc_yagyu', name: '柳生劍術道場・嚴信', type: 'npc', x: 430, y: 280, icon: 'npc_yagyu', desc: '「夫兵法之道，在心不在器。練完木刀別忘了去茶屋吃串熱騰騰的三色糰子，張弛有度方為天下無雙！」' },
+        { id: 'npc_kaede', name: '破邪巫女・神無月楓', type: 'npc', x: 290, y: 270, icon: 'samurai_female', desc: '「櫻吹雪飄落的洛中城下町最熱鬧了！各地武士團的劍豪都在廣場集結，願神明護佑我們的每一場遠征。」' },
+        { id: 'npc_komachi', name: '花見糰子茶屋・小町', type: 'npc', x: 560, y: 520, icon: 'npc_town_girl', desc: '「歡迎光臨花見茶屋！剛烤好的甜醬油糰子跟宇治抹茶香氣四溢，各位武士大人要歇腳恢復氣力嗎？」' },
+        { id: 'forge_kunitomo', name: '國友鐵齋・鍛冶工坊', type: 'town', x: 680, y: 280, icon: 'npc_tessai', desc: '「哈哈哈！天外隕鐵與百鍊玉鋼都在爐裡燒得通紅啦！快把名刀交給老夫千錘百鍊！」' },
+        { id: 'npc_hayate', name: '鴨川大橋巡守・疾風', type: 'npc', x: 790, y: 490, icon: 'npc_hayate', desc: '「跨過這座朱紅太鼓橋往東就是試刀林，已經有不少【大型多人武士團】的劍士正在東岸討伐鬼眾呢！」' },
         { id: 'chest_kyoto', name: '町民感謝金蒔繪禮匣', type: 'chest', x: 1180, y: 640, icon: '🎁', desc: '洛中街坊為感謝巡守武士而準備的漆金禮匣！' }
-      ];
-
-      this.state.townNpcs = [
-        {
-          id: 'wander_1',
-          name: '賞櫻町娘・阿綾',
-          spriteId: 'npc_town_girl',
-          x: 470,
-          y: 430,
-          originX: 470,
-          originY: 430,
-          vx: 0.45,
-          vy: 0.1,
-          facing: 'right',
-          walkFrame: 0,
-          bubbleText: '🌸 櫻花跟糰子都好美～'
-        },
-        {
-          id: 'wander_2',
-          name: '道場門生・新八',
-          spriteId: 'samurai_general',
-          x: 640,
-          y: 455,
-          originX: 640,
-          originY: 455,
-          vx: -0.4,
-          vy: 0.12,
-          facing: 'left',
-          walkFrame: 1,
-          bubbleText: '⚔️ 今日木刀百振達成！'
-        }
       ];
     } else {
       this.state.pois = [
-        { id: 'shrine_' + zoneId, name: `${zone.name.split('・')[0]}・祈福大社`, type: 'shrine', x: 250, y: 240, icon: '⛩️', desc: '點著暖光燈籠的靈山大社，參拜可獲【出雲武運】戰力加成！' },
-        { id: 'npc_guide_' + zoneId, name: '行腳茶屋・小町', type: 'npc', x: 520, y: 520, icon: 'npc_town_girl', desc: '「走累了嗎？在野點傘下喝口熱抹茶，再繼續跟妖怪們切磋吧！」' },
-        { id: 'forge_' + zoneId, name: '行軍鍛冶爐・鐵齋', type: 'town', x: 640, y: 280, icon: 'npc_tessai', desc: '「在野外打到好胚子？直接交給老夫現場鍛造強化！」' },
+        { id: 'shrine_' + zoneId, name: `${zone.name.split('・')[0]}・祈福大社`, type: 'shrine', x: 250, y: 240, icon: '⛩️', desc: '點著暖光燈籠的靈山大社，參拜可獲【出雲武運】戰力加成並記錄冒險進度！' },
+        { id: 'npc_guide_' + zoneId, name: '行腳茶屋・小町', type: 'npc', x: 520, y: 520, icon: 'npc_town_girl', desc: '「遠征辛苦了！在野點傘下喝口熱抹茶、補充行囊道具，再與各路武士一同討伐妖魔吧！」' },
+        { id: 'forge_' + zoneId, name: '行軍鍛冶爐・鐵齋', type: 'town', x: 640, y: 280, icon: 'npc_tessai', desc: '「在戰場打到稀有玉鋼胚子？直接交給老夫的野戰熔爐現場鍛造強化！」' },
         { id: 'chest_' + zoneId, name: '古道金蒔繪秘寶箱', type: 'chest', x: 1160, y: 620, icon: '🎁', desc: '藏在古樹下的金蒔繪寶箱，能開出稀世武具！' }
       ];
     }
 
-    // 生成武士道列傳風格的豐富景觀物件（櫻花樹、竹林、楓樹、岩石、鳥居、石燈籠、陣幕）
+    // 生成《大型多人武士道列傳》漫遊的線上武士團玩家與町民 (點擊可開大型 TV GAME 對話框切磋／共鬥)
+    this.state.townNpcs = [
+      {
+        id: 'online_musashi_clan',
+        name: '緋村拔刀齋',
+        guildTag: '【二天一流盟】',
+        level: 28,
+        spriteId: 'samurai_oni',
+        x: 470,
+        y: 430,
+        originX: 470,
+        originY: 430,
+        vx: 0.52,
+        vy: 0.12,
+        facing: 'right',
+        walkFrame: 0,
+        bubbleText: '🔥 徵求劍豪組隊挑戰常世鬼大將！',
+        isOnlinePlayer: true
+      },
+      {
+        id: 'online_shinsengumi',
+        name: '沖田總司',
+        guildTag: '【新選組一番隊】',
+        level: 32,
+        spriteId: 'samurai_general',
+        x: 640,
+        y: 455,
+        originX: 640,
+        originY: 455,
+        vx: -0.48,
+        vy: 0.14,
+        facing: 'left',
+        walkFrame: 1,
+        bubbleText: '⚔️ 三段突刺修練中，有人要切磋嗎？',
+        isOnlinePlayer: true
+      },
+      {
+        id: 'online_takeda_lord',
+        name: '真田幸村',
+        guildTag: '【風林火山武士團】',
+        level: 35,
+        spriteId: 'samurai_lord',
+        x: 910,
+        y: 440,
+        originX: 910,
+        originY: 440,
+        vx: 0.42,
+        vy: -0.15,
+        facing: 'right',
+        walkFrame: 2,
+        bubbleText: '🛡️ 橋東妖氣濃厚，小隊注意架勢相剋！',
+        isOnlinePlayer: true
+      },
+      {
+        id: 'online_izumo_miko',
+        name: '出雲阿國',
+        guildTag: '【出雲神樂眾】',
+        level: 26,
+        spriteId: 'samurai_female',
+        x: 360,
+        y: 465,
+        originX: 360,
+        originY: 465,
+        vx: 0.36,
+        vy: -0.1,
+        facing: 'right',
+        walkFrame: 0,
+        bubbleText: '🌸 參拜出雲大社有全屬性加持喔～',
+        isOnlinePlayer: true
+      }
+    ];
+
     this.generateZoneScenery(zone);
-
-    // 預先渲染全彩高細節 16-bit 地圖底圖 Canvas
     this.buildOffscreenGround(zone);
-
-    // 初始化天氣飄落粒子（櫻花瓣、竹葉、楓葉、金粉、火粉）
     this.initParticles(zone);
 
-    // 生成漫遊的 3頭身像素妖怪
+    // 生成漫遊的妖魔陣列
     this.state.yokaiList = [];
     const monsterConfigs = [
       { name: '貪吃赤面鬼', sprite: 'yokai_oni' },
       { name: '鞍馬小天狗', sprite: 'yokai_tengu' },
       { name: '提燈白狐妖', sprite: 'yokai_kitsune' },
-      { name: '偷酒赤面鬼', sprite: 'yokai_oni' },
+      { name: '羅剎赤鬼眾', sprite: 'yokai_oni' },
       { name: '常世鬼大將', sprite: 'yokai_tengu' }
     ];
     const stances: ('earth' | 'water' | 'fire' | 'wind' | 'void')[] = ['earth', 'water', 'fire', 'wind', 'void'];
@@ -423,14 +462,12 @@ export class WorldMapEngine {
       });
     });
 
-    // 街道兩側石燈籠與朱紅提燈
     for (let lx = 180; lx <= zone.width - 180; lx += 160) {
       if (Math.abs(lx - zone.riverX) < 75) continue;
       props.push({ kind: 'lantern', x: lx, y: 392, scale: 1, variant: 0 });
       props.push({ kind: 'lantern', x: lx, y: 512, scale: 1, variant: 1 });
     }
 
-    // 奇岩與裝飾景物
     const rockCoords = [[190, 370], [710, 590], [960, 370], [1220, 370], [1080, 520]];
     rockCoords.forEach(([rx, ry], idx) => {
       props.push({ kind: 'rock', x: rx, y: ry, scale: 1, variant: idx % 2 });
@@ -441,22 +478,22 @@ export class WorldMapEngine {
 
   private initParticles(zone: MapZoneConfig) {
     this.state.particles = [];
-    for (let i = 0; i < 42; i++) {
+    for (let i = 0; i < 45; i++) {
       this.state.particles.push({
         x: Math.random() * zone.width,
         y: Math.random() * zone.height,
         vx: zone.id === 'fuji' || zone.id === 'yomi' ? (Math.random() - 0.5) * 18 : -18 - Math.random() * 22,
         vy: zone.id === 'fuji' || zone.id === 'yomi' ? -15 - Math.random() * 20 : 16 + Math.random() * 20,
-        size: 3 + Math.floor(Math.random() * 4),
+        size: 3.5 + Math.random() * 3.5,
         color: zone.particleColors[i % zone.particleColors.length],
-        alpha: 0.55 + Math.random() * 0.4,
+        alpha: 0.65 + Math.random() * 0.35,
         phase: Math.random() * Math.PI * 2
       });
     }
   }
 
   /**
-   * 預先繪製《武士道列傳》風格的全彩高細節像素地貌底圖
+   * 預先繪製 SFC《Final Fantasy VI》＋《武士道列傳》高彩度厚塗質感地貌底圖（非點陣方格）
    */
   private buildOffscreenGround(zone: MapZoneConfig) {
     if (typeof document === 'undefined') return;
@@ -465,124 +502,172 @@ export class WorldMapEngine {
     off.height = zone.height;
     const g = off.getContext('2d');
     if (!g) return;
-    g.imageSmoothingEnabled = false;
+    g.imageSmoothingEnabled = true;
 
-    const tileSize = 32;
-    const cols = Math.ceil(zone.width / tileSize);
-    const rows = Math.ceil(zone.height / tileSize);
+    // 1. FF6 風格深邃地表漸層與柔光草甸紋理
+    const groundGrad = g.createLinearGradient(0, 76, 0, zone.height);
+    groundGrad.addColorStop(0, zone.grassDark);
+    groundGrad.addColorStop(0.45, zone.grassBase);
+    groundGrad.addColorStop(1, zone.grassDark);
+    g.fillStyle = groundGrad;
+    g.fillRect(0, 0, zone.width, zone.height);
 
-    // 1. 全彩草地／地貌像素拼接磚 (Multi-tone 16-bit Grass & Wildflowers)
-    for (let r = 0; r < rows; r++) {
-      for (let c = 0; c < cols; c++) {
-        const tx = c * tileSize;
-        const ty = r * tileSize;
+    // 自然柔和的草地明暗光斑與花叢 (無方塊鋸齒)
+    for (let r = 2; r < 28; r++) {
+      for (let c = 0; c < 46; c++) {
         const hash = ((c * 73856093) ^ (r * 19349663)) >>> 0;
+        const cx = c * 36 + (hash % 18);
+        const cy = r * 32 + ((hash >> 3) % 16);
 
-        g.fillStyle = (c + r) % 2 === 0 ? zone.grassBase : zone.grassDark;
-        g.fillRect(tx, ty, tileSize, tileSize);
+        const patchGrad = g.createRadialGradient(cx, cy, 2, cx, cy, 28 + (hash % 16));
+        patchGrad.addColorStop(0, (c + r) % 2 === 0 ? zone.grassLight : zone.grassDark);
+        patchGrad.addColorStop(1, 'transparent');
+        g.fillStyle = patchGrad;
+        g.beginPath();
+        g.arc(cx, cy, 32, 0, Math.PI * 2);
+        g.fill();
 
-        // 草叢亮部像素紋理
-        g.fillStyle = zone.grassLight;
-        g.fillRect(tx + (hash % 18), ty + ((hash >> 3) % 18), 6, 4);
-        g.fillRect(tx + ((hash >> 5) % 22), ty + ((hash >> 7) % 22), 4, 6);
+        // 細膩的弧形草葉與落花瓣
+        if (hash % 3 === 0) {
+          g.strokeStyle = zone.grassLight;
+          g.lineWidth = 1.6;
+          g.beginPath();
+          g.moveTo(cx, cy + 4);
+          g.quadraticCurveTo(cx - 4, cy - 3, cx - 6, cy - 6);
+          g.moveTo(cx, cy + 4);
+          g.quadraticCurveTo(cx + 3, cy - 4, cx + 6, cy - 7);
+          g.stroke();
+        }
 
-        // 像素小草簇 (Grass blades)
-        g.fillStyle = zone.grassLight;
-        const gx = tx + 6 + (hash % 16);
-        const gy = ty + 8 + ((hash >> 4) % 16);
-        g.fillRect(gx, gy, 2, 6);
-        g.fillRect(gx - 2, gy + 2, 2, 4);
-        g.fillRect(gx + 2, gy + 1, 2, 5);
-
-        // 點綴盛開的像素野花與落櫻
         if (hash % 5 === 0) {
           const flColor = zone.flowerColors[hash % zone.flowerColors.length];
-          const fx = tx + 8 + ((hash >> 2) % 16);
-          const fy = ty + 8 + ((hash >> 6) % 16);
           g.fillStyle = flColor;
-          g.fillRect(fx, fy - 2, 2, 6);
-          g.fillRect(fx - 2, fy, 6, 2);
+          for (let a = 0; a < 5; a++) {
+            const ang = (a * Math.PI * 2) / 5;
+            g.beginPath();
+            g.arc(cx + Math.cos(ang) * 3.2, cy + Math.sin(ang) * 3.2, 2.0, 0, Math.PI * 2);
+            g.fill();
+          }
           g.fillStyle = '#fef08a';
-          g.fillRect(fx, fy, 2, 2);
+          g.beginPath();
+          g.arc(cx, cy, 1.5, 0, Math.PI * 2);
+          g.fill();
         }
       }
     }
 
-    // 2. 遠景浮世繪山巒天際線 (Top Horizon Vista — 富士山 / 鞍馬群峰 / 京都北山)
+    // 2. 遠景 FF6 浮世繪山巒天際線
     this.drawHorizonVista(g, zone);
 
-    // 3. 繪製石疊廣場與縱橫街道網 (Cobblestone Plaza & Edo Highways)
-    // 中央城下町石疊大廣場
+    // 3. 繪製立體石疊廣場與東海道石板街道網
     this.drawCobblestoneRect(g, 380, 290, 340, 260, zone.roadBase, zone.roadBorder);
-    // 東西向東海道主幹道 (Y = 405..495)
     this.drawCobblestoneRect(g, 40, 405, zone.width - 80, 90, zone.roadBase, zone.roadBorder);
-    // 通往神社、道場、鍛冶屋、寶箱的飛石參道 (Stepping Stone Paths)
     this.drawSteppingStones(g, 240, 405, 240, 230);
     this.drawSteppingStones(g, 430, 320, 430, 270);
     this.drawSteppingStones(g, 660, 320, 660, 270);
     this.drawSteppingStones(g, 1160, 495, 1160, 630);
 
-    // 4. 繪製貫穿南北的溪流與護岸石垣 (River & Stone Embankments)
+    // 4. 繪製流暢曲折的溪流與鵝卵石護岸
     const rx = zone.riverX;
-    for (let y = 76; y < zone.height; y += 16) {
-      const waveOffset = Math.round(Math.sin(y * 0.015) * 18);
+    for (let y = 76; y < zone.height; y += 8) {
+      const waveOffset = Math.sin(y * 0.015) * 18;
       const curRx = rx + waveOffset;
-      // 兩側護岸石垣
-      g.fillStyle = '#64748b';
-      g.fillRect(curRx - 48, y, 12, 16);
-      g.fillRect(curRx + 36, y, 12, 16);
-      g.fillStyle = '#94a3b8';
-      g.fillRect(curRx - 46, y + 2, 8, 6);
-      g.fillRect(curRx + 38, y + 2, 8, 6);
 
-      // 淺灘與深水河道
-      g.fillStyle = zone.waterShallow;
-      g.fillRect(curRx - 36, y, 72, 16);
-      g.fillStyle = zone.waterDeep;
-      g.fillRect(curRx - 24, y, 48, 16);
+      const waterGrad = g.createLinearGradient(curRx - 42, y, curRx + 42, y);
+      waterGrad.addColorStop(0, '#475569');
+      waterGrad.addColorStop(0.14, zone.waterShallow);
+      waterGrad.addColorStop(0.5, zone.waterDeep);
+      waterGrad.addColorStop(0.86, zone.waterShallow);
+      waterGrad.addColorStop(1, '#475569');
+      g.fillStyle = waterGrad;
+      g.fillRect(curRx - 42, y, 84, 9);
+
+      // 河岸圓潤岩石
+      if (y % 24 === 0) {
+        g.fillStyle = '#64748b';
+        g.beginPath();
+        g.ellipse(curRx - 42, y + 4, 7, 5, 0, 0, Math.PI * 2);
+        g.ellipse(curRx + 42, y + 4, 7, 5, 0, 0, Math.PI * 2);
+        g.fill();
+        g.fillStyle = '#94a3b8';
+        g.beginPath();
+        g.ellipse(curRx - 43, y + 2, 4, 2.5, 0, 0, Math.PI * 2);
+        g.ellipse(curRx + 41, y + 2, 4, 2.5, 0, 0, Math.PI * 2);
+        g.fill();
+      }
     }
 
-    // 5. 繪製橫跨河川的《武士道列傳》朱紅太鼓木橋 (Vermilion Arched Taiko Bridge)
-    this.drawTaikoBridge(g, rx + Math.round(Math.sin(450 * 0.015) * 18), 400, 128, 100);
+    // 5. 繪製橫跨河川的《武士道列傳》朱紅拱形太鼓橋
+    this.drawTaikoBridge(g, rx + Math.sin(450 * 0.015) * 18, 400, 132, 100);
 
     this.groundCanvas = off;
   }
 
   private drawHorizonVista(g: CanvasRenderingContext2D, zone: MapZoneConfig) {
-    const h = 76;
-    // 天空漸層色帶
-    const skyColors = zone.id === 'fuji'
-      ? ['#450a0a', '#991b1b', '#ea580c', '#fdba74']
-      : zone.id === 'yomi'
-      ? ['#0f051d', '#2e1065', '#581c87', '#7e22ce']
-      : zone.id === 'kyoto'
-      ? ['#1e3a8a', '#2563eb', '#60a5fa', '#bae6fd']
-      : ['#0f172a', '#1e293b', '#334155', '#64748b'];
-
-    skyColors.forEach((col, idx) => {
-      g.fillStyle = col;
-      g.fillRect(0, idx * (h / 4), zone.width, h / 4);
-    });
-
-    // 遠山剪影與赤富士／白雪富士
-    for (let x = 0; x < zone.width; x += 4) {
-      const m1 = Math.sin(x * 0.006) * 22 + Math.cos(x * 0.013) * 12;
-      const my = Math.max(12, Math.round(46 - m1));
-      g.fillStyle = zone.id === 'fuji' ? '#7f1d1d' : '#1e293b';
-      g.fillRect(x, my, 4, h - my);
+    const h = 80;
+    const skyGrad = g.createLinearGradient(0, 0, 0, h);
+    if (zone.id === 'fuji') {
+      skyGrad.addColorStop(0, '#2a0808');
+      skyGrad.addColorStop(0.5, '#7f1d1d');
+      skyGrad.addColorStop(1, '#ea580c');
+    } else if (zone.id === 'yomi') {
+      skyGrad.addColorStop(0, '#090314');
+      skyGrad.addColorStop(0.5, '#2e1065');
+      skyGrad.addColorStop(1, '#6b21a8');
+    } else {
+      skyGrad.addColorStop(0, '#091128');
+      skyGrad.addColorStop(0.55, '#1e3a8a');
+      skyGrad.addColorStop(1, '#38bdf8');
     }
+    g.fillStyle = skyGrad;
+    g.fillRect(0, 0, zone.width, h);
 
-    // 中央富士山峰 (Fuji Silhouette)
-    const fx = Math.round(zone.width * 0.52);
-    for (let dy = 0; dy < 58; dy++) {
-      const halfW = Math.round(14 + Math.pow(dy, 1.32) * 0.85);
-      g.fillStyle = dy < 18 ? '#f8fafc' : zone.id === 'fuji' ? '#dc2626' : '#3b82f6';
-      g.fillRect(fx - halfW, 18 + dy, halfW * 2, 1);
+    // 柔光圓月／夕陽
+    const sunX = zone.width * 0.25;
+    const sunGrad = g.createRadialGradient(sunX, 28, 4, sunX, 28, 38);
+    sunGrad.addColorStop(0, '#fef08a');
+    sunGrad.addColorStop(0.4, 'rgba(251, 191, 36, 0.45)');
+    sunGrad.addColorStop(1, 'transparent');
+    g.fillStyle = sunGrad;
+    g.beginPath();
+    g.arc(sunX, 28, 38, 0, Math.PI * 2);
+    g.fill();
+
+    // 遠景連綿山脈剪影
+    g.fillStyle = zone.id === 'fuji' ? '#450a0a' : '#0f172a';
+    g.beginPath();
+    g.moveTo(0, h);
+    for (let x = 0; x <= zone.width; x += 20) {
+      const m = Math.sin(x * 0.005) * 20 + Math.cos(x * 0.012) * 12;
+      g.lineTo(x, 48 - m);
     }
+    g.lineTo(zone.width, h);
+    g.closePath();
+    g.fill();
 
-    // 地平線石垣圍欄
-    g.fillStyle = '#334155';
-    g.fillRect(0, h - 6, zone.width, 6);
+    // 壯麗富士山流線型山體與白雪冠頂
+    const fx = zone.width * 0.52;
+    const fujiGrad = g.createLinearGradient(fx, 12, fx, h);
+    fujiGrad.addColorStop(0, '#ffffff');
+    fujiGrad.addColorStop(0.32, '#e2e8f0');
+    fujiGrad.addColorStop(0.38, zone.id === 'fuji' ? '#dc2626' : '#2563eb');
+    fujiGrad.addColorStop(1, zone.id === 'fuji' ? '#450a0a' : '#0f172a');
+    g.fillStyle = fujiGrad;
+    g.beginPath();
+    g.moveTo(fx - 18, 14);
+    g.lineTo(fx + 18, 14);
+    g.quadraticCurveTo(fx + 55, 52, fx + 150, h);
+    g.lineTo(fx - 150, h);
+    g.quadraticCurveTo(fx - 55, 52, fx - 18, 14);
+    g.closePath();
+    g.fill();
+
+    // 城郭石垣邊界
+    const wallGrad = g.createLinearGradient(0, h - 8, 0, h);
+    wallGrad.addColorStop(0, '#475569');
+    wallGrad.addColorStop(1, '#1e293b');
+    g.fillStyle = wallGrad;
+    g.fillRect(0, h - 8, zone.width, 8);
   }
 
   private drawCobblestoneRect(
@@ -594,69 +679,108 @@ export class WorldMapEngine {
     baseColor: string,
     borderColor: string
   ) {
-    // 外框石緣
+    g.save();
     g.fillStyle = borderColor;
-    g.fillRect(x - 4, y - 4, w + 8, h + 8);
-    g.fillStyle = baseColor;
-    g.fillRect(x, y, w, h);
+    g.beginPath();
+    g.roundRect(x - 5, y - 5, w + 10, h + 10, 10);
+    g.fill();
 
-    // 石板磚縫與明暗色塊
-    const brickW = 24;
-    const brickH = 16;
-    for (let by = y; by < y + h; by += brickH) {
-      const rowOffset = ((by / brickH) % 2) * 12;
-      for (let bx = x; bx < x + w; bx += brickW) {
+    const rdGrad = g.createLinearGradient(x, y, x, y + h);
+    rdGrad.addColorStop(0, baseColor);
+    rdGrad.addColorStop(0.5, '#d6c3a5');
+    rdGrad.addColorStop(1, baseColor);
+    g.fillStyle = rdGrad;
+    g.beginPath();
+    g.roundRect(x, y, w, h, 8);
+    g.fill();
+
+    // 圓潤石板紋理
+    const brickW = 28;
+    const brickH = 18;
+    for (let by = y + 4; by < y + h - 8; by += brickH) {
+      const rowOffset = ((Math.floor(by / brickH)) % 2) * 14;
+      for (let bx = x + 4 + rowOffset; bx < x + w - 24; bx += brickW) {
         const hash = ((bx * 31) ^ (by * 17)) & 7;
-        g.fillStyle = hash === 0 ? 'rgba(255,255,255,0.16)' : hash === 1 ? 'rgba(0,0,0,0.10)' : 'transparent';
-        if (g.fillStyle !== 'transparent') {
-          g.fillRect(bx + 2, by + 2, Math.min(brickW - 3, x + w - bx - 2), Math.min(brickH - 3, y + h - by - 2));
-        }
-        g.fillStyle = 'rgba(71, 53, 33, 0.25)';
-        g.fillRect(bx, by, Math.min(brickW, x + w - bx), 1);
-        const vx = bx + rowOffset;
-        if (vx < x + w) {
-          g.fillRect(vx, by, 1, Math.min(brickH, y + h - by));
-        }
+        g.fillStyle = hash % 2 === 0 ? 'rgba(255,255,255,0.14)' : 'rgba(0,0,0,0.08)';
+        g.strokeStyle = 'rgba(68, 51, 34, 0.25)';
+        g.lineWidth = 1;
+        g.beginPath();
+        g.roundRect(bx, by, brickW - 3, brickH - 3, 4);
+        g.fill();
+        g.stroke();
       }
     }
+    g.restore();
   }
 
   private drawSteppingStones(g: CanvasRenderingContext2D, x1: number, y1: number, x2: number, y2: number) {
     const steps = Math.max(4, Math.floor(Math.hypot(x2 - x1, y2 - y1) / 24));
     for (let i = 0; i <= steps; i++) {
       const t = i / steps;
-      const sx = Math.round(x1 + (x2 - x1) * t);
-      const sy = Math.round(y1 + (y2 - y1) * t);
-      g.fillStyle = '#64748b';
-      g.fillRect(sx - 12, sy - 7, 24, 14);
+      const sx = x1 + (x2 - x1) * t;
+      const sy = y1 + (y2 - y1) * t;
+      g.fillStyle = '#475569';
+      g.beginPath();
+      g.ellipse(sx, sy + 2, 13, 8, 0, 0, Math.PI * 2);
+      g.fill();
       g.fillStyle = '#cbd5e1';
-      g.fillRect(sx - 10, sy - 5, 20, 10);
+      g.beginPath();
+      g.ellipse(sx, sy, 11, 6.5, 0, 0, Math.PI * 2);
+      g.fill();
     }
   }
 
   private drawTaikoBridge(g: CanvasRenderingContext2D, centerX: number, topY: number, width: number, height: number) {
-    const left = centerX - Math.round(width / 2);
-    // 橋面木板
-    g.fillStyle = '#78350f';
-    g.fillRect(left, topY, width, height);
-    for (let bx = left; bx < left + width; bx += 12) {
-      g.fillStyle = (bx / 12) % 2 === 0 ? '#92400e' : '#b45309';
-      g.fillRect(bx + 1, topY + 8, 10, height - 16);
+    const left = centerX - width / 2;
+    g.save();
+    // 橋身弧形陰影
+    g.fillStyle = 'rgba(0, 0, 0, 0.35)';
+    g.beginPath();
+    g.roundRect(left - 4, topY + 6, width + 8, height, 8);
+    g.fill();
+
+    // 檜木拱橋橋面漸層
+    const woodGrad = g.createLinearGradient(left, topY, left + width, topY);
+    woodGrad.addColorStop(0, '#78350f');
+    woodGrad.addColorStop(0.5, '#b45309');
+    woodGrad.addColorStop(1, '#78350f');
+    g.fillStyle = woodGrad;
+    g.beginPath();
+    g.roundRect(left, topY, width, height, 6);
+    g.fill();
+
+    // 木板接縫
+    g.strokeStyle = 'rgba(69, 26, 3, 0.45)';
+    g.lineWidth = 1.5;
+    for (let bx = left + 10; bx < left + width - 6; bx += 10) {
+      g.beginPath();
+      g.moveTo(bx, topY + 8);
+      g.lineTo(bx, topY + height - 8);
+      g.stroke();
     }
-    // 上下朱紅欄杆 (Vermilion Railings)
-    g.fillStyle = '#dc2626';
-    g.fillRect(left - 4, topY, width + 8, 10);
-    g.fillRect(left - 4, topY + height - 10, width + 8, 10);
-    // 黃金擬寶珠柱頭 (Gold Giboshi Finials)
-    const posts = [left, left + Math.round(width * 0.33), left + Math.round(width * 0.66), left + width - 6];
+
+    // 朱紅漆塗欄杆與黃金擬寶珠
+    const railGrad = g.createLinearGradient(left, topY, left, topY + 12);
+    railGrad.addColorStop(0, '#ef4444');
+    railGrad.addColorStop(1, '#991b1b');
+    g.fillStyle = railGrad;
+    g.beginPath();
+    g.roundRect(left - 4, topY - 2, width + 8, 12, 4);
+    g.roundRect(left - 4, topY + height - 10, width + 8, 12, 4);
+    g.fill();
+
+    const posts = [left + 2, left + width * 0.33, left + width * 0.66, left + width - 8];
     for (const px of posts) {
-      g.fillStyle = '#991b1b';
-      g.fillRect(px, topY - 6, 8, 16);
+      g.fillStyle = '#b91c1c';
+      g.fillRect(px, topY - 8, 8, 16);
       g.fillRect(px, topY + height - 14, 8, 16);
       g.fillStyle = '#fbbf24';
-      g.fillRect(px + 1, topY - 9, 6, 4);
-      g.fillRect(px + 1, topY + height - 17, 6, 4);
+      g.beginPath();
+      g.arc(px + 4, topY - 9, 4.5, 0, Math.PI * 2);
+      g.arc(px + 4, topY + height - 15, 4.5, 0, Math.PI * 2);
+      g.fill();
     }
+    g.restore();
   }
 
   public navigateToQuestTarget() {
@@ -696,10 +820,29 @@ export class WorldMapEngine {
 
       for (const poi of this.state.pois) {
         const dist = Math.hypot(worldX - poi.x, worldY - (poi.y - 16));
-        if (dist <= 48) {
+        if (dist <= 52) {
           if (this.onInteractPOICallback) this.onInteractPOICallback(poi);
           this.state.targetX = poi.x;
           this.state.targetY = poi.y + 24;
+          return;
+        }
+      }
+
+      // 點擊《大型多人武士道列傳》線上武士玩家可開啟大型 TV GAME 對話框互動／切磋／共鬥
+      for (const wn of this.state.townNpcs) {
+        const dist = Math.hypot(worldX - wn.x, worldY - (wn.y - 16));
+        if (dist <= 48 && this.onInteractPOICallback) {
+          this.onInteractPOICallback({
+            id: wn.id,
+            name: `${wn.guildTag || ''}Lv.${wn.level || 25} ${wn.name}`,
+            type: 'npc',
+            x: wn.x,
+            y: wn.y,
+            icon: wn.spriteId,
+            desc: `「${wn.bubbleText} 閣下也是修習《五輪書》的劍豪嗎？要與在下一同結伴助陣，或是拔刀切磋武藝？」`
+          });
+          this.state.targetX = wn.x;
+          this.state.targetY = wn.y + 20;
           return;
         }
       }
@@ -764,7 +907,7 @@ export class WorldMapEngine {
   }
 
   private update(dt: number, now: number) {
-    const moveSpeed = 230;
+    const moveSpeed = 235;
     let vx = 0;
     let vy = 0;
 
@@ -836,7 +979,7 @@ export class WorldMapEngine {
       npc.y += npc.vy;
       npc.walkFrame = (npc.walkFrame + dt * 4) % 4;
       npc.facing = npc.vx >= 0 ? 'right' : 'left';
-      if (Math.hypot(npc.x - npc.originX, npc.y - npc.originY) > 70) {
+      if (Math.hypot(npc.x - npc.originX, npc.y - npc.originY) > 75) {
         npc.vx *= -1;
         npc.vy *= -1;
       }
@@ -870,7 +1013,6 @@ export class WorldMapEngine {
       }
     }
 
-    // 更新天氣落葉／櫻吹雪粒子
     for (const pt of this.state.particles) {
       pt.x += pt.vx * dt + Math.sin(now * 0.002 + pt.phase) * 0.35;
       pt.y += pt.vy * dt;
@@ -880,7 +1022,6 @@ export class WorldMapEngine {
       if (pt.y > curZone.height) pt.y = 85;
     }
 
-    // 清理過期刀光特效
     this.state.slashEffects = this.state.slashEffects.filter(s => now - s.createdAt < 360);
 
     const targetCamX = this.state.playerX - this.canvas.width / 2;
@@ -901,10 +1042,10 @@ export class WorldMapEngine {
     const camY = Math.round(this.state.cameraY);
 
     ctx.save();
-    ctx.imageSmoothingEnabled = false;
+    ctx.imageSmoothingEnabled = true;
     ctx.clearRect(0, 0, w, h);
 
-    // 1. 繪製全彩預渲染地貌底圖 (Grass, Flowers, Roads, River, Taiko Bridge, Horizon)
+    // 1. 繪製高解析度厚塗地貌底圖
     if (this.groundCanvas) {
       ctx.drawImage(this.groundCanvas, camX, camY, w, h, 0, 0, w, h);
     } else {
@@ -912,10 +1053,10 @@ export class WorldMapEngine {
       ctx.fillRect(0, 0, w, h);
     }
 
-    // 2. 動態河水波光與悠游錦鯉 (Animated Water Ripples & Swimming Koi)
+    // 2. 動態河水波光與悠游錦鯉
     this.renderAnimatedRiverDetails(ctx, curZone, camX, camY, w, h, now);
 
-    // 3. 繪製地標和風建築群 (鳥居大社、柳生道場、糰子茶屋、國友鍛冶屋、秘寶箱)
+    // 3. 繪製地標和風建築群 (流線飛簷瓦頂)
     for (const poi of this.state.pois) {
       const px = poi.x - camX;
       const py = poi.y - camY;
@@ -923,7 +1064,7 @@ export class WorldMapEngine {
       this.renderPOIArchitecture(ctx, poi, px, py, now);
     }
 
-    // 4. 繪製場景樹木、竹林、楓樹與石燈籠 (依 Y 軸深度排序)
+    // 4. 繪製場景樹木、竹林、楓樹與石燈籠
     for (const prop of this.state.scenery) {
       const sx = prop.x - camX;
       const sy = prop.y - camY;
@@ -931,28 +1072,11 @@ export class WorldMapEngine {
       this.renderSceneryProp(ctx, prop, sx, sy, now);
     }
 
-    // 5. 若在京都，標示鴨川橋東側「東郊試刀林」木製路標
-    if (curZone.id === 'kyoto') {
-      const signX = 915 - camX;
-      const signY = 385 - camY;
-      ctx.fillStyle = '#451a03';
-      ctx.fillRect(signX - 3, signY - 12, 6, 26);
-      ctx.fillStyle = '#fef3c7';
-      ctx.fillRect(signX - 72, signY - 26, 144, 20);
-      ctx.strokeStyle = '#92400e';
-      ctx.lineWidth = 2;
-      ctx.strokeRect(signX - 72, signY - 26, 144, 20);
-      ctx.font = 'bold 11px "Noto Sans TC", sans-serif';
-      ctx.fillStyle = '#78350f';
-      ctx.textAlign = 'center';
-      ctx.fillText('⬅ 洛中町區 ｜ 鴨川試刀林 ➡', signX, signY - 12);
-    }
-
-    // 6. 繪製目標尋路指示光圈
+    // 5. 繪製目標尋路指示光圈
     if (this.state.targetX !== null && this.state.targetY !== null) {
       const tx = this.state.targetX - camX;
       const ty = this.state.targetY - camY;
-      const pulse = 12 + Math.sin(now * 0.008) * 3;
+      const pulse = 13 + Math.sin(now * 0.008) * 3;
       ctx.beginPath();
       ctx.arc(tx, ty, pulse, 0, Math.PI * 2);
       ctx.strokeStyle = '#fde047';
@@ -965,13 +1089,12 @@ export class WorldMapEngine {
       ctx.fill();
     }
 
-    // 7. 繪製 POI 的 3頭身像素 NPC 與名稱牌
+    // 6. 繪製 POI 的流暢角色與名稱牌
     for (const poi of this.state.pois) {
       const px = poi.x - camX;
       const py = poi.y - camY;
       if (px < -100 || px > w + 100 || py < -100 || py > h + 100) continue;
 
-      // 腳下互動光環
       ctx.beginPath();
       ctx.ellipse(px, py + 3, 22, 8, 0, 0, Math.PI * 2);
       ctx.fillStyle = poi.type === 'shrine'
@@ -982,75 +1105,93 @@ export class WorldMapEngine {
       ctx.fill();
 
       if (poi.type === 'npc' || poi.type === 'town') {
-        drawChibiSprite(ctx, poi.icon, px, py + 4, 2, 'down', 0);
+        drawChibiSprite(ctx, poi.icon, px, py + 4, 2.15, 'down', 0);
       }
 
-      // 精緻日式木牌名稱標籤
-      ctx.font = 'bold 11px "Noto Sans TC", sans-serif';
+      ctx.font = 'bold 12px "Noto Sans TC", sans-serif';
       ctx.textAlign = 'center';
-      const textW = ctx.measureText(poi.name).width + 14;
-      ctx.fillStyle = 'rgba(15, 23, 42, 0.88)';
-      ctx.fillRect(px - textW / 2, py + 9, textW, 18);
-      ctx.strokeStyle = poi.type === 'chest' ? '#facc15' : '#f59e0b';
-      ctx.lineWidth = 1;
-      ctx.strokeRect(px - textW / 2, py + 9, textW, 18);
+      const textW = ctx.measureText(poi.name).width + 16;
+      ctx.fillStyle = 'rgba(10, 20, 52, 0.92)';
+      ctx.beginPath();
+      ctx.roundRect(px - textW / 2, py + 8, textW, 20, 5);
+      ctx.fill();
+      ctx.strokeStyle = poi.type === 'chest' ? '#facc15' : '#fbbf24';
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
       ctx.fillStyle = poi.type === 'chest' ? '#fde047' : '#ffffff';
-      ctx.fillText(poi.name, px, py + 21);
+      ctx.fillText(poi.name, px, py + 22);
     }
 
-    // 8. 繪製城鎮散步 3頭身町民與對話氣泡
+    // 7. 繪製《大型多人武士道列傳》漫遊的線上武士玩家與即時聊天氣泡
     for (const wn of this.state.townNpcs) {
       const nx = wn.x - camX;
       const ny = wn.y - camY;
-      if (nx < -80 || nx > w + 80 || ny < -80 || ny > h + 80) continue;
+      if (nx < -90 || nx > w + 90 || ny < -90 || ny > h + 90) continue;
 
+      // 線上武士光環
       ctx.beginPath();
-      ctx.ellipse(nx, ny + 2, 14, 5, 0, 0, Math.PI * 2);
-      ctx.fillStyle = 'rgba(0,0,0,0.35)';
+      ctx.ellipse(nx, ny + 3, 18, 6.5, 0, 0, Math.PI * 2);
+      ctx.fillStyle = 'rgba(56, 189, 248, 0.32)';
       ctx.fill();
 
-      drawChibiSprite(ctx, wn.spriteId, nx, ny + 2, 2, wn.facing, wn.walkFrame);
+      drawChibiSprite(ctx, wn.spriteId, nx, ny + 2, 2.1, wn.facing, wn.walkFrame);
 
-      ctx.font = 'bold 10px "Noto Sans TC", sans-serif';
+      // 線上武士團名牌
+      const titleStr = `${wn.guildTag || ''}Lv.${wn.level || 25} ${wn.name}`;
+      ctx.font = 'bold 11px "Noto Sans TC", sans-serif';
       ctx.textAlign = 'center';
-      const bw = ctx.measureText(wn.bubbleText).width + 12;
-      ctx.fillStyle = 'rgba(255, 251, 235, 0.94)';
-      ctx.fillRect(nx - bw / 2, ny - 64, bw, 16);
-      ctx.strokeStyle = '#d97706';
+      const tw = ctx.measureText(titleStr).width + 12;
+      ctx.fillStyle = 'rgba(8, 22, 56, 0.9)';
+      ctx.beginPath();
+      ctx.roundRect(nx - tw / 2, ny + 7, tw, 17, 4);
+      ctx.fill();
+      ctx.strokeStyle = '#38bdf8';
       ctx.lineWidth = 1;
-      ctx.strokeRect(nx - bw / 2, ny - 64, bw, 16);
-      ctx.fillStyle = '#78350f';
-      ctx.fillText(wn.bubbleText, nx, ny - 53);
+      ctx.stroke();
+      ctx.fillStyle = '#7dd3fc';
+      ctx.fillText(titleStr, nx, ny + 19);
+
+      // 頭頂即時對話氣泡
+      ctx.font = 'bold 11px "Noto Sans TC", sans-serif';
+      const bw = ctx.measureText(wn.bubbleText).width + 14;
+      ctx.fillStyle = 'rgba(15, 28, 68, 0.92)';
+      ctx.beginPath();
+      ctx.roundRect(nx - bw / 2, ny - 68, bw, 19, 6);
+      ctx.fill();
+      ctx.strokeStyle = '#fbbf24';
+      ctx.lineWidth = 1.2;
+      ctx.stroke();
+      ctx.fillStyle = '#fef08a';
+      ctx.fillText(wn.bubbleText, nx, ny - 55);
     }
 
-    // 9. 繪製 3頭身像素漫遊妖怪
+    // 8. 繪製漫遊妖魔
     for (const yk of this.state.yokaiList) {
       const yx = yk.x - camX;
       const yy = yk.y - camY;
       if (yx < -80 || yx > w + 80 || yy < -80 || yy > h + 80) continue;
 
-      const scale = yk.isBoss ? 2.5 : 2;
-      const spriteH = 24 * scale;
+      const scale = yk.isBoss ? 2.6 : 2.15;
+      const spriteH = 26 * scale;
 
       ctx.beginPath();
-      ctx.ellipse(yx, yy + 3, 18, 7, 0, 0, Math.PI * 2);
+      ctx.ellipse(yx, yy + 3, 20, 7.5, 0, 0, Math.PI * 2);
       ctx.fillStyle = this.state.activeCombatYokaiId === yk.id ? 'rgba(239, 68, 68, 0.65)' : 'rgba(0,0,0,0.45)';
       ctx.fill();
 
       const ykFacing = yk.vx < 0 ? 'left' : 'right';
       drawChibiSprite(ctx, yk.avatar, yx, yy + 2, scale, ykFacing, (now / 220) % 2);
 
-      // 妖怪血條
-      const barW = 50;
+      const barW = 54;
       const barH = 6;
       const hpPct = Math.max(0, Math.min(1, yk.hp / yk.maxHp));
       const barY = yy - spriteH - 8;
-      ctx.fillStyle = 'rgba(0,0,0,0.8)';
+      ctx.fillStyle = 'rgba(0,0,0,0.85)';
       ctx.fillRect(yx - barW / 2 - 1, barY - 1, barW + 2, barH + 2);
       ctx.fillStyle = yk.isBoss ? '#ef4444' : '#f59e0b';
       ctx.fillRect(yx - barW / 2, barY, barW * hpPct, barH);
 
-      ctx.font = 'bold 11px "Noto Sans TC", sans-serif';
+      ctx.font = 'bold 12px "Noto Sans TC", sans-serif';
       ctx.textAlign = 'center';
       ctx.fillStyle = '#090d16';
       ctx.fillText(`Lv.${yk.level} ${yk.name}`, yx + 1, barY - 4);
@@ -1058,7 +1199,7 @@ export class WorldMapEngine {
       ctx.fillText(`Lv.${yk.level} ${yk.name}`, yx, barY - 5);
     }
 
-    // 10. 繪製《新武士道列傳》三人同行小隊：夥伴【影縫疾風】、【神無月楓】排隊跟隨主角行走
+    // 9. 繪製《新武士道列傳》三人同行小隊：夥伴【影縫疾風】、【神無月楓】排隊跟隨主角行走
     const hayatePos = this.state.trailHistory[Math.min(20, this.state.trailHistory.length - 1)];
     const kaedePos = this.state.trailHistory[Math.min(10, this.state.trailHistory.length - 1)];
 
@@ -1066,29 +1207,29 @@ export class WorldMapEngine {
       const hx = hayatePos.x - camX;
       const hy = hayatePos.y - camY;
       ctx.beginPath();
-      ctx.ellipse(hx, hy + 3, 15, 6, 0, 0, Math.PI * 2);
-      ctx.fillStyle = 'rgba(56, 189, 248, 0.28)';
+      ctx.ellipse(hx, hy + 3, 16, 6, 0, 0, Math.PI * 2);
+      ctx.fillStyle = 'rgba(56, 189, 248, 0.32)';
       ctx.fill();
-      drawChibiSprite(ctx, 'npc_hayate', hx, hy + 3, 2, hayatePos.facing, this.state.isWalking ? (this.state.walkFrame + 2) % 4 : 0);
+      drawChibiSprite(ctx, 'npc_hayate', hx, hy + 3, 2.15, hayatePos.facing, this.state.isWalking ? (this.state.walkFrame + 2) % 4 : 0);
     }
 
     if (kaedePos) {
       const kx = kaedePos.x - camX;
       const ky = kaedePos.y - camY;
       ctx.beginPath();
-      ctx.ellipse(kx, ky + 3, 15, 6, 0, 0, Math.PI * 2);
-      ctx.fillStyle = 'rgba(244, 63, 94, 0.28)';
+      ctx.ellipse(kx, ky + 3, 16, 6, 0, 0, Math.PI * 2);
+      ctx.fillStyle = 'rgba(244, 63, 94, 0.32)';
       ctx.fill();
-      drawChibiSprite(ctx, 'samurai_female', kx, ky + 3, 2, kaedePos.facing, this.state.isWalking ? (this.state.walkFrame + 1) % 4 : 0);
+      drawChibiSprite(ctx, 'samurai_female', kx, ky + 3, 2.15, kaedePos.facing, this.state.isWalking ? (this.state.walkFrame + 1) % 4 : 0);
     }
 
-    // 繪製領隊主角 3頭身像素武士 (Player Leader)
+    // 繪製領隊主角 (Player Leader)
     const px = this.state.playerX - camX;
     const py = this.state.playerY - camY;
 
     ctx.beginPath();
-    ctx.ellipse(px, py + 3, 20, 8, 0, 0, Math.PI * 2);
-    ctx.fillStyle = 'rgba(250, 204, 21, 0.42)';
+    ctx.ellipse(px, py + 3, 22, 8.5, 0, 0, Math.PI * 2);
+    ctx.fillStyle = 'rgba(250, 204, 21, 0.45)';
     ctx.fill();
 
     drawChibiSprite(
@@ -1096,37 +1237,47 @@ export class WorldMapEngine {
       this.state.playerAvatar,
       px,
       py + 3,
-      2,
+      2.25,
       this.state.facing,
       this.state.isWalking ? this.state.walkFrame : 0
     );
 
-    // 玩家頭頂名牌
-    ctx.font = 'bold 11px "Noto Sans TC", sans-serif';
+    ctx.font = 'bold 12px "Noto Sans TC", sans-serif';
     ctx.textAlign = 'center';
     const label = `【${this.state.playerTitle}】${this.state.playerName}`;
-    const lw = ctx.measureText(label).width + 14;
-    ctx.fillStyle = 'rgba(15, 23, 42, 0.9)';
-    ctx.fillRect(px - lw / 2, py - 66, lw, 18);
+    const lw = ctx.measureText(label).width + 16;
+    ctx.fillStyle = 'rgba(10, 22, 58, 0.94)';
+    ctx.beginPath();
+    ctx.roundRect(px - lw / 2, py - 70, lw, 20, 5);
+    ctx.fill();
     ctx.strokeStyle = '#fbbf24';
     ctx.lineWidth = 1.5;
-    ctx.strokeRect(px - lw / 2, py - 66, lw, 18);
+    ctx.stroke();
     ctx.fillStyle = '#fde047';
-    ctx.fillText(label, px, py - 53);
+    ctx.fillText(label, px, py - 56);
 
-    // 11. 繪製拔刀斬擊三日月刀光特效 (Katana Crescent Slash VFX)
+    // 10. 繪製拔刀斬擊三日月刀光特效
     this.renderSlashEffects(ctx, camX, camY, now);
 
-    // 12. 繪製前景飄落櫻花瓣／竹葉／楓葉粒子
+    // 11. 繪製前景飄落櫻花瓣／竹葉／楓葉粒子
     for (const pt of this.state.particles) {
       const sx = pt.x - camX;
       const sy = pt.y - camY;
       if (sx < -10 || sx > w + 10 || sy < -10 || sy > h + 10) continue;
       ctx.fillStyle = pt.color;
-      ctx.fillRect(Math.round(sx), Math.round(sy), pt.size, pt.size - 1);
+      ctx.beginPath();
+      ctx.ellipse(sx, sy, pt.size, pt.size * 0.65, pt.phase, 0, Math.PI * 2);
+      ctx.fill();
     }
 
-    // 13. 繪製左上角《武士道列傳》和風地名卷軸與右上角即時雷達小地圖 (Minimap)
+    // 12. SFC《FF6》招牌深邃暗角光影 (Atmospheric Vignette)
+    const vig = ctx.createRadialGradient(w * 0.5, h * 0.5, Math.min(w, h) * 0.35, w * 0.5, h * 0.5, Math.max(w, h) * 0.72);
+    vig.addColorStop(0, 'transparent');
+    vig.addColorStop(1, 'rgba(3, 7, 18, 0.42)');
+    ctx.fillStyle = vig;
+    ctx.fillRect(0, 0, w, h);
+
+    // 13. 繪製左上角 FF6 皇家藍名牌與右上角雷達小地圖
     this.renderHudOverlays(ctx, curZone, w, h);
 
     ctx.restore();
@@ -1143,248 +1294,296 @@ export class WorldMapEngine {
   ) {
     const rx = zone.riverX;
     for (let y = 90; y < zone.height; y += 36) {
-      if (y > 395 && y < 505) continue; // 太鼓橋下方不畫水紋
-      const waveOffset = Math.round(Math.sin(y * 0.015) * 18);
+      if (y > 395 && y < 505) continue;
+      const waveOffset = Math.sin(y * 0.015) * 18;
       const sx = rx + waveOffset - camX;
       const sy = y - camY;
       if (sx < -50 || sx > w + 50 || sy < -20 || sy > h + 20) continue;
 
-      const shimmerX = Math.round(Math.sin(now * 0.004 + y) * 10);
-      ctx.fillStyle = 'rgba(255, 255, 255, 0.45)';
-      ctx.fillRect(sx - 12 + shimmerX, sy, 16, 2);
-      ctx.fillRect(sx + 4 - shimmerX, sy + 14, 12, 2);
+      const shimmerX = Math.sin(now * 0.004 + y) * 10;
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.45)';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(sx - 14 + shimmerX, sy);
+      ctx.quadraticCurveTo(sx - 4 + shimmerX, sy - 2, sx + 4 + shimmerX, sy);
+      ctx.stroke();
 
-      // 錦鯉游動 (Swimming Koi Fish in Kyoto / Nikko / Kurama)
       if (y % 108 === 0 && zone.id !== 'yomi' && zone.id !== 'fuji') {
-        const koiX = sx + Math.round(Math.sin(now * 0.002 + y) * 14);
-        const koiY = sy + 8 + Math.round(Math.cos(now * 0.002 + y) * 4);
+        const koiX = sx + Math.sin(now * 0.002 + y) * 14;
+        const koiY = sy + 8 + Math.cos(now * 0.002 + y) * 4;
         ctx.fillStyle = (y / 108) % 2 === 0 ? '#ef4444' : '#f59e0b';
-        ctx.fillRect(koiX, koiY, 6, 3);
-        ctx.fillStyle = '#ffffff';
-        ctx.fillRect(koiX + 6, koiY + 1, 3, 2);
+        ctx.beginPath();
+        ctx.ellipse(koiX, koiY, 4.5, 2.2, 0, 0, Math.PI * 2);
+        ctx.fill();
       }
     }
   }
 
   /**
-   * 繪製武士道列傳風格的全彩像素建築（大鳥居、茶屋、道場、鍛冶屋、金蒔繪寶箱）
+   * 繪製流線型飛簷瓦頂與高立體感和風建築
    */
   private renderPOIArchitecture(ctx: CanvasRenderingContext2D, poi: MapPOI, px: number, py: number, now: number) {
+    ctx.save();
     if (poi.type === 'shrine') {
-      // 朱紅大鳥居與注連繩 (Grand Vermilion Torii Gate)
-      const topY = py - 74;
-      // 雙柱陰影與基底
-      ctx.fillStyle = '#1e293b';
-      ctx.fillRect(px - 34, py - 8, 12, 8);
-      ctx.fillRect(px + 22, py - 8, 12, 8);
-      // 朱紅雙柱
+      const topY = py - 78;
+      ctx.fillStyle = '#0f172a';
+      ctx.fillRect(px - 35, py - 8, 12, 8);
+      ctx.fillRect(px + 23, py - 8, 12, 8);
+
+      const pillarGrad = ctx.createLinearGradient(px - 32, topY, px - 22, topY);
+      pillarGrad.addColorStop(0, '#991b1b');
+      pillarGrad.addColorStop(0.5, '#ef4444');
+      pillarGrad.addColorStop(1, '#7f1d1d');
+      ctx.fillStyle = pillarGrad;
+      ctx.fillRect(px - 32, topY + 12, 9, 58);
+      ctx.fillRect(px + 23, topY + 12, 9, 58);
+
+      // 流線飛簷上樑 (Curved Kasagi Roof Beam)
+      ctx.fillStyle = '#18181b';
+      ctx.beginPath();
+      ctx.moveTo(px - 54, topY - 3);
+      ctx.quadraticCurveTo(px, topY + 5, px + 54, topY - 3);
+      ctx.lineTo(px + 48, topY + 6);
+      ctx.quadraticCurveTo(px, topY + 11, px - 48, topY + 6);
+      ctx.closePath();
+      ctx.fill();
+
       ctx.fillStyle = '#dc2626';
-      ctx.fillRect(px - 32, topY + 12, 8, 56);
-      ctx.fillRect(px + 24, topY + 12, 8, 56);
-      // 笠木與島木 (雙層弧形上樑)
-      ctx.fillStyle = '#18181b';
-      ctx.fillRect(px - 48, topY, 96, 5);
-      ctx.fillStyle = '#ef4444';
-      ctx.fillRect(px - 44, topY + 5, 88, 7);
-      // 貫 (下橫樑) 與黃金神額
-      ctx.fillRect(px - 38, topY + 20, 76, 6);
+      ctx.fillRect(px - 44, topY + 6, 88, 6);
+      ctx.fillRect(px - 38, topY + 21, 76, 6);
+
       ctx.fillStyle = '#fbbf24';
-      ctx.fillRect(px - 7, topY + 10, 14, 12);
-      ctx.fillStyle = '#18181b';
-      ctx.fillRect(px - 4, topY + 12, 8, 8);
-      // 白色紙垂 (Shide zigzags)
-      ctx.fillStyle = '#ffffff';
-      for (const sx of [px - 20, px - 8, px + 8, px + 20]) {
-        ctx.fillRect(sx, topY + 26, 4, 6);
-        ctx.fillRect(sx - 2, topY + 30, 4, 5);
-      }
+      ctx.fillRect(px - 7, topY + 10, 14, 13);
+      ctx.fillStyle = '#090d16';
+      ctx.fillRect(px - 4, topY + 12, 8, 9);
     } else if (poi.id.includes('komachi') || poi.id.includes('guide')) {
-      // 花見糰子茶屋建築與紅野點傘 (Edo Tea House & Red Parasol)
-      const bx = px - 52;
-      const by = py - 72;
-      // 瓦頂 (Kawara Tiled Roof)
-      ctx.fillStyle = '#1e293b';
-      ctx.fillRect(bx - 6, by, 108, 22);
-      ctx.fillStyle = '#334155';
-      for (let rx = bx - 4; rx < bx + 100; rx += 10) {
-        ctx.fillRect(rx, by + 3, 8, 16);
-      }
-      // 木造屋身與白漆喰牆
+      const bx = px - 54;
+      const by = py - 74;
+      // 飛簷瓦頂
+      const roofGrad = ctx.createLinearGradient(bx, by, bx, by + 24);
+      roofGrad.addColorStop(0, '#0f172a');
+      roofGrad.addColorStop(1, '#334155');
+      ctx.fillStyle = roofGrad;
+      ctx.beginPath();
+      ctx.moveTo(bx + 12, by);
+      ctx.lineTo(bx + 96, by);
+      ctx.quadraticCurveTo(bx + 108, by + 16, bx + 116, by + 22);
+      ctx.lineTo(bx - 8, by + 22);
+      ctx.quadraticCurveTo(bx, by + 16, bx + 12, by);
+      ctx.closePath();
+      ctx.fill();
+
       ctx.fillStyle = '#78350f';
-      ctx.fillRect(bx, by + 22, 96, 36);
+      ctx.fillRect(bx + 4, by + 22, 100, 38);
       ctx.fillStyle = '#fef3c7';
-      ctx.fillRect(bx + 6, by + 26, 84, 28);
-      // 紅色茶屋暖簾 (Noren Curtain)
-      ctx.fillStyle = '#e11d48';
-      ctx.fillRect(bx + 12, by + 24, 22, 20);
-      ctx.fillRect(bx + 37, by + 24, 22, 20);
-      ctx.fillRect(bx + 62, by + 24, 22, 20);
-      ctx.fillStyle = '#ffffff';
-      ctx.font = 'bold 11px sans-serif';
-      ctx.textAlign = 'center';
-      ctx.fillText('茶', bx + 23, by + 38);
-      ctx.fillText('糰', bx + 48, by + 38);
-      ctx.fillText('子', bx + 73, by + 38);
-      // 戶外紅布床几與野點傘
-      ctx.fillStyle = '#dc2626';
-      ctx.fillRect(px + 34, py - 58, 36, 10);
-      ctx.fillStyle = '#f87171';
-      ctx.fillRect(px + 40, py - 64, 24, 6);
-      ctx.fillStyle = '#78350f';
-      ctx.fillRect(px + 51, py - 48, 3, 36);
-      ctx.fillStyle = '#b91c1c';
-      ctx.fillRect(px + 36, py - 20, 32, 8);
-    } else if (poi.id.includes('yagyu')) {
-      // 柳生劍術道場 (Samurai Dojo)
-      const bx = px - 56;
-      const by = py - 78;
-      // 雙層青瓦屋頂與黃金鯱鉾
-      ctx.fillStyle = '#fbbf24';
-      ctx.fillRect(bx + 4, by - 6, 6, 8);
-      ctx.fillRect(bx + 102, by - 6, 6, 8);
-      ctx.fillStyle = '#1e293b';
-      ctx.fillRect(bx - 4, by, 120, 24);
-      ctx.fillStyle = '#334155';
-      for (let rx = bx; rx < bx + 112; rx += 12) {
-        ctx.fillRect(rx, by + 4, 9, 18);
+      ctx.fillRect(bx + 10, by + 26, 88, 30);
+
+      // 紅色茶屋暖簾
+      ctx.fillStyle = '#be123c';
+      for (const nx of [bx + 14, bx + 42, bx + 70]) {
+        ctx.beginPath();
+        ctx.roundRect(nx, by + 24, 24, 21, 3);
+        ctx.fill();
       }
-      // 白壁與道場木門
-      ctx.fillStyle = '#f8fafc';
-      ctx.fillRect(bx + 4, by + 24, 104, 38);
-      ctx.fillStyle = '#451a03';
-      ctx.fillRect(bx + 4, by + 24, 104, 5);
-      ctx.fillRect(bx + 36, by + 29, 40, 33);
-      ctx.fillStyle = '#fbbf24';
-      ctx.font = 'bold 11px sans-serif';
+      ctx.fillStyle = '#ffffff';
+      ctx.font = 'bold 12px "Noto Sans TC", sans-serif';
       ctx.textAlign = 'center';
-      ctx.fillText('柳生道場', px, by + 20);
+      ctx.fillText('茶', bx + 26, by + 39);
+      ctx.fillText('糰', bx + 54, by + 39);
+      ctx.fillText('子', bx + 82, by + 39);
+
+      // 圓弧紅野點傘
+      ctx.fillStyle = '#78350f';
+      ctx.fillRect(px + 51, py - 52, 3, 40);
+      const umbGrad = ctx.createRadialGradient(px + 52, py - 58, 2, px + 52, py - 52, 24);
+      umbGrad.addColorStop(0, '#f87171');
+      umbGrad.addColorStop(1, '#b91c1c');
+      ctx.fillStyle = umbGrad;
+      ctx.beginPath();
+      ctx.arc(px + 52, py - 48, 22, Math.PI, Math.PI * 2);
+      ctx.closePath();
+      ctx.fill();
+    } else if (poi.id.includes('yagyu')) {
+      const bx = px - 58;
+      const by = py - 80;
+      const roofGrad = ctx.createLinearGradient(bx, by, bx, by + 26);
+      roofGrad.addColorStop(0, '#090d16');
+      roofGrad.addColorStop(1, '#1e293b');
+      ctx.fillStyle = roofGrad;
+      ctx.beginPath();
+      ctx.moveTo(bx + 14, by);
+      ctx.lineTo(bx + 106, by);
+      ctx.quadraticCurveTo(bx + 118, by + 18, bx + 126, by + 25);
+      ctx.lineTo(bx - 6, by + 25);
+      ctx.quadraticCurveTo(bx + 2, by + 18, bx + 14, by);
+      ctx.closePath();
+      ctx.fill();
+
+      // 黃金鯱鉾
+      ctx.fillStyle = '#fbbf24';
+      ctx.beginPath();
+      ctx.arc(bx + 14, by - 3, 4, 0, Math.PI * 2);
+      ctx.arc(bx + 106, by - 3, 4, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.fillStyle = '#f8fafc';
+      ctx.fillRect(bx + 8, by + 25, 104, 38);
+      ctx.fillStyle = '#451a03';
+      ctx.fillRect(bx + 40, by + 30, 40, 33);
+      ctx.fillStyle = '#fbbf24';
+      ctx.font = 'bold 12px "Noto Sans TC", sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText('柳生新陰流道場', px, by + 18);
     } else if (poi.type === 'town') {
-      // 國友鐵齋鍛冶工坊與赤紅熔爐 (Blacksmith Forge & Glowing Furnace)
       const bx = px - 50;
       const by = py - 74;
-      ctx.fillStyle = '#27272a';
-      ctx.fillRect(bx - 4, by, 104, 22);
+      ctx.fillStyle = '#18181b';
+      ctx.beginPath();
+      ctx.roundRect(bx - 4, by, 108, 22, 5);
+      ctx.fill();
       ctx.fillStyle = '#78350f';
-      ctx.fillRect(bx + 2, by + 22, 92, 36);
-      // 紅磚高溫鍛造爐
+      ctx.fillRect(bx + 2, by + 22, 96, 36);
       ctx.fillStyle = '#7f1d1d';
-      ctx.fillRect(bx + 10, by + 26, 34, 30);
+      ctx.fillRect(bx + 10, by + 26, 36, 30);
       const fireFlicker = Math.sin(now * 0.015) > 0 ? '#f97316' : '#facc15';
       ctx.fillStyle = fireFlicker;
-      ctx.fillRect(bx + 16, by + 36, 22, 16);
-      // 鐵砧 (Anvil)
-      ctx.fillStyle = '#64748b';
-      ctx.fillRect(px + 24, py - 22, 20, 10);
-      ctx.fillRect(px + 28, py - 12, 12, 6);
+      ctx.beginPath();
+      ctx.arc(bx + 28, by + 46, 11, Math.PI, Math.PI * 2);
+      ctx.fill();
     } else if (poi.type === 'chest') {
-      // 金蒔繪秘寶箱 (Gold Lacquer Treasure Chest)
       ctx.fillStyle = '#451a03';
-      ctx.fillRect(px - 16, py - 24, 32, 22);
-      ctx.fillStyle = '#78350f';
-      ctx.fillRect(px - 14, py - 22, 28, 18);
+      ctx.beginPath();
+      ctx.roundRect(px - 17, py - 24, 34, 22, 4);
+      ctx.fill();
+      ctx.strokeStyle = '#fbbf24';
+      ctx.lineWidth = 2;
+      ctx.stroke();
       ctx.fillStyle = '#fbbf24';
-      ctx.fillRect(px - 16, py - 24, 32, 4);
-      ctx.fillRect(px - 16, py - 14, 32, 3);
-      ctx.fillRect(px - 4, py - 17, 8, 8);
+      ctx.fillRect(px - 4, py - 16, 8, 8);
     }
+    ctx.restore();
   }
 
-  /**
-   * 繪製全彩櫻花樹、竹林、紅楓、青松、銀杏、石燈籠與奇岩
-   */
   private renderSceneryProp(ctx: CanvasRenderingContext2D, prop: SceneryProp, sx: number, sy: number, now: number) {
+    ctx.save();
     if (prop.kind === 'lantern') {
-      // 石燈籠與暖光暈
       ctx.fillStyle = '#64748b';
       ctx.fillRect(sx - 6, sy - 4, 12, 4);
       ctx.fillRect(sx - 4, sy - 22, 8, 18);
-      ctx.fillRect(sx - 8, sy - 28, 16, 6);
-      const glow = 16 + Math.sin(now * 0.006 + prop.x) * 3;
+      ctx.beginPath();
+      ctx.moveTo(sx - 10, sy - 22);
+      ctx.lineTo(sx, sy - 30);
+      ctx.lineTo(sx + 10, sy - 22);
+      ctx.closePath();
+      ctx.fill();
+
+      const glow = 20 + Math.sin(now * 0.006 + prop.x) * 4;
+      const lg = ctx.createRadialGradient(sx, sy - 18, 2, sx, sy - 18, glow);
+      lg.addColorStop(0, 'rgba(253, 224, 71, 0.85)');
+      lg.addColorStop(0.4, 'rgba(251, 191, 36, 0.28)');
+      lg.addColorStop(1, 'transparent');
+      ctx.fillStyle = lg;
       ctx.beginPath();
       ctx.arc(sx, sy - 18, glow, 0, Math.PI * 2);
-      ctx.fillStyle = 'rgba(251, 191, 36, 0.22)';
       ctx.fill();
-      ctx.fillStyle = '#fde047';
-      ctx.fillRect(sx - 3, sy - 21, 6, 6);
+      ctx.restore();
       return;
     }
 
     if (prop.kind === 'rock') {
-      ctx.fillStyle = '#475569';
-      ctx.fillRect(sx - 14, sy - 12, 28, 14);
-      ctx.fillStyle = '#64748b';
-      ctx.fillRect(sx - 10, sy - 18, 20, 14);
-      ctx.fillStyle = '#94a3b8';
-      ctx.fillRect(sx - 6, sy - 16, 10, 6);
+      const rg = ctx.createRadialGradient(sx - 4, sy - 12, 2, sx, sy - 8, 18);
+      rg.addColorStop(0, '#94a3b8');
+      rg.addColorStop(0.6, '#64748b');
+      rg.addColorStop(1, '#334155');
+      ctx.fillStyle = rg;
+      ctx.beginPath();
+      ctx.ellipse(sx, sy - 7, 16, 10, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
       return;
     }
 
     if (prop.kind === 'bamboo') {
-      // 鞍馬山翠竹林 (Multi-stalk Emerald Bamboo)
       for (const offset of [-10, 0, 10]) {
         const bx = sx + offset;
-        ctx.fillStyle = '#15803d';
+        const bg = ctx.createLinearGradient(bx - 3, sy - 64, bx + 3, sy - 64);
+        bg.addColorStop(0, '#14532d');
+        bg.addColorStop(0.5, '#4ade80');
+        bg.addColorStop(1, '#15803d');
+        ctx.fillStyle = bg;
         ctx.fillRect(bx - 3, sy - 64, 6, 64);
-        ctx.fillStyle = '#4ade80';
-        ctx.fillRect(bx - 1, sy - 64, 2, 64);
-        // 竹節
-        ctx.fillStyle = '#14532d';
-        for (let by = sy - 14; by > sy - 60; by -= 14) {
-          ctx.fillRect(bx - 4, by, 8, 2);
-        }
-        // 竹葉簇
         ctx.fillStyle = '#22c55e';
-        ctx.fillRect(bx - 14, sy - 68, 28, 10);
-        ctx.fillStyle = '#86efac';
-        ctx.fillRect(bx - 10, sy - 74, 20, 8);
+        ctx.beginPath();
+        ctx.ellipse(bx, sy - 68, 16, 7, 0, 0, Math.PI * 2);
+        ctx.fill();
       }
+      ctx.restore();
       return;
     }
 
-    // 樹幹陰影與木紋樹幹 (Sakura / Maple / Pine / Ginkgo / Dead Tree)
+    // 樹幹陰影與流暢樹幹
     ctx.beginPath();
     ctx.ellipse(sx, sy + 2, 24, 9, 0, 0, Math.PI * 2);
-    ctx.fillStyle = 'rgba(0, 0, 0, 0.32)';
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.35)';
     ctx.fill();
 
-    ctx.fillStyle = '#451a03';
-    ctx.fillRect(sx - 7, sy - 38, 14, 40);
-    ctx.fillStyle = '#78350f';
-    ctx.fillRect(sx - 4, sy - 38, 6, 38);
+    const trunkGrad = ctx.createLinearGradient(sx - 7, sy - 40, sx + 7, sy);
+    trunkGrad.addColorStop(0, '#78350f');
+    trunkGrad.addColorStop(1, '#3b1502');
+    ctx.fillStyle = trunkGrad;
+    ctx.beginPath();
+    ctx.moveTo(sx - 8, sy);
+    ctx.quadraticCurveTo(sx - 5, sy - 20, sx - 6, sy - 42);
+    ctx.lineTo(sx + 6, sy - 42);
+    ctx.quadraticCurveTo(sx + 5, sy - 20, sx + 8, sy);
+    ctx.closePath();
+    ctx.fill();
 
     if (prop.kind === 'dead_tree') {
-      // 常世彼岸枯木與紫晶靈花
-      ctx.fillStyle = '#451a03';
-      ctx.fillRect(sx - 22, sy - 46, 18, 6);
-      ctx.fillRect(sx + 6, sy - 52, 18, 6);
       ctx.fillStyle = '#a855f7';
-      ctx.fillRect(sx - 24, sy - 52, 10, 8);
-      ctx.fillRect(sx + 16, sy - 58, 10, 8);
+      ctx.beginPath();
+      ctx.arc(sx - 16, sy - 48, 7, 0, Math.PI * 2);
+      ctx.arc(sx + 16, sy - 52, 7, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
       return;
     }
 
-    // 豐滿三層樹冠配色 (Sakura Pink / Maple Crimson / Ginkgo Gold / Pine Emerald)
     const canopyColors = prop.kind === 'sakura'
-      ? ['#db2777', '#f472b6', '#fbcfe8']
+      ? ['#be185d', '#f472b6', '#fce7f3']
       : prop.kind === 'maple'
-      ? ['#991b1b', '#dc2626', '#f97316']
+      ? ['#7f1d1d', '#dc2626', '#fb923c']
       : prop.kind === 'ginkgo'
-      ? ['#b45309', '#f59e0b', '#fde047']
-      : ['#14532d', '#15803d', '#22c55e'];
+      ? ['#b45309', '#f59e0b', '#fef08a']
+      : ['#064e3b', '#15803d', '#4ade80'];
 
-    // 底層深色樹冠
-    ctx.fillStyle = canopyColors[0];
-    ctx.fillRect(sx - 32, sy - 62, 64, 28);
-    ctx.fillRect(sx - 26, sy - 74, 52, 16);
-    // 中層主色樹冠
-    ctx.fillStyle = canopyColors[1];
-    ctx.fillRect(sx - 28, sy - 66, 56, 24);
-    ctx.fillRect(sx - 20, sy - 80, 40, 18);
-    // 頂層高光花簇／葉簇
-    ctx.fillStyle = canopyColors[2];
-    ctx.fillRect(sx - 20, sy - 70, 18, 10);
-    ctx.fillRect(sx + 4, sy - 64, 18, 10);
-    ctx.fillRect(sx - 10, sy - 82, 20, 8);
+    // 圓潤多層次厚塗樹冠 (Painterly Spherical Canopy Clusters)
+    const clusters = [
+      { dx: -18, dy: -52, r: 20 },
+      { dx: 18, dy: -52, r: 20 },
+      { dx: 0, dy: -66, r: 24 },
+      { dx: -10, dy: -58, r: 18 },
+      { dx: 10, dy: -58, r: 18 }
+    ];
+
+    for (const c of clusters) {
+      const cg = ctx.createRadialGradient(
+        sx + c.dx - c.r * 0.25,
+        sy + c.dy - c.r * 0.25,
+        c.r * 0.1,
+        sx + c.dx,
+        sy + c.dy,
+        c.r
+      );
+      cg.addColorStop(0, canopyColors[2]);
+      cg.addColorStop(0.55, canopyColors[1]);
+      cg.addColorStop(1, canopyColors[0]);
+      ctx.fillStyle = cg;
+      ctx.beginPath();
+      ctx.arc(sx + c.dx, sy + c.dy, c.r, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.restore();
   }
 
   private renderSlashEffects(ctx: CanvasRenderingContext2D, camX: number, camY: number, now: number) {
@@ -1401,7 +1600,6 @@ export class WorldMapEngine {
       ctx.translate(sx + dirX * 26, sy + dirY * 22);
       ctx.globalAlpha = 1 - age;
 
-      // 三日月刀光弧線
       ctx.beginPath();
       ctx.arc(0, 0, 26 + age * 16, -Math.PI * 0.65, Math.PI * 0.65);
       ctx.strokeStyle = sl.isCrit ? '#fde047' : '#38bdf8';
@@ -1415,7 +1613,7 @@ export class WorldMapEngine {
       ctx.stroke();
 
       if (sl.damageText) {
-        ctx.font = 'bold 15px "Noto Sans TC", sans-serif';
+        ctx.font = 'bold 16px "Noto Sans TC", sans-serif';
         ctx.textAlign = 'center';
         ctx.fillStyle = '#090d16';
         ctx.fillText(sl.damageText, 1, -24 - age * 24 + 1);
@@ -1428,33 +1626,42 @@ export class WorldMapEngine {
   }
 
   private renderHudOverlays(ctx: CanvasRenderingContext2D, zone: MapZoneConfig, w: number, _h: number) {
-    // 1. 左上角《武士道列傳》和風木匾卷軸 (Zone Name Banner)
-    ctx.fillStyle = 'rgba(15, 23, 42, 0.86)';
-    ctx.fillRect(12, 12, 236, 44);
-    ctx.strokeStyle = '#f59e0b';
-    ctx.lineWidth = 2;
-    ctx.strokeRect(12, 12, 236, 44);
+    // 1. 左上角 SFC FF6 皇家漸層藍地名視窗
+    const bannerGrad = ctx.createLinearGradient(12, 12, 12, 60);
+    bannerGrad.addColorStop(0, 'rgba(18, 42, 114, 0.94)');
+    bannerGrad.addColorStop(1, 'rgba(6, 15, 46, 0.96)');
+    ctx.fillStyle = bannerGrad;
+    ctx.beginPath();
+    ctx.roundRect(12, 12, 260, 48, 8);
+    ctx.fill();
+    ctx.strokeStyle = '#e2e8f0';
+    ctx.lineWidth = 2.5;
+    ctx.stroke();
+    ctx.strokeStyle = '#fbbf24';
+    ctx.lineWidth = 1;
+    ctx.strokeRect(15, 15, 254, 42);
 
-    ctx.fillStyle = '#fbbf24';
-    ctx.font = 'bold 13px "Noto Sans TC", sans-serif';
+    ctx.fillStyle = '#fde047';
+    ctx.font = 'bold 14px "Noto Sans TC", sans-serif';
     ctx.textAlign = 'left';
-    ctx.fillText(`🏮 ${zone.name}`, 22, 31);
+    ctx.fillText(`🏮 ${zone.name}`, 24, 33);
     ctx.fillStyle = '#cbd5e1';
     ctx.font = '11px "Noto Sans TC", sans-serif';
-    ctx.fillText(zone.subtitle, 24, 48);
+    ctx.fillText(`${zone.subtitle}（線上武士：${this.state.townNpcs.length + 1} 人）`, 24, 51);
 
-    // 2. 右上角全彩雷達小地圖 (Mini-map)
-    const mw = 128;
-    const mh = 82;
-    const mx = w - mw - 12;
+    // 2. 右上角全彩雷達小地圖
+    const mw = 136;
+    const mh = 86;
+    const mx = w - mw - 14;
     const my = 12;
 
-    ctx.fillStyle = 'rgba(15, 23, 42, 0.88)';
-    ctx.fillRect(mx - 2, my - 2, mw + 4, mh + 4);
+    ctx.fillStyle = 'rgba(8, 18, 48, 0.92)';
+    ctx.beginPath();
+    ctx.roundRect(mx - 3, my - 3, mw + 6, mh + 6, 6);
+    ctx.fill();
     ctx.fillStyle = zone.grassDark;
     ctx.fillRect(mx, my, mw, mh);
 
-    // 小地圖道路與河川
     const scaleX = mw / zone.width;
     const scaleY = mh / zone.height;
     ctx.fillStyle = zone.roadBase;
@@ -1462,23 +1669,33 @@ export class WorldMapEngine {
     ctx.fillStyle = zone.waterShallow;
     ctx.fillRect(mx + Math.round(zone.riverX * scaleX) - 2, my, 5, mh);
 
-    // 小地圖 POI 點 (藍點)
     for (const p of this.state.pois) {
       ctx.fillStyle = p.type === 'shrine' ? '#ef4444' : p.type === 'chest' ? '#facc15' : '#38bdf8';
-      ctx.fillRect(mx + Math.round(p.x * scaleX) - 2, my + Math.round(p.y * scaleY) - 2, 4, 4);
+      ctx.beginPath();
+      ctx.arc(mx + p.x * scaleX, my + p.y * scaleY, 2.5, 0, Math.PI * 2);
+      ctx.fill();
     }
 
-    // 小地圖妖怪點 (紅點)
+    for (const wn of this.state.townNpcs) {
+      ctx.fillStyle = '#4ade80';
+      ctx.beginPath();
+      ctx.arc(mx + wn.x * scaleX, my + wn.y * scaleY, 2.2, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
     for (const yk of this.state.yokaiList) {
       ctx.fillStyle = '#f87171';
-      ctx.fillRect(mx + Math.round(yk.x * scaleX) - 2, my + Math.round(yk.y * scaleY) - 2, 4, 4);
+      ctx.beginPath();
+      ctx.arc(mx + yk.x * scaleX, my + yk.y * scaleY, 2.5, 0, Math.PI * 2);
+      ctx.fill();
     }
 
-    // 小地圖玩家位置 (閃爍金白點)
     ctx.fillStyle = '#ffffff';
-    ctx.fillRect(mx + Math.round(this.state.playerX * scaleX) - 3, my + Math.round(this.state.playerY * scaleY) - 3, 6, 6);
-    ctx.strokeStyle = '#f59e0b';
-    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.arc(mx + this.state.playerX * scaleX, my + this.state.playerY * scaleY, 3.5, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = '#e2e8f0';
+    ctx.lineWidth = 2;
     ctx.strokeRect(mx - 2, my - 2, mw + 4, mh + 4);
   }
 }

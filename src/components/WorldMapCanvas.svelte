@@ -67,20 +67,40 @@
   }
 
   function handleDojoSpar() {
+    const sparName = npcModal?.name || '柳生新陰流・高徒';
+    const sparAvatar = npcModal?.avatar || 'samurai_general';
     gameStore.closeNpcDialogue();
     gameStore.startJrpgEncounter({
-      name: '柳生新陰流・高徒',
-      avatar: 'samurai_general',
-      hp: 220 + gameStore.player.level * 50,
-      maxHp: 220 + gameStore.player.level * 50,
-      atk: 16 + gameStore.player.level * 5,
-      def: 10 + gameStore.player.level * 3,
+      name: sparName,
+      avatar: sparAvatar,
+      hp: 260 + gameStore.player.level * 55,
+      maxHp: 260 + gameStore.player.level * 55,
+      atk: 18 + gameStore.player.level * 5,
+      def: 11 + gameStore.player.level * 3,
       stance: 'wind',
       isBoss: false
     });
   }
 
-  // 同步玩家 3頭身像素外觀、姓名、稱號
+  function handleOnlineCoop() {
+    const allyName = npcModal?.name || '線上劍豪';
+    gameStore.player.townBuffUntil = Date.now() + 300000;
+    gameStore.syncPartyStats(true);
+    if (gameStore.party[0]) {
+      gameStore.party[0].pow = Math.min(100, gameStore.party[0].pow + 50);
+    }
+    audio.playLevelUpFanfare();
+    gameStore.showToast(`🤝 與${allyName}結為共鬥盟友！全隊 HP/SP 全滿、戰力 +15%，且怒氣槽 +50%！`, 'success');
+    gameStore.closeNpcDialogue();
+  }
+
+  function triggerQuickTownDialogue() {
+    if (!engine || engine.state.pois.length === 0) return;
+    const npcPoi = engine.state.pois.find(p => p.id.includes('yagyu') || p.type === 'npc') || engine.state.pois[0];
+    gameStore.openNpcDialogue(npcPoi);
+  }
+
+  // 同步玩家外觀、姓名、稱號
   $effect(() => {
     const av = gameStore.player.cosmetics.avatar;
     const nm = gameStore.player.name;
@@ -120,8 +140,8 @@
 
   onMount(() => {
     if (!canvasEl || !containerEl) return;
-    const w = containerEl.clientWidth || 860;
-    const h = 410;
+    const w = containerEl.clientWidth || 1080;
+    const h = 440;
     canvasEl.width = w;
     canvasEl.height = h;
 
@@ -139,8 +159,8 @@
 
     const handleResize = () => {
       if (containerEl && engine) {
-        const nw = containerEl.clientWidth || 860;
-        engine.resize(nw, 410);
+        const nw = containerEl.clientWidth || 1080;
+        engine.resize(nw, 440);
       }
     };
     window.addEventListener('resize', handleResize);
@@ -155,7 +175,7 @@
 <div class="world-map-wrapper" bind:this={containerEl}>
   <div class="map-top-bar">
     <div class="map-zones-bar">
-      <span class="zones-label">🗺️ 《新武士道列傳》全彩世界地圖：</span>
+      <span class="zones-label">🗺️ 《新武士道列傳》大型多人世界地圖：</span>
       <div class="zones-list">
         {#each MAP_ZONES as zone}
           <button
@@ -166,6 +186,9 @@
           </button>
         {/each}
       </div>
+      <button class="btn btn-sm btn-crimson" onclick={triggerQuickTownDialogue}>
+        💬 開啟 TV GAME 城鎮對話框
+      </button>
     </div>
 
     <div class="bgm-control-bar">
@@ -193,36 +216,75 @@
   <div class="canvas-container">
     <canvas bind:this={canvasEl}></canvas>
 
-    <!-- 傳統 JRPG 皇家藍底金框 NPC 對話視窗 -->
+    <!-- SFC FF6 / TV GAME 巨型皇家藍金屬浮雕對話視窗 -->
     {#if npcModal && npcModal.open}
-      <div class="jrpg-dialogue-box">
-        <div class="jrpg-dialogue-portrait">
-          <PixelPortrait spriteId={npcModal.avatar} scale={3} label={npcModal.name} />
+      <div class="tvgame-giant-dialogue-window">
+        <div class="ff6-corner tl"></div>
+        <div class="ff6-corner tr"></div>
+        <div class="ff6-corner bl"></div>
+        <div class="ff6-corner br"></div>
+
+        <div class="tvgame-portrait-frame">
+          <PixelPortrait spriteId={npcModal.avatar} scale={5} mode="bust" label={npcModal.name} />
         </div>
-        <div class="jrpg-dialogue-body">
-          <div class="jrpg-speaker-name">【{npcModal.name}】</div>
-          <p class="jrpg-dialogue-text">{npcModal.dialogue}</p>
-          <div class="jrpg-dialogue-actions">
+
+        <div class="tvgame-dialogue-main">
+          <div class="tvgame-speaker-header">
+            <span class="speaker-badge">【{npcModal.name}】</span>
+            <span class="tvgame-window-tag">SFC TV-GAME DIALOGUE</span>
+          </div>
+
+          <p class="tvgame-dialogue-text">
+            {npcModal.dialogue}
+            <span class="ff6-blinking-cursor">▼</span>
+          </p>
+
+          <div class="tvgame-choice-list">
             {#if npcModal.poiType === 'shrine'}
-              <button class="btn btn-gold btn-sm" onclick={handleShrinePray}>⛩️ 虔誠參拜（全隊全回復＋出雲武運＋存檔）</button>
+              <button class="ff6-choice-btn primary" onclick={handleShrinePray}>
+                <span class="ff6-hand">☞</span> ⛩️ 虔誠參拜大社（全隊 HP/SP 全滿回復 ＋【出雲武運】全屬性 +15% ＋ 存檔）
+              </button>
             {:else if npcModal.poiId.includes('komachi') || npcModal.poiId.includes('guide')}
-              <button class="btn btn-gold btn-sm" onclick={handleInnRest}>🍵 宿屋休息吃糰子 (20兩：全隊 HP/SP 全滿)</button>
-              <button class="btn btn-outline btn-sm" onclick={() => gameStore.buyConsumable('dango')}>🍡 買花見糰子 (30兩)</button>
-              <button class="btn btn-outline btn-sm" onclick={() => gameStore.buyConsumable('matcha')}>🍵 買宇治抹茶 (40兩)</button>
-              <button class="btn btn-outline btn-sm" onclick={() => gameStore.buyConsumable('sake')}>🍶 買般若湯 (80兩)</button>
+              <button class="ff6-choice-btn primary" onclick={handleInnRest}>
+                <span class="ff6-hand">☞</span> 🍵 宿屋休息吃糰子（20兩：全隊 HP/SP 全滿回復）
+              </button>
+              <button class="ff6-choice-btn" onclick={() => gameStore.buyConsumable('dango')}>
+                <span class="ff6-hand">☞</span> 🍡 購買花見三色糰子（30兩）
+              </button>
+              <button class="ff6-choice-btn" onclick={() => gameStore.buyConsumable('matcha')}>
+                <span class="ff6-hand">☞</span> 🍵 購買宇治特濃抹茶（40兩）
+              </button>
+              <button class="ff6-choice-btn" onclick={() => gameStore.buyConsumable('sake')}>
+                <span class="ff6-hand">☞</span> 🍶 購買鬼殺般若湯（80兩）
+              </button>
             {:else if npcModal.poiType === 'town'}
-              <button class="btn btn-gold btn-sm" onclick={handleGoForge}>🔨 進入國友鍛冶屋（打造與強化名刀）</button>
-            {:else if npcModal.poiId.includes('yagyu')}
-              <button class="btn btn-gold btn-sm" onclick={handleDojoSpar}>⚔️ 與道場門生進行指令切磋</button>
-              <button class="btn btn-outline btn-sm" onclick={() => { gameStore.closeNpcDialogue(); gameStore.activeTab = 'talents'; }}>☯️ 研習五輪劍法</button>
+              <button class="ff6-choice-btn primary" onclick={handleGoForge}>
+                <span class="ff6-hand">☞</span> 🔨 進入國友鍛冶工坊（鍛造名刀與強化武具）
+              </button>
+            {:else if npcModal.poiId.startsWith('online_')}
+              <button class="ff6-choice-btn primary" onclick={handleOnlineCoop}>
+                <span class="ff6-hand">☞</span> 🤝 邀請結伴共鬥（全隊 HP/SP 全滿、戰力 +15%、怒氣 POW +50%）
+              </button>
+              <button class="ff6-choice-btn" onclick={handleDojoSpar}>
+                <span class="ff6-hand">☞</span> ⚔️ 與該名線上劍豪進行武士道切磋對決
+              </button>
+            {:else}
+              <button class="ff6-choice-btn primary" onclick={handleDojoSpar}>
+                <span class="ff6-hand">☞</span> ⚔️ 與道場高徒進行指令比武切磋
+              </button>
+              <button class="ff6-choice-btn" onclick={() => { gameStore.closeNpcDialogue(); gameStore.activeTab = 'talents'; }}>
+                <span class="ff6-hand">☞</span> ☯️ 研習《五輪書》劍道奧義
+              </button>
             {/if}
-            <button class="btn btn-outline btn-sm" onclick={() => gameStore.closeNpcDialogue()}>收刀告辭</button>
+            <button class="ff6-choice-btn cancel" onclick={() => gameStore.closeNpcDialogue()}>
+              <span class="ff6-hand">☞</span> 收刀告辭（關閉對話視窗）
+            </button>
           </div>
         </div>
       </div>
     {:else}
       <div class="map-overlay-tips">
-        🏮 三人小隊同行（主角・神無月楓・影縫疾風）：點擊地面或按 WASD 探索全彩地圖 ｜ 點擊茶屋宿屋／道場／大社對話 ｜ 接觸妖魔展開回合指令戰
+        🏮 《大型多人武士道列傳》世界地圖：點擊地面或 WASD 移動 ｜ 點擊【線上武士玩家／茶屋／道場／大社】開啟巨型 TV GAME 對話框 ｜ 接觸妖魔進入 FF6 橫向戰鬥
       </div>
     {/if}
   </div>
@@ -230,21 +292,21 @@
 
 <style>
   .world-map-wrapper {
-    background: #0d1117;
-    border: 2px solid #d97706;
+    background: #060b19;
+    border: 3px solid #cbd5e1;
+    box-shadow: inset 0 0 0 2px #d97706, 0 10px 32px rgba(0, 0, 0, 0.75);
     border-radius: 10px;
     overflow: hidden;
     position: relative;
-    box-shadow: 0 6px 24px rgba(0, 0, 0, 0.55);
   }
 
   .map-top-bar {
-    background: linear-gradient(180deg, #1e2430, #141821);
-    border-bottom: 2px solid #b45309;
+    background: linear-gradient(180deg, #10235c 0%, #071238 100%);
+    border-bottom: 3px solid #cbd5e1;
     display: flex;
     flex-direction: column;
     gap: 6px;
-    padding: 8px 12px;
+    padding: 8px 14px;
   }
 
   .map-zones-bar {
@@ -255,9 +317,10 @@
   }
 
   .zones-label {
-    font-size: 0.85rem;
-    font-weight: 800;
-    color: #fbbf24;
+    font-size: 0.92rem;
+    font-weight: 900;
+    color: #fde047;
+    text-shadow: 1px 1px 0 #000;
     white-space: nowrap;
   }
 
@@ -265,6 +328,7 @@
     display: flex;
     gap: 6px;
     flex-wrap: wrap;
+    flex: 1;
   }
 
   .bgm-control-bar {
@@ -273,7 +337,7 @@
     gap: 8px;
     flex-wrap: wrap;
     padding-top: 4px;
-    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    border-top: 1px solid rgba(255, 255, 255, 0.14);
   }
 
   .bgm-tracks {
@@ -283,34 +347,34 @@
   }
 
   .btn-track {
-    background: rgba(15, 23, 42, 0.75);
-    border: 1px solid #475569;
-    color: #cbd5e1;
-    font-size: 0.75rem;
+    background: rgba(8, 18, 48, 0.85);
+    border: 1px solid #64748b;
+    color: #e2e8f0;
+    font-size: 0.78rem;
     font-weight: 700;
-    padding: 3px 9px;
+    padding: 3px 10px;
     border-radius: 6px;
     cursor: pointer;
     transition: all 0.15s;
   }
 
   .btn-track:hover {
-    border-color: #fbbf24;
+    border-color: #fde047;
     color: #fff;
   }
 
   .btn-track.active {
-    background: rgba(245, 158, 11, 0.22);
-    border-color: #fbbf24;
-    color: #fde047;
-    box-shadow: 0 0 8px rgba(245, 158, 11, 0.35);
+    background: linear-gradient(180deg, #b45309, #78350f);
+    border-color: #fde047;
+    color: #fef08a;
+    box-shadow: 0 0 10px rgba(245, 158, 11, 0.5);
   }
 
   .canvas-container {
     position: relative;
     width: 100%;
-    height: 410px;
-    background: #1a2e1a;
+    height: 440px;
+    background: #09131c;
   }
 
   canvas {
@@ -318,77 +382,169 @@
     width: 100%;
     height: 100%;
     cursor: pointer;
-    image-rendering: pixelated;
   }
 
-  /* 傳統 90 年代 JRPG 皇家深藍金框對話視窗 */
-  .jrpg-dialogue-box {
+  /* SFC《Final Fantasy VI》風格 TV GAME 巨型皇家藍金屬浮雕對話視窗 */
+  .tvgame-giant-dialogue-window {
     position: absolute;
-    bottom: 10px;
-    left: 14px;
-    right: 14px;
-    background: linear-gradient(180deg, rgba(15, 32, 75, 0.96), rgba(8, 18, 46, 0.98));
-    border: 3px solid #fbbf24;
-    box-shadow: inset 0 0 0 2px #1e3a8a, 0 8px 28px rgba(0, 0, 0, 0.85);
-    border-radius: 10px;
-    padding: 12px 16px;
+    bottom: 12px;
+    left: 16px;
+    right: 16px;
+    min-height: 205px;
+    background: linear-gradient(180deg, #14328c 0%, #091954 55%, #040a26 100%);
+    border: 4px solid #e2e8f0;
+    box-shadow:
+      inset 0 0 0 3px #1d4ed8,
+      inset 0 0 0 5px #fbbf24,
+      0 14px 44px rgba(0, 0, 0, 0.92);
+    border-radius: 12px;
+    padding: 18px 24px;
     display: flex;
     align-items: center;
-    gap: 16px;
-    z-index: 20;
+    gap: 24px;
+    z-index: 30;
   }
 
-  .jrpg-dialogue-portrait {
-    width: 68px;
-    height: 80px;
-    background: #090d16;
-    border: 2px solid #f59e0b;
-    border-radius: 8px;
+  .ff6-corner {
+    position: absolute;
+    width: 10px;
+    height: 10px;
+    background: #fbbf24;
+    border: 2px solid #ffffff;
+    border-radius: 2px;
+    z-index: 2;
+  }
+  .ff6-corner.tl { top: 4px; left: 4px; }
+  .ff6-corner.tr { top: 4px; right: 4px; }
+  .ff6-corner.bl { bottom: 4px; left: 4px; }
+  .ff6-corner.br { bottom: 4px; right: 4px; }
+
+  .tvgame-portrait-frame {
+    width: 146px;
+    height: 146px;
+    background: radial-gradient(circle, #1e3a8a 0%, #050814 100%);
+    border: 3px solid #fbbf24;
+    box-shadow: inset 0 0 0 2px #e2e8f0, 0 6px 18px rgba(0, 0, 0, 0.8);
+    border-radius: 10px;
     display: flex;
     align-items: center;
     justify-content: center;
     flex-shrink: 0;
+    overflow: hidden;
   }
 
-  .jrpg-dialogue-body {
+  .tvgame-dialogue-main {
     flex: 1;
     display: flex;
     flex-direction: column;
-    gap: 6px;
+    gap: 10px;
   }
 
-  .jrpg-speaker-name {
-    font-size: 0.98rem;
+  .tvgame-speaker-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 2px solid rgba(251, 191, 36, 0.45);
+    padding-bottom: 4px;
+  }
+
+  .speaker-badge {
+    font-size: 1.35rem;
     font-weight: 900;
     color: #fde047;
-    text-shadow: 1px 1px 0 #000;
+    text-shadow: 2px 2px 0 #000000;
+    letter-spacing: 0.5px;
   }
 
-  .jrpg-dialogue-text {
-    font-size: 0.9rem;
-    color: #f8fafc;
-    line-height: 1.5;
+  .tvgame-window-tag {
+    font-size: 0.75rem;
+    font-weight: 900;
+    color: #93c5fd;
+    letter-spacing: 1.5px;
   }
 
-  .jrpg-dialogue-actions {
+  .tvgame-dialogue-text {
+    font-size: 1.28rem;
+    font-weight: 800;
+    color: #ffffff;
+    text-shadow: 2px 2px 0 #000000;
+    line-height: 1.6;
+    margin: 2px 0;
+  }
+
+  .ff6-blinking-cursor {
+    display: inline-block;
+    margin-left: 8px;
+    color: #fde047;
+    animation: ff6Blink 0.75s infinite alternate;
+  }
+
+  @keyframes ff6Blink {
+    from { opacity: 1; transform: translateY(0); }
+    to { opacity: 0.2; transform: translateY(4px); }
+  }
+
+  .tvgame-choice-list {
     display: flex;
     flex-wrap: wrap;
-    gap: 8px;
+    gap: 10px;
     margin-top: 4px;
+  }
+
+  .ff6-choice-btn {
+    background: linear-gradient(180deg, rgba(30, 58, 138, 0.92), rgba(15, 23, 42, 0.96));
+    border: 2px solid #cbd5e1;
+    border-radius: 8px;
+    padding: 8px 16px;
+    color: #f8fafc;
+    font-size: 1.02rem;
+    font-weight: 900;
+    text-shadow: 1px 1px 0 #000;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.14s;
+  }
+
+  .ff6-choice-btn.primary {
+    border-color: #fde047;
+    background: linear-gradient(180deg, #1d4ed8, #0f172a);
+    color: #fef08a;
+  }
+
+  .ff6-choice-btn:hover {
+    border-color: #fde047;
+    background: linear-gradient(180deg, #2563eb, #1e3a8a);
+    color: #ffffff;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 14px rgba(250, 204, 21, 0.4);
+  }
+
+  .ff6-hand {
+    color: #fde047;
+    font-size: 1.15rem;
+    transition: transform 0.15s;
+  }
+
+  .ff6-choice-btn:hover .ff6-hand {
+    transform: translateX(4px);
   }
 
   .map-overlay-tips {
     position: absolute;
     bottom: 8px;
-    left: 12px;
-    right: 12px;
-    background: rgba(15, 23, 42, 0.88);
-    border: 1px solid rgba(245, 158, 11, 0.45);
+    left: 14px;
+    right: 14px;
+    background: linear-gradient(180deg, rgba(16, 38, 102, 0.92), rgba(7, 16, 48, 0.95));
+    border: 2px solid #cbd5e1;
+    box-shadow: inset 0 0 0 1px #fbbf24;
     color: #fef3c7;
-    font-size: 0.76rem;
-    font-weight: 600;
-    padding: 5px 12px;
-    border-radius: 6px;
+    font-size: 0.85rem;
+    font-weight: 800;
+    text-shadow: 1px 1px 0 #000;
+    padding: 6px 14px;
+    border-radius: 8px;
     pointer-events: none;
     text-align: center;
   }
