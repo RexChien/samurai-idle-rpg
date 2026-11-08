@@ -1,0 +1,17 @@
+{
+  "name": "samurai-idle-rpg",
+  "version": "1.0.0",
+  "description": "Japanese Samurai Blade Idle RPG",
+  "scripts": {
+    "test": "node --test test/*.test.js"
+  },
+  "keywords": [
+    "samurai",
+    "idle-rpg",
+    "game",
+    "japanese",
+    "katana"
+  ],
+  "author": "RexChien",
+  "license": "MIT"
+}
