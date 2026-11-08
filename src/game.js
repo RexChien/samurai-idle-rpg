@@ -115,9 +115,6 @@ class SamuraiGame {
         }
       },
 
-      // 劍境維度系統 (Antimatter Dimensions Style Cascading Tiers)
-      dimensions: this.getDefaultDimensionsState(),
-
       lastTimestamp: Date.now()
     };
 
@@ -280,12 +277,6 @@ class SamuraiGame {
       if (perks.perk_boss_slayer > 0) armorPen += perks.perk_boss_slayer * 4;
     }
 
-    // 劍境維度劍氣攻擊加成 (Sword Dimensions Qi Bonus)
-    if (this.player.dimensions && this.player.dimensions.swordQi > 0) {
-      const qiBonus = 1 + Math.log10(Math.max(1, this.player.dimensions.swordQi)) * 0.25;
-      baseAtk = Math.floor(baseAtk * qiBonus);
-    }
-
     return {
       maxHp: baseHp,
       atk: baseAtk,
@@ -380,15 +371,9 @@ class SamuraiGame {
       const comboBonus = Math.min(2.0, 1 + (this.comboCount * 0.02));
       damage = Math.floor(damage * comboBonus);
 
-      // 手動斬擊獎勵金小判與劍氣共鳴
+      // 手動斬擊獎勵金小判
       const manualGold = Math.max(1, Math.floor(2 + (this.player.level || 1)));
       this.player.gold += manualGold;
-
-      if (this.player.dimensions) {
-        const qiBurst = Math.max(1, Math.floor(1 + (this.player.dimensions.swordQi || 0) * 0.02));
-        this.player.dimensions.swordQi += qiBurst;
-        this.player.dimensions.totalSwordQiEarned += qiBurst;
-      }
     }
 
     // 扣除敵人體力
@@ -1045,9 +1030,6 @@ class SamuraiGame {
         }
       }
 
-      // 3. 劍境維度連鎖運轉 (Cascading Sword Dimensions Tick - Antimatter Dimensions)
-      this.tickDimensions(0.2);
-
       // 自動自然體力回調
       if (this.playerCurrentHp < stats.maxHp) {
         this.playerCurrentHp = Math.min(stats.maxHp, this.playerCurrentHp + Math.max(1, Math.floor(stats.maxHp * 0.005)));
@@ -1259,9 +1241,6 @@ class SamuraiGame {
             }
           };
         }
-        if (!this.player.dimensions) {
-          this.player.dimensions = this.getDefaultDimensionsState();
-        }
         return true;
       }
     } catch (e) {
@@ -1333,7 +1312,6 @@ class SamuraiGame {
     if (tabName === "dojo") this.updateDojoUI();
     if (tabName === "inventory") this.updateInventoryUI();
     if (tabName === "codex") this.updateCodexUI();
-    if (tabName === "dimensions") this.updateDimensionsUI();
 
     window.dispatchEvent(new Event('resize'));
     setTimeout(() => {
@@ -1506,16 +1484,6 @@ class SamuraiGame {
       } else {
         comboEl.style.display = "none";
       }
-    }
-
-    // 戰鬥畫面劍氣簡報更新
-    const battleQiVal = document.getElementById("battle-sword-qi-val");
-    if (battleQiVal && this.player.dimensions) {
-      battleQiVal.textContent = window.formatDimNumber ? window.formatDimNumber(this.player.dimensions.swordQi) : Math.floor(this.player.dimensions.swordQi).toLocaleString();
-    }
-    const battleQiRate = document.getElementById("battle-sword-qi-rate");
-    if (battleQiRate && this.player.dimensions) {
-      battleQiRate.textContent = window.formatDimNumber ? window.formatDimNumber(this.getSwordQiProductionRate()) : Math.floor(this.getSwordQiProductionRate()).toLocaleString();
     }
 
     // 自律斬開關按鈕更新
@@ -1759,9 +1727,6 @@ class SamuraiGame {
       if (e.code === "Space" || e.key === " " || e.code === "KeyZ" || e.code === "Enter") {
         e.preventDefault();
         startHolding();
-      }
-      if (e.code === "KeyM" || e.key === "m" || e.key === "M") {
-        this.maxAllDimensions();
       }
     });
 
@@ -2812,340 +2777,7 @@ class SamuraiGame {
     }, 4000);
   }
 
-  // ========================================================
-  // 劍境維度系統 (Cascading Sword Dimensions - Antimatter Dimensions)
-  // ========================================================
-
-  getDefaultDimensionsState() {
-    return {
-      swordQi: 0,
-      totalSwordQiEarned: 0,
-      tickspeedBought: 0,
-      shifts: 0,
-      galaxies: 0,
-      autobuyers: {
-        tickspeed: false,
-        dim1: false,
-        dim2: false,
-        dim3: false,
-        dim4: false,
-        dim5: false,
-        dim6: false,
-        dim7: false,
-        dim8: false
-      },
-      tiers: {
-        1: { amount: 0, bought: 0 },
-        2: { amount: 0, bought: 0 },
-        3: { amount: 0, bought: 0 },
-        4: { amount: 0, bought: 0 },
-        5: { amount: 0, bought: 0 },
-        6: { amount: 0, bought: 0 },
-        7: { amount: 0, bought: 0 },
-        8: { amount: 0, bought: 0 }
-      }
-    };
-  }
-
-  getDimensionMaxUnlocked() {
-    if (!this.player.dimensions) return 4;
-    const shifts = this.player.dimensions.shifts || 0;
-    return Math.min(8, 4 + shifts);
-  }
-
-  getDimensionTierMultiplier(tierId) {
-    if (!this.player.dimensions) return 1;
-    const tier = this.player.dimensions.tiers[tierId];
-    if (!tier) return 1;
-    let mult = Math.pow(2, Math.floor(tier.bought / 10));
-    const shifts = this.player.dimensions.shifts || 0;
-    if (shifts > 0) {
-      mult *= Math.pow(2, shifts);
-    }
-    return mult;
-  }
-
-  getDimensionTierCost(tierId) {
-    const cfg = (window.DIMENSIONS_DATA && window.DIMENSIONS_DATA.tiers) ? window.DIMENSIONS_DATA.tiers.find(t => t.id === tierId) : null;
-    const baseCost = cfg ? cfg.baseCost : Math.pow(10, tierId);
-    const costMult = cfg ? cfg.costMult : 1000;
-    const tier = (this.player.dimensions && this.player.dimensions.tiers[tierId]) ? this.player.dimensions.tiers[tierId] : { bought: 0 };
-    return Math.floor(baseCost * Math.pow(costMult, Math.floor(tier.bought / 10)));
-  }
-
-  getTickspeedCost() {
-    const bought = (this.player.dimensions && this.player.dimensions.tickspeedBought) ? this.player.dimensions.tickspeedBought : 0;
-    return Math.floor(10 * Math.pow(10, bought));
-  }
-
-  getTickspeedMultiplier() {
-    const galaxies = (this.player.dimensions && this.player.dimensions.galaxies) ? this.player.dimensions.galaxies : 0;
-    return 1.11 + (galaxies * 0.02);
-  }
-
-  getEffectiveTickspeed() {
-    const bought = (this.player.dimensions && this.player.dimensions.tickspeedBought) ? this.player.dimensions.tickspeedBought : 0;
-    return Math.pow(this.getTickspeedMultiplier(), bought);
-  }
-
-  getSwordQiProductionRate() {
-    if (!this.player.dimensions) return 0;
-    const t1 = this.player.dimensions.tiers[1];
-    if (!t1 || t1.amount <= 0) return 0;
-    const mult = this.getDimensionTierMultiplier(1);
-    const effSpeed = this.getEffectiveTickspeed();
-    return t1.amount * mult * effSpeed;
-  }
-
-  getSwordQiAtkBonus() {
-    if (!this.player.dimensions || !this.player.dimensions.swordQi || this.player.dimensions.swordQi <= 0) return 1;
-    return 1 + Math.log10(Math.max(1, this.player.dimensions.swordQi)) * 0.25;
-  }
-
-  buyDimensionTier(tierId, silent = false, isAuto = false) {
-    if (!this.player.dimensions) return false;
-    const maxUnlocked = this.getDimensionMaxUnlocked();
-    if (tierId > maxUnlocked) return false;
-
-    const cost = this.getDimensionTierCost(tierId);
-    if (this.player.gold < cost) {
-      if (!silent && !isAuto) this.showToast(window.t ? (window.t("msgGoldLack100") || "金小判不足！") : "金小判不足！");
-      return false;
-    }
-
-    this.player.gold -= cost;
-    const tier = this.player.dimensions.tiers[tierId];
-    tier.amount += 1;
-    tier.bought += 1;
-
-    if (!isAuto && window.samuraiAudio) window.samuraiAudio.playSharpen();
-    this.updateBattleUI();
-    this.updateDimensionsUI();
-    return true;
-  }
-
-  buyTickspeed(isAuto = false) {
-    if (!this.player.dimensions) return false;
-    const cost = this.getTickspeedCost();
-    if (this.player.gold < cost) {
-      if (!isAuto) this.showToast(window.t ? (window.t("msgGoldLack100") || "金小判不足！") : "金小判不足！");
-      return false;
-    }
-
-    this.player.gold -= cost;
-    this.player.dimensions.tickspeedBought += 1;
-
-    if (!isAuto && window.samuraiAudio) window.samuraiAudio.playLevelUp();
-    this.updateBattleUI();
-    this.updateDimensionsUI();
-    return true;
-  }
-
-  maxAllDimensions() {
-    if (!this.player.dimensions) return;
-    // 1. 購買神速刻印
-    let tsCost = this.getTickspeedCost();
-    while (this.player.gold >= tsCost) {
-      this.player.gold -= tsCost;
-      this.player.dimensions.tickspeedBought += 1;
-      tsCost = this.getTickspeedCost();
-    }
-
-    // 2. 從最高解鎖維度向下購買
-    const maxUnlocked = this.getDimensionMaxUnlocked();
-    for (let t = maxUnlocked; t >= 1; t--) {
-      let cost = this.getDimensionTierCost(t);
-      while (this.player.gold >= cost) {
-        this.player.gold -= cost;
-        this.player.dimensions.tiers[t].amount += 1;
-        this.player.dimensions.tiers[t].bought += 1;
-        cost = this.getDimensionTierCost(t);
-      }
-    }
-
-    if (window.samuraiAudio) window.samuraiAudio.playSharpen();
-    this.updateBattleUI();
-    this.updateDimensionsUI();
-  }
-
-  canDimensionShift() {
-    if (!this.player.dimensions) return false;
-    const maxUnlocked = this.getDimensionMaxUnlocked();
-    const highestTier = this.player.dimensions.tiers[maxUnlocked];
-    return highestTier && highestTier.amount >= 20;
-  }
-
-  dimensionShift() {
-    if (!this.canDimensionShift()) return false;
-    const dims = this.player.dimensions;
-    dims.shifts = (dims.shifts || 0) + 1;
-    for (let t = 1; t <= 8; t++) {
-      dims.tiers[t].amount = 0;
-      dims.tiers[t].bought = 0;
-    }
-    dims.swordQi = 0;
-    if (window.samuraiAudio) window.samuraiAudio.playLevelUp();
-    this.updateDimensionsUI();
-    this.updateBattleUI();
-    return true;
-  }
-
-  canSwordGalaxy() {
-    if (!this.player.dimensions) return false;
-    const t8 = this.player.dimensions.tiers[8];
-    return t8 && t8.amount >= 80;
-  }
-
-  swordGalaxy() {
-    if (!this.canSwordGalaxy()) return false;
-    const dims = this.player.dimensions;
-    dims.galaxies = (dims.galaxies || 0) + 1;
-    dims.shifts = 0;
-    dims.tickspeedBought = 0;
-    for (let t = 1; t <= 8; t++) {
-      dims.tiers[t].amount = 0;
-      dims.tiers[t].bought = 0;
-    }
-    dims.swordQi = 0;
-    if (window.samuraiAudio) window.samuraiAudio.playAchievementFanfare();
-    this.updateDimensionsUI();
-    this.updateBattleUI();
-    return true;
-  }
-
-  tickDimensions(dt = 0.2) {
-    if (!this.player.dimensions) return;
-    const dims = this.player.dimensions;
-    const maxUnlocked = this.getDimensionMaxUnlocked();
-    const effSpeed = this.getEffectiveTickspeed();
-
-    // 階層層層產出 (Cascading Production: 8 -> 7 -> 6 -> 5 -> 4 -> 3 -> 2 -> 1)
-    for (let t = maxUnlocked; t >= 2; t--) {
-      const tier = dims.tiers[t];
-      if (tier && tier.amount > 0) {
-        const mult = this.getDimensionTierMultiplier(t);
-        const produced = tier.amount * mult * effSpeed * dt;
-        dims.tiers[t - 1].amount += produced;
-      }
-    }
-
-    // 第 1 維度產出劍氣
-    const tier1 = dims.tiers[1];
-    if (tier1 && tier1.amount > 0) {
-      const mult1 = this.getDimensionTierMultiplier(1);
-      const qiProduced = tier1.amount * mult1 * effSpeed * dt;
-      dims.swordQi += qiProduced;
-      dims.totalSwordQiEarned += qiProduced;
-    }
-
-    if (this.activeTab === "dimensions") {
-      this.updateDimensionsUI();
-    }
-  }
-
-  updateDimensionsUI() {
-    if (!this.player.dimensions) return;
-    const dims = this.player.dimensions;
-    const lang = window.getLang ? window.getLang() : "zh-TW";
-
-    const qiDisplay = document.getElementById("dim-sword-qi-display");
-    if (qiDisplay) {
-      qiDisplay.textContent = window.formatDimNumber ? window.formatDimNumber(dims.swordQi) : Math.floor(dims.swordQi).toLocaleString();
-    }
-    const rateDisplay = document.getElementById("dim-qi-rate-display");
-    if (rateDisplay) {
-      const rate = this.getSwordQiProductionRate();
-      rateDisplay.textContent = window.formatDimNumber ? window.formatDimNumber(rate) : Math.floor(rate).toLocaleString();
-    }
-    const bonusDisplay = document.getElementById("dim-qi-dmg-bonus");
-    if (bonusDisplay) {
-      const bonusPct = Math.floor((this.getSwordQiAtkBonus() - 1) * 100);
-      bonusDisplay.textContent = `+${bonusPct}%`;
-    }
-
-    const tsStats = document.getElementById("dim-tickspeed-stats");
-    if (tsStats) {
-      const effSpeed = this.getEffectiveTickspeed();
-      tsStats.textContent = `${window.t ? (window.t("tickspeed") || "神速頻率") : "神速頻率"}: ${effSpeed.toFixed(2)}x`;
-    }
-    const tsCostEl = document.getElementById("dim-tickspeed-cost");
-    if (tsCostEl) {
-      const tsCost = this.getTickspeedCost();
-      tsCostEl.textContent = `${window.t ? (window.t("dimCostText") || "花費") : "花費"}: ${window.formatDimNumber ? window.formatDimNumber(tsCost) : tsCost.toLocaleString()} 🪙`;
-    }
-    const btnTs = document.getElementById("btn-buy-tickspeed");
-    if (btnTs) {
-      btnTs.disabled = this.player.gold < this.getTickspeedCost();
-    }
-
-    const shiftsCount = document.getElementById("dim-shifts-count");
-    if (shiftsCount) {
-      shiftsCount.textContent = `${window.t ? (window.t("dimShiftTitle") || "境界突破") : "境界突破"}: ${dims.shifts || 0}`;
-    }
-    const galaxiesCount = document.getElementById("dim-galaxies-count");
-    if (galaxiesCount) {
-      galaxiesCount.textContent = `${window.t ? (window.t("dimGalaxyTitle") || "劍星天河") : "劍星天河"}: ${dims.galaxies || 0}`;
-    }
-
-    const container = document.getElementById("dimensions-rows-container");
-    if (container && window.DIMENSIONS_DATA) {
-      const maxUnlocked = this.getDimensionMaxUnlocked();
-      let html = "";
-      for (let t = 1; t <= maxUnlocked; t++) {
-        const tier = dims.tiers[t] || { amount: 0, bought: 0 };
-        const tierInfo = window.getDimensionText ? window.getDimensionText(t, lang) : { name: `Tier ${t}`, desc: "" };
-        const mult = this.getDimensionTierMultiplier(t);
-        const cost = this.getDimensionTierCost(t);
-        const canAfford = this.player.gold >= cost;
-
-        html += `
-          <div class="dim-row ${canAfford ? '' : 'disabled'}">
-            <div class="dim-info-col">
-              <div class="dim-name-row">
-                <span class="dim-name">${tierInfo.name}</span>
-                <span class="dim-mult">x${window.formatDimNumber ? window.formatDimNumber(mult) : mult}</span>
-              </div>
-              <div class="dim-desc">${tierInfo.desc}</div>
-              <div class="dim-count-row">
-                <span>${window.t ? (window.t("dimAmountText") || "修業數") : "修業數"}: <b class="dim-amount">${window.formatDimNumber ? window.formatDimNumber(tier.amount) : Math.floor(tier.amount)}</b></span>
-                <span class="dim-bought">(${window.t ? (window.t("dimBuy10Badge") || "十次") : "十次"}: ${tier.bought % 10}/10)</span>
-              </div>
-            </div>
-            <div class="dim-action-col">
-              <button class="btn-buy-dim ${canAfford ? 'can-afford' : ''}" onclick="window.game.buyDimensionTier(${t})">
-                <span>${window.t ? (window.t("dimCostText") || "花費") : "花費"}: ${window.formatDimNumber ? window.formatDimNumber(cost) : cost.toLocaleString()} 🪙</span>
-              </button>
-            </div>
-          </div>
-        `;
-      }
-      container.innerHTML = html;
-    }
-
-    const shiftReqEl = document.getElementById("dim-shift-req");
-    const btnShift = document.getElementById("btn-dimension-shift");
-    if (shiftReqEl && btnShift) {
-      const maxUnlocked = this.getDimensionMaxUnlocked();
-      const highestTier = dims.tiers[maxUnlocked] || { amount: 0 };
-      const reqAmount = 20;
-      const tInfo = window.getDimensionText ? window.getDimensionText(maxUnlocked, lang) : { name: `Tier ${maxUnlocked}` };
-      shiftReqEl.textContent = `${window.t ? (window.t("dimReqText") || "需累積") : "需累積"}: ${tInfo.name} (${Math.floor(highestTier.amount)} / ${reqAmount})`;
-      const canShift = this.canDimensionShift();
-      btnShift.disabled = !canShift;
-      btnShift.classList.toggle("can-shift", canShift);
-    }
-
-    const galaxyReqEl = document.getElementById("dim-galaxy-req");
-    const btnGalaxy = document.getElementById("btn-sword-galaxy");
-    if (galaxyReqEl && btnGalaxy) {
-      const t8 = dims.tiers[8] || { amount: 0 };
-      const req8 = 80;
-      galaxyReqEl.textContent = `${window.t ? (window.t("dimReqText") || "需累積") : "需累積"}: 第 8 維度 (${Math.floor(t8.amount)} / ${req8})`;
-      const canGalaxy = this.canSwordGalaxy();
-      btnGalaxy.disabled = !canGalaxy;
-      btnGalaxy.classList.toggle("can-galaxy", canGalaxy);
-    }
-  }
+  // 劍境維度機制已暫時取消
 
   // 清理計時器（用於重置或自動測試）
   destroy() {
