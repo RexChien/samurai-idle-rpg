@@ -154,6 +154,9 @@ class SamuraiGame {
 
   // 計算玩家武士位階稱號
   getRankTitle(level) {
+    if (window.getRankTitle) {
+      return window.getRankTitle(level, window.getLang ? window.getLang() : "zh-TW");
+    }
     if (level < 10) return "無宿浪士";
     if (level < 25) return "足輕組頭";
     if (level < 45) return "直參旗本";
@@ -1070,8 +1073,15 @@ class SamuraiGame {
 
   // UI 渲染更新整合
   updateCharacterUI() {
+    const lang = window.getLang ? window.getLang() : "zh-TW";
     const stats = this.getCalculatedStats();
-    document.getElementById("player-name").textContent = this.player.name;
+
+    // 預設浪人名稱在地化
+    let displayName = this.player.name;
+    if (!displayName || displayName === "無名浪人" || displayName === "Nameless Ronin" || displayName === "無名の浪人") {
+      displayName = lang === "ja" ? "無名の浪人" : (lang === "en" ? "Nameless Ronin" : "無名浪人");
+    }
+    document.getElementById("player-name").textContent = displayName;
     document.getElementById("player-title").textContent = this.getRankTitle(this.player.level);
     document.getElementById("player-level").textContent = `Lv.${this.player.level}`;
 
@@ -1091,8 +1101,10 @@ class SamuraiGame {
     // 命運陣營標籤
     const factionBadge = document.getElementById("player-faction-badge");
     if (factionBadge && window.STORY_DATA && this.player.story) {
-      const f = window.STORY_DATA.factions[this.player.story.faction] || window.STORY_DATA.factions.unaligned;
-      factionBadge.textContent = `${f.icon} ${f.name}`;
+      const fid = this.player.story.faction || "unaligned";
+      const f = window.STORY_DATA.factions[fid] || window.STORY_DATA.factions.unaligned;
+      const fText = window.getFactionText ? window.getFactionText(fid, lang) : f;
+      factionBadge.textContent = `${f.icon} ${fText.name || f.name}`;
       factionBadge.style.background = f.color + "22";
       factionBadge.style.borderColor = f.color;
       factionBadge.style.color = f.color;
@@ -1103,25 +1115,27 @@ class SamuraiGame {
     document.getElementById("stat-def").textContent = stats.def.toLocaleString();
     document.getElementById("stat-crit").textContent = `${stats.crit}%`;
     document.getElementById("stat-critdmg").textContent = `${stats.critDmg}%`;
-    document.getElementById("stat-speed").textContent = `${stats.speed.toFixed(2)} 次/秒`;
+    const speedUnit = window.t ? window.t("statPerSec") : "次/秒";
+    document.getElementById("stat-speed").textContent = `${stats.speed.toFixed(2)} ${speedUnit}`;
     document.getElementById("stat-pen").textContent = `${stats.armorPen}%`;
 
     // 武器展示
     const weapon = this.player.equipped.weapon;
     const weaponEl = document.getElementById("equip-weapon-display");
     if (weapon) {
+      const wText = window.getSwordText ? window.getSwordText(weapon, lang) : weapon;
       weaponEl.innerHTML = `
         <div class="equip-card" style="border-color:${weapon.color}">
-          <span class="equip-tier" style="background:${weapon.color}">${weapon.tierName}</span>
+          <span class="equip-tier" style="background:${weapon.color}">${wText.tierName}</span>
           <div class="equip-name" style="color:${weapon.color}">
-            ${weapon.name} ${weapon.refine > 0 ? `+${weapon.refine}` : ""}
+            ${wText.name} ${weapon.refine > 0 ? `+${weapon.refine}` : ""}
           </div>
           <div class="equip-sword-visual">
             ${weapon.svg || ""}
           </div>
-          <div class="equip-sub">${weapon.type}・${weapon.smith}（${weapon.era || "日本古作"}）</div>
+          <div class="equip-sub">${wText.type}・${wText.smith}（${wText.era || "日本古作"}）</div>
           <div class="equip-stat">攻 +${weapon.baseAtk + (weapon.refine * 15)} | 會心 +${weapon.crit}%</div>
-          <div class="equip-passive">${weapon.passive}</div>
+          <div class="equip-passive">${wText.passive}</div>
         </div>
       `;
     }
@@ -1179,9 +1193,23 @@ class SamuraiGame {
     }
 
     // 當前戰役地圖名稱
+    const lang = window.getLang ? window.getLang() : "zh-TW";
     const zone = window.ZONES_DATA.find(z => z.id === this.player.stats.currentZone) || window.ZONES_DATA[0];
-    document.getElementById("current-zone-name").textContent = `第 ${zone.id} 幕・${zone.name}`;
-    document.getElementById("current-zone-sub").textContent = zone.subtitle;
+    const zText = window.getZoneText ? window.getZoneText(zone.id, lang) : zone;
+    const actPrefix = lang === 'en' ? `Act ${zone.id}: ` : `第 ${zone.id} 幕・`;
+    document.getElementById("current-zone-name").textContent = `${actPrefix}${zText.name || zone.name}`;
+    document.getElementById("current-zone-sub").textContent = zText.sub || zone.subtitle;
+
+    const zoneSelect = document.getElementById("zone-select");
+    if (zoneSelect) {
+      Array.from(zoneSelect.options).forEach(opt => {
+        const zid = parseInt(opt.value);
+        const zt = window.getZoneText ? window.getZoneText(zid, lang) : null;
+        if (zt && zt.name) {
+          opt.textContent = `${lang === 'en' ? `Act ${zid}: ` : `第 ${zid} 幕・`}${zt.name}`;
+        }
+      });
+    }
 
     // 連擊計數
     const comboEl = document.getElementById("combo-counter");
@@ -1254,18 +1282,20 @@ class SamuraiGame {
   }
 
   updateInventoryUI() {
+    const lang = window.getLang ? window.getLang() : "zh-TW";
     // 渲染背包內名刀列表
     const swordsGrid = document.getElementById("inventory-swords-grid");
     if (swordsGrid) {
       swordsGrid.innerHTML = this.player.swordsInventory.map(s => {
         const isEquipped = this.player.equipped.weapon && this.player.equipped.weapon.instanceId === s.instanceId;
+        const sText = window.getSwordText ? window.getSwordText(s, lang) : s;
         return `
           <div class="inv-item-card ${isEquipped ? 'equipped' : ''}" style="border-left: 4px solid ${s.color}">
             <div style="display:flex;justify-content:space-between;align-items:center;">
               <span class="inv-item-name" style="color:${s.color}">
-                ${s.name} ${s.refine > 0 ? `+${s.refine}` : ""}
+                ${sText.name} ${s.refine > 0 ? `+${s.refine}` : ""}
               </span>
-              <span class="inv-item-tier" style="background:${s.color}">${s.tierName}</span>
+              <span class="inv-item-tier" style="background:${s.color}">${sText.tierName}</span>
             </div>
             <div class="inv-sword-visual">
               ${s.svg || ""}
@@ -1276,13 +1306,13 @@ class SamuraiGame {
               <span>速 x${s.speed.toFixed(2)}</span>
             </div>
             <div class="inv-item-meta" style="font-size:0.8rem;color:#a8a29e;margin:4px 0;">
-              <span>${s.type}・${s.smith}</span> | <span>${s.era || "日本古作"}</span>
+              <span>${sText.type}・${sText.smith}</span> | <span>${sText.era || "日本古作"}</span>
             </div>
-            <div class="inv-item-passive">${s.passive}</div>
+            <div class="inv-item-passive">${sText.passive}</div>
             <div class="inv-item-actions">
               ${isEquipped ?
-                `<button class="btn-equip active" disabled>已裝著</button>` :
-                `<button class="btn-equip" onclick="window.game.equipSword('${s.instanceId}')">帶刀（裝備）</button>`
+                `<button class="btn-equip active" disabled>${window.t ? window.t("btnEquipped") : "已裝著"}</button>` :
+                `<button class="btn-equip" onclick="window.game.equipSword('${s.instanceId}')">${window.t ? window.t("btnEquip") : "帶刀（裝備）"}</button>`
               }
             </div>
           </div>
@@ -1295,15 +1325,16 @@ class SamuraiGame {
     if (consumablesBox) {
       consumablesBox.innerHTML = window.ITEMS_DATA.consumables.map(c => {
         const count = this.player.items[c.id] || 0;
+        const cText = window.getItemText ? window.getItemText(c, lang) : c;
         return `
           <div class="consumable-card">
             <div class="con-icon">${c.icon}</div>
             <div class="con-info">
-              <div class="con-name">${c.name} <span class="con-qty">x${count}</span></div>
-              <div class="con-desc">${c.desc}</div>
+              <div class="con-name">${cText.name} <span class="con-qty">x${count}</span></div>
+              <div class="con-desc">${cText.desc}</div>
             </div>
             <button class="btn-use" ${count <= 0 ? "disabled" : ""} onclick="window.game.useItem('${c.id}')">
-              使用
+              ${window.t ? window.t("btnUse") : "使用"}
             </button>
           </div>
         `;
@@ -1315,34 +1346,44 @@ class SamuraiGame {
     const list = document.getElementById("codex-swords-list");
     if (!list) return;
 
+    const lang = window.getLang ? window.getLang() : "zh-TW";
     const totalSwords = window.SWORDS_DATA.length;
     const unlockedCount = this.player.codex.length;
     document.getElementById("codex-progress").textContent = `${unlockedCount} / ${totalSwords} (${Math.floor((unlockedCount / totalSwords) * 100)}%)`;
 
     list.innerHTML = window.SWORDS_DATA.map(s => {
       const isUnlocked = this.player.codex.includes(s.id);
+      const sText = window.getSwordText ? window.getSwordText(s, lang) : s;
+      const lockedName = window.t ? window.t("codexLockedName") : "？？？？（未解鎖）";
+      const lockedTip = window.t ? window.t("codexLockedTip") : "討伐戰國頭目或於鍛冶屋行淬火秘鍛，以解鎖此名刃銘鑑傳承。";
+      const smithLabel = window.t ? window.t("codexSmith") : "刀工：";
+      const eraLabel = window.t ? window.t("codexEra") : "時代：";
+      const masterLabel = window.t ? window.t("codexMaster") : "傳承名將：";
+      const hamonLabel = window.t ? window.t("codexHamon") : "刃文樣式：";
+      const bonusText = window.t ? window.t("codexBonus") : "✨ 銘鑑之證：全武士體力 +30，攻擊力 +5";
+
       return `
         <div class="codex-item-card ${isUnlocked ? 'unlocked' : 'locked'}">
           <div class="codex-header">
             <span class="codex-name" style="color: ${isUnlocked ? s.color : '#78716c'}">
-              ${isUnlocked ? s.name : "？？？？（未解鎖）"}
+              ${isUnlocked ? sText.name : lockedName}
             </span>
             <span class="codex-tier" style="border-color:${isUnlocked ? s.color : '#444'}; color:${isUnlocked ? s.color : '#777'}">
-              ${s.tierName}
+              ${sText.tierName}
             </span>
           </div>
           ${isUnlocked && s.svg ? `<div class="codex-sword-visual">${s.svg}</div>` : ""}
           <div class="codex-meta">
             <span>${isUnlocked ? s.romaji : "---"}</span>
-            <span>刀工：${isUnlocked ? s.smith : "？？？"}</span>
-            <span>時代：${isUnlocked ? (s.era || "古傳") : "？？？"}</span>
+            <span>${smithLabel}${isUnlocked ? sText.smith : "？？？"}</span>
+            <span>${eraLabel}${isUnlocked ? (sText.era || "古傳") : "？？？"}</span>
           </div>
-          ${isUnlocked && s.master ? `<div class="codex-extra-info"><b>傳承名將：</b>${s.master}</div>` : ""}
-          ${isUnlocked && s.hamon ? `<div class="codex-extra-info"><b>刃文樣式：</b>${s.hamon}</div>` : ""}
+          ${isUnlocked && s.master ? `<div class="codex-extra-info"><b>${masterLabel}</b>${sText.master}</div>` : ""}
+          ${isUnlocked && s.hamon ? `<div class="codex-extra-info"><b>${hamonLabel}</b>${sText.hamon}</div>` : ""}
           <div class="codex-lore">
-            ${isUnlocked ? s.lore : "討伐戰國頭目或於鍛冶屋行淬火秘鍛，以解鎖此名刃銘鑑傳承。"}
+            ${isUnlocked ? sText.lore : lockedTip}
           </div>
-          ${isUnlocked ? `<div class="codex-bonus">✨ 銘鑑之證：全武士體力 +30，攻擊力 +5</div>` : ""}
+          ${isUnlocked ? `<div class="codex-bonus">${bonusText}</div>` : ""}
         </div>
       `;
     }).join("");
@@ -1547,8 +1588,10 @@ class SamuraiGame {
     if (!window.STORY_DATA || !this.player.story) return;
 
     // 1. 當前陣營英雄旗幟
+    const lang = window.getLang ? window.getLang() : "zh-TW";
     const factionId = this.player.story.faction || "unaligned";
     const f = window.STORY_DATA.factions[factionId] || window.STORY_DATA.factions.unaligned;
+    const fText = window.getFactionText ? window.getFactionText(factionId, lang) : f;
     const bannerEl = document.getElementById("story-faction-banner");
     if (bannerEl) {
       bannerEl.innerHTML = `
@@ -1557,12 +1600,12 @@ class SamuraiGame {
         </div>
         <div class="faction-banner-info">
           <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
-            <h3 style="color:${f.color};font-size:1.35rem;margin:0;">${f.name}</h3>
-            <span style="font-size:0.75rem;padding:2px 8px;border-radius:4px;background:${f.color}22;border:1px solid ${f.color};color:${f.color};">${f.sub}</span>
+            <h3 style="color:${f.color};font-size:1.35rem;margin:0;">${fText.name || f.name}</h3>
+            <span style="font-size:0.75rem;padding:2px 8px;border-radius:4px;background:${f.color}22;border:1px solid ${f.color};color:${f.color};">${fText.sub || f.sub}</span>
           </div>
-          <p style="font-size:0.85rem;color:#cbd5e1;margin:4px 0;">${f.desc}</p>
+          <p style="font-size:0.85rem;color:#cbd5e1;margin:4px 0;">${fText.desc || f.desc}</p>
           <div class="faction-passive-pill" style="border-left:3px solid ${f.color};background:rgba(0,0,0,0.4);padding:4px 8px;border-radius:4px;font-size:0.82rem;color:#fbbf24;">
-            ✨ <b>陣營天賦庇佑</b>：${f.passiveDesc}
+            ✨ <b>${lang === 'en' ? 'Faction Blessing' : (lang === 'ja' ? '陣営加護' : '陣營天賦庇佑')}</b>：${fText.passiveDesc || f.passiveDesc}
           </div>
         </div>
       `;
@@ -1804,12 +1847,13 @@ class SamuraiGame {
         btnReincarnate.disabled = false;
         btnReincarnate.style.opacity = "1";
         btnReincarnate.style.cursor = "pointer";
-        btnReincarnate.innerHTML = `🌀 啟動劍心輪迴（領取 +${gainPreview} 魂火）`;
+        const rebText = window.t ? window.t("prestigeRebirthBtn") : "🌀 斬斷因果・發動劍心輪迴";
+        btnReincarnate.innerHTML = `${rebText} (+${gainPreview})`;
       } else {
         btnReincarnate.disabled = true;
         btnReincarnate.style.opacity = "0.5";
         btnReincarnate.style.cursor = "not-allowed";
-        btnReincarnate.innerHTML = `🔒 需達到 Lv.${window.PRESTIGE_DATA.unlockLevel} 或第 ${window.PRESTIGE_DATA.unlockZone} 幕`;
+        btnReincarnate.innerHTML = `🔒 Lv.${window.PRESTIGE_DATA.unlockLevel} / Act ${window.PRESTIGE_DATA.unlockZone}`;
       }
     }
 
