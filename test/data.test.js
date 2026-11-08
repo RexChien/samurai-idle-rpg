@@ -103,14 +103,22 @@ test('2. Samurai Classes & Talents (data/classes.js)', async (t) => {
   });
 });
 
-test('3. Campaign Acts & Yokai (data/campaign.js)', async (t) => {
-  await t.test('defines 7 campaign acts with diverse yokai and bosses', () => {
+test('3. Campaign Acts, Town Hub & World Map Waypoints (data/campaign.js)', async (t) => {
+  await t.test('defines Town Hub with 4 NPCs (shrine healer, blacksmith, merchant, master)', () => {
+    assert.ok(window.TOWN_HUB);
+    assert.equal(window.TOWN_HUB.id, 'town_kyoto');
+    assert.equal(window.TOWN_HUB.npcs.length, 4);
+  });
+
+  await t.test('defines 7 campaign acts with waypoint icons, coordinates, yokai, and bosses', () => {
     assert.ok(window.CAMPAIGN_ACTS);
     assert.equal(window.CAMPAIGN_ACTS.length, 7);
 
     window.CAMPAIGN_ACTS.forEach((act, idx) => {
       assert.equal(act.act, idx + 1);
       assert.ok(act.name.length > 0);
+      assert.ok(act.mapIcon);
+      assert.ok(act.mapPos && typeof act.mapPos.x === 'number');
       assert.ok(act.enemies.length >= 3);
       assert.ok(act.boss);
       assert.equal(act.boss.isBoss, true);
