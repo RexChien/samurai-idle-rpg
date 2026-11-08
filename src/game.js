@@ -1201,7 +1201,7 @@ class SamuraiGame {
     document.getElementById("current-zone-sub").textContent = zText.sub || zone.subtitle;
 
     const zoneSelect = document.getElementById("zone-select");
-    if (zoneSelect) {
+    if (zoneSelect && zoneSelect.options) {
       Array.from(zoneSelect.options).forEach(opt => {
         const zid = parseInt(opt.value);
         const zt = window.getZoneText ? window.getZoneText(zid, lang) : null;
@@ -1897,18 +1897,33 @@ class SamuraiGame {
       }).join("");
     }
   }
-}
 
-// 實例化全域 Game 物件並確保可靠啟動
-window.game = new SamuraiGame();
-function initSamuraiGame() {
-  if (window.game && !window.game.isStarted) {
-    window.game.isStarted = true;
-    window.game.start();
+  // 清理計時器（用於重置或自動測試）
+  destroy() {
+    if (this.combatInterval) clearInterval(this.combatInterval);
+    if (this.saveInterval) clearInterval(this.saveInterval);
+    if (this.buffInterval) clearInterval(this.buffInterval);
+    if (this.bossTimerInterval) clearInterval(this.bossTimerInterval);
   }
 }
-if (document.readyState === "loading") {
-  document.addEventListener("DOMContentLoaded", initSamuraiGame);
-} else {
-  initSamuraiGame();
+
+if (typeof window !== "undefined") window.SamuraiGame = SamuraiGame;
+if (typeof global !== "undefined") global.SamuraiGame = SamuraiGame;
+
+// 實例化全域 Game 物件並確保可靠啟動
+if (typeof window !== "undefined" && !window.__TESTING__) {
+  window.game = new SamuraiGame();
+  function initSamuraiGame() {
+    if (window.game && !window.game.isStarted) {
+      window.game.isStarted = true;
+      window.game.start();
+    }
+  }
+  if (typeof document !== "undefined") {
+    if (document.readyState === "loading") {
+      document.addEventListener("DOMContentLoaded", initSamuraiGame);
+    } else {
+      initSamuraiGame();
+    }
+  }
 }
