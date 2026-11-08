@@ -1607,12 +1607,15 @@ class SamuraiGame {
   showEndingModal(ending) {
     const modal = document.getElementById("ending-modal");
     if (!modal) return;
-    document.getElementById("ending-modal-icon").textContent = ending.icon;
-    document.getElementById("ending-modal-title").textContent = ending.title;
-    document.getElementById("ending-modal-title").style.color = ending.color;
-    document.getElementById("ending-modal-tagline").textContent = ending.tagline;
-    document.getElementById("ending-modal-epilogue").textContent = ending.epilogue;
-    document.getElementById("ending-modal-reward").textContent = `${ending.rewardTitle}（+${ending.karmaReward} 輪迴魂火）`;
+    const lang = window.getLang ? window.getLang() : "zh-TW";
+    const ed = window.getStoryEndingText ? window.getStoryEndingText(ending.id, lang) : ending;
+    document.getElementById("ending-modal-icon").textContent = ed.icon;
+    document.getElementById("ending-modal-title").textContent = ed.title;
+    document.getElementById("ending-modal-title").style.color = ed.color;
+    document.getElementById("ending-modal-tagline").textContent = ed.tagline;
+    document.getElementById("ending-modal-epilogue").textContent = ed.epilogue;
+    const karmaName = window.t ? window.t("endingRewardKarma") : "輪迴魂火";
+    document.getElementById("ending-modal-reward").textContent = `${ed.rewardTitle}（+${ed.karmaReward} ${karmaName}）`;
     modal.classList.add("active");
   }
 
@@ -1646,17 +1649,23 @@ class SamuraiGame {
 
     // 2. 當前章節情報
     const currentActNum = Math.min(7, Math.max(1, this.player.stats.currentZone || 1));
-    const chapter = window.STORY_DATA.chapters.find(c => c.act === currentActNum) || window.STORY_DATA.chapters[0];
+    const chText = window.getStoryChapterText ? window.getStoryChapterText(currentActNum, lang) : (window.STORY_DATA.chapters.find(c => c.act === currentActNum) || window.STORY_DATA.chapters[0]);
+
+    const actWord = lang === 'en' ? `Act ${currentActNum}` : (lang === 'ja' ? `第 ${currentActNum} 幕` : `第 ${currentActNum} 幕`);
+    const progressWord = this.inBossFight 
+      ? (lang === 'en' ? 'Boss Encounter' : (lang === 'ja' ? '頭目決戦中' : '決戰頭目中'))
+      : (lang === 'en' ? `Progress: ${this.zoneKillProgress}/10` : (lang === 'ja' ? `進捗: ${this.zoneKillProgress}/10` : `進度: ${this.zoneKillProgress}/10`));
 
     const tagEl = document.getElementById("story-act-tag");
-    if (tagEl) tagEl.textContent = `第 ${chapter.act} 幕（${this.inBossFight ? "決戰頭目中" : `進度: ${this.zoneKillProgress}/10`}）`;
+    if (tagEl) tagEl.textContent = `${actWord}（${progressWord}）`;
     const titleEl = document.getElementById("story-act-title");
-    if (titleEl) titleEl.textContent = chapter.title;
+    if (titleEl) titleEl.textContent = chText.title;
     const summaryEl = document.getElementById("story-act-summary");
     if (summaryEl) {
-      let flavor = chapter.summary;
-      if (chapter.branchFlavor && chapter.branchFlavor[factionId]) {
-        flavor += `<br><span style="color:${f.color};font-size:0.88rem;display:inline-block;margin-top:6px;">🏮 <b>【${f.name}專屬歷史線索】</b>：${chapter.branchFlavor[factionId]}</span>`;
+      let flavor = chText.summary;
+      if (chText.branchFlavor && chText.branchFlavor[factionId]) {
+        const clueLabel = window.t ? window.t("endingHeaderHistoryClue", { name: fText.name || f.name }) : `🏮 【${fText.name || f.name}專屬歷史線索】`;
+        flavor += `<br><span style="color:${f.color};font-size:0.88rem;display:inline-block;margin-top:6px;">${clueLabel}：${chText.branchFlavor[factionId]}</span>`;
       }
       summaryEl.innerHTML = flavor;
     }
@@ -1664,22 +1673,23 @@ class SamuraiGame {
     // 3. 歷練劇幕對白 Stream
     const dialogueStream = document.getElementById("story-dialogue-stream");
     if (dialogueStream) {
-      let dialogues = [...chapter.introDialogue];
-      if (this.zoneKillProgress >= 5 && chapter.milestoneDialogue) {
-        dialogues = dialogues.concat(chapter.milestoneDialogue);
+      let dialogues = [...(chText.introDialogue || [])];
+      if (this.zoneKillProgress >= 5 && chText.milestoneDialogue) {
+        dialogues = dialogues.concat(chText.milestoneDialogue);
       }
-      if (this.inBossFight && chapter.bossDialogue) {
-        dialogues = dialogues.concat(chapter.bossDialogue);
+      if (this.inBossFight && chText.bossDialogue) {
+        dialogues = dialogues.concat(chText.bossDialogue);
       }
-      if (this.player.story.completedActs.includes(chapter.act) && chapter.clearDialogue) {
-        dialogues = dialogues.concat(chapter.clearDialogue);
+      if (this.player.story.completedActs.includes(currentActNum) && chText.clearDialogue) {
+        dialogues = dialogues.concat(chText.clearDialogue);
       }
 
       dialogueStream.innerHTML = dialogues.map(d => {
+        const speaker = window.getSpeakerText ? window.getSpeakerText(d.speaker, lang) : d.speaker;
         const isPlayer = d.speaker === "你" || d.speaker === "浪人";
         return `
           <div class="dialogue-line ${isPlayer ? 'player' : 'npc'}">
-            <span class="dialogue-speaker">${d.speaker}:</span>
+            <span class="dialogue-speaker">${speaker}:</span>
             <span class="dialogue-text">${d.text}</span>
           </div>
         `;
@@ -1692,16 +1702,21 @@ class SamuraiGame {
     if (choiceSection && choicesGrid) {
       if (currentActNum >= 3 && this.player.story.faction === "unaligned") {
         choiceSection.style.display = "block";
-        const chapter3 = window.STORY_DATA.chapters[2];
-        choicesGrid.innerHTML = chapter3.choices.map(c => `
-          <div class="story-choice-card faction-${c.faction}">
-            <h4 style="margin-bottom:6px;color:${window.STORY_DATA.factions[c.faction].color};">${c.name}</h4>
-            <p style="font-size:0.83rem;color:#cbd5e1;line-height:1.5;margin-bottom:12px;">${c.desc}</p>
-            <button class="btn-choose-faction btn-${c.faction}" onclick="window.game.chooseFaction('${c.faction}')">
-              立誓投身此道
-            </button>
-          </div>
-        `).join("");
+        const chapter3 = window.getStoryChapterText ? window.getStoryChapterText(3, lang) : window.STORY_DATA.chapters[2];
+        const vowBtnText = window.t ? window.t("btnVowFaction") : "立誓投身此道";
+        choicesGrid.innerHTML = (chapter3.choices || []).map(c => {
+          const choiceName = (c.translations && c.translations[lang]) ? c.translations[lang].name : c.name;
+          const choiceDesc = (c.translations && c.translations[lang]) ? c.translations[lang].desc : c.desc;
+          return `
+            <div class="story-choice-card faction-${c.faction}">
+              <h4 style="margin-bottom:6px;color:${window.STORY_DATA.factions[c.faction].color};">${choiceName}</h4>
+              <p style="font-size:0.83rem;color:#cbd5e1;line-height:1.5;margin-bottom:12px;">${choiceDesc}</p>
+              <button class="btn-choose-faction btn-${c.faction}" onclick="window.game.chooseFaction('${c.faction}')">
+                ${vowBtnText}
+              </button>
+            </div>
+          `;
+        }).join("");
       } else {
         choiceSection.style.display = "none";
       }
@@ -1713,15 +1728,19 @@ class SamuraiGame {
       timelineEl.innerHTML = window.STORY_DATA.chapters.map(c => {
         const isCompleted = this.player.story.completedActs.includes(c.act);
         const isCurrent = this.player.stats.currentZone === c.act;
-        let statusTag = isCompleted ? "✅ 已突破" : (isCurrent ? "⚔️ 討伐中" : "🔒 未開闢");
+        let statusTag = isCompleted ? (window.t ? window.t("storyStatusCompleted") : "✅ 已突破") 
+          : (isCurrent ? (window.t ? window.t("storyStatusCurrent") : "⚔️ 討伐中") 
+          : (window.t ? window.t("storyStatusLocked") : "🔒 未開闢"));
         let statusClass = isCompleted ? "completed" : (isCurrent ? "current" : "locked");
+        const actChText = window.getStoryChapterText ? window.getStoryChapterText(c.act, lang) : c;
+        const actLabel = lang === 'en' ? `Act ${c.act}` : (lang === 'ja' ? `第 ${c.act} 幕` : `第 ${c.act} 幕`);
         return `
           <div class="timeline-act-cell ${statusClass}">
             <div class="act-cell-top">
-              <span class="act-badge">第 ${c.act} 幕</span>
+              <span class="act-badge">${actLabel}</span>
               <span class="act-status">${statusTag}</span>
             </div>
-            <div class="act-name">${c.title}</div>
+            <div class="act-name">${actChText.title}</div>
           </div>
         `;
       }).join("");
@@ -1730,24 +1749,29 @@ class SamuraiGame {
     // 6. 四大歷史終章大結局錄
     const endingsGrid = document.getElementById("story-endings-grid");
     if (endingsGrid) {
-      endingsGrid.innerHTML = Object.values(window.STORY_DATA.endings).map(ed => {
+      endingsGrid.innerHTML = Object.keys(window.STORY_DATA.endings).map(eid => {
+        const ed = window.getStoryEndingText ? window.getStoryEndingText(eid, lang) : window.STORY_DATA.endings[eid];
         const isUnlocked = this.player.story.unlockedEndings.includes(ed.id);
+        const lockedTitle = window.t ? window.t("endingLockedTitle") : "【未勘破之歷史迷霧】";
+        const lockedTag = window.t ? window.t("endingLockedTag") : "達成第 7 幕特定陣營終局解鎖";
+        const lockedDesc = window.t ? window.t("endingLockedDesc") : "需於本幕或轉生後選擇相應命運路線，並在江戶天守閣擊破天下無雙。";
+        const karmaLabel = window.t ? window.t("endingRewardKarma") : "輪迴魂火";
         return `
           <div class="ending-archive-card ${isUnlocked ? 'unlocked' : 'locked'}" style="${isUnlocked ? `border-color:${ed.color}` : ''}">
             <div class="ending-archive-header">
               <span style="font-size:1.8rem;">${isUnlocked ? ed.icon : '🔒'}</span>
               <div>
-                <h4 style="color:${isUnlocked ? ed.color : '#6b7280'};font-size:1rem;margin:0;">${isUnlocked ? ed.title : '【未勘破之歷史迷霧】'}</h4>
-                <span style="font-size:0.75rem;color:#9ca3af;">${isUnlocked ? ed.tagline : '達成第 7 幕特定陣營終局解鎖'}</span>
+                <h4 style="color:${isUnlocked ? ed.color : '#6b7280'};font-size:1rem;margin:0;">${isUnlocked ? ed.title : lockedTitle}</h4>
+                <span style="font-size:0.75rem;color:#9ca3af;">${isUnlocked ? ed.tagline : lockedTag}</span>
               </div>
             </div>
             ${isUnlocked ? `
               <div class="ending-archive-body">${ed.epilogue}</div>
               <div class="ending-reward-badge" style="color:${ed.color};border:1px solid ${ed.color}44;">
-                🏆 永久頭銜：${ed.rewardTitle} | 魂火 +${ed.karmaReward}
+                🏆 ${ed.rewardTitle} | ${karmaLabel} +${ed.karmaReward}
               </div>
             ` : `
-              <div style="font-size:0.8rem;color:#6b7280;margin-top:8px;">需於本幕或轉生後選擇相應命運路線，並在江戶天守閣擊破天下無雙。</div>
+              <div style="font-size:0.8rem;color:#6b7280;margin-top:8px;">${lockedDesc}</div>
             `}
           </div>
         `;
