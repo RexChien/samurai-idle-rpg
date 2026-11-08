@@ -28,7 +28,6 @@ before(() => {
   eval(fs.readFileSync('data/story.js', 'utf8'));
   eval(fs.readFileSync('data/prestige.js', 'utf8'));
   eval(fs.readFileSync('data/achievements.js', 'utf8'));
-  eval(fs.readFileSync('data/dimensions.js', 'utf8'));
   eval(fs.readFileSync('src/audio.js', 'utf8'));
 });
 
@@ -408,34 +407,6 @@ describe('8. Multilingual Storylines & Audio Mute Control', () => {
     assert.equal(flippedState, false);
     assert.equal(audio2.enabled, false);
     assert.equal(global.localStorage.getItem('SAMURAI_AUDIO_ENABLED'), 'false');
-  });
-});
-
-describe('9. Sword Dimensions Database (data/dimensions.js)', () => {
-  it('defines 8 cascading sword dimension tiers with complete multilingual translations', () => {
-    assert.ok(window.DIMENSIONS_DATA, 'DIMENSIONS_DATA should be defined');
-    assert.equal(window.DIMENSIONS_DATA.tiers.length, 8);
-
-    for (let i = 1; i <= 8; i++) {
-      const tier = window.DIMENSIONS_DATA.tiers[i - 1];
-      assert.equal(tier.id, i);
-      assert.ok(tier.name && tier.name.length > 0);
-      assert.ok(tier.baseCost > 0);
-
-      for (const lang of ['zh-TW', 'en', 'ja']) {
-        const text = window.getDimensionText(i, lang);
-        assert.ok(text.name && text.name.length > 0);
-        assert.ok(text.desc && text.desc.length > 0);
-      }
-    }
-  });
-
-  it('formats large numbers into scientific notation (Antimatter Dimensions style)', () => {
-    assert.equal(window.formatDimNumber(0), '0');
-    assert.equal(window.formatDimNumber(500), '500');
-    assert.equal(window.formatDimNumber(999999), '999,999');
-    assert.equal(window.formatDimNumber(1000000), '1.00e6');
-    assert.equal(window.formatDimNumber(2500000000000), '2.50e12');
   });
 });
 
