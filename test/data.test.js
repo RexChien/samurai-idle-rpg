@@ -5,6 +5,8 @@ const fs = require('fs');
 // Setup mock global browser environment
 before(() => {
   global.window = global;
+  global.window.addEventListener = () => {};
+  global.window.removeEventListener = () => {};
   global.localStorage = {
     _data: {},
     getItem(k) { return this._data[k] || null; },
@@ -26,6 +28,7 @@ before(() => {
   eval(fs.readFileSync('data/story.js', 'utf8'));
   eval(fs.readFileSync('data/prestige.js', 'utf8'));
   eval(fs.readFileSync('data/achievements.js', 'utf8'));
+  eval(fs.readFileSync('src/audio.js', 'utf8'));
 });
 
 describe('1. Swords Database (data/swords.js)', () => {
@@ -308,5 +311,11 @@ describe('7. Achievements Database (data/achievements.js)', () => {
       }
     }
   });
+
+  it('procedural audio engine defines playAchievementFanfare method', () => {
+    assert.ok(global.SamuraiAudio, 'SamuraiAudio class should be defined');
+    assert.equal(typeof global.SamuraiAudio.prototype.playAchievementFanfare, 'function');
+  });
 });
+
 
