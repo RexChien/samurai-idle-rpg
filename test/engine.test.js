@@ -94,6 +94,7 @@ function setupMockEnvironment(clearStorage = true) {
   eval(fs.readFileSync('data/enemies.js', 'utf8'));
   eval(fs.readFileSync('data/story.js', 'utf8'));
   eval(fs.readFileSync('data/prestige.js', 'utf8'));
+  eval(fs.readFileSync('data/achievements.js', 'utf8'));
   eval(fs.readFileSync('src/game.js', 'utf8'));
 }
 
@@ -269,4 +270,77 @@ describe('Game Engine & Mechanics (src/game.js)', () => {
     window.setLanguage('zh-TW');
     assert.equal(window.getLang(), 'zh-TW');
   });
+
+  it('tracks achievement progress accurately across game activities', () => {
+    const achKill1 = window.ACHIEVEMENTS_DATA.find(a => a.id === 'ach_kill_1');
+    const achBoss1 = window.ACHIEVEMENTS_DATA.find(a => a.id === 'ach_boss_1');
+    const achLevel10 = window.ACHIEVEMENTS_DATA.find(a => a.id === 'ach_level_10');
+
+    // Initially 0 kills, 0 boss kills, level 1
+    assert.equal(game.getAchievementProgress(achKill1).isCompleted, false);
+    assert.equal(game.getAchievementProgress(achBoss1).isCompleted, false);
+    assert.equal(game.getAchievementProgress(achLevel10).isCompleted, false);
+
+    // After 1 kill
+    game.player.stats.totalKills = 1;
+    const progKill1 = game.getAchievementProgress(achKill1);
+    assert.equal(progKill1.current, 1);
+    assert.equal(progKill1.isCompleted, true);
+    assert.equal(progKill1.isClaimed, false);
+
+    // After reaching level 10
+    game.player.level = 10;
+    const progLevel10 = game.getAchievementProgress(achLevel10);
+    assert.equal(progLevel10.current, 10);
+    assert.equal(progLevel10.isCompleted, true);
+  });
+
+  it('allows claiming completed achievements and grants rewards correctly', () => {
+    const achKill1 = window.ACHIEVEMENTS_DATA.find(a => a.id === 'ach_kill_1');
+    game.player.stats.totalKills = 1;
+
+    const initialGold = game.player.gold;
+    const initialSteel = game.player.steel;
+
+    game.claimAchievement('ach_kill_1');
+
+    assert.ok(game.player.achievements.claimed.includes('ach_kill_1'));
+    assert.equal(game.player.gold, initialGold + achKill1.reward.gold);
+    assert.equal(game.player.steel, initialSteel + achKill1.reward.steel);
+
+    // Claiming again should have no effect
+    const goldAfterFirst = game.player.gold;
+    game.claimAchievement('ach_kill_1');
+    assert.equal(game.player.gold, goldAfterFirst);
+  });
+
+  it('claimAllAchievements collects all completed unclaimed achievements', () => {
+    game.player.stats.totalKills = 50; // satisfies ach_kill_1 and ach_kill_50
+    game.player.stats.bossKills = 1;   // satisfies ach_boss_1
+    game.player.level = 10;           // satisfies ach_level_10
+
+    const initialGold = game.player.gold;
+    const initialSteel = game.player.steel;
+
+    game.claimAllAchievements();
+
+    assert.ok(game.player.achievements.claimed.includes('ach_kill_1'));
+    assert.ok(game.player.achievements.claimed.includes('ach_kill_50'));
+    assert.ok(game.player.achievements.claimed.includes('ach_boss_1'));
+    assert.ok(game.player.achievements.claimed.includes('ach_level_10'));
+    assert.ok(game.player.gold > initialGold);
+    assert.ok(game.player.steel > initialSteel);
+  });
+
+  it('filterAchievements switches category filter without throwing errors', () => {
+    game.filterAchievements('combat');
+    assert.equal(game.activeAchFilter, 'combat');
+
+    game.filterAchievements('swords');
+    assert.equal(game.activeAchFilter, 'swords');
+
+    game.filterAchievements('all');
+    assert.equal(game.activeAchFilter, 'all');
+  });
 });
+
