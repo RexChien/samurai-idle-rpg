@@ -342,5 +342,25 @@ describe('Game Engine & Mechanics (src/game.js)', () => {
     game.filterAchievements('all');
     assert.equal(game.activeAchFilter, 'all');
   });
+
+  it('triggers Diablo 3 style center achievement banner and sound fanfare when unlocking achievements', () => {
+    let fanfarePlayed = false;
+    global.window.samuraiAudio = {
+      playAchievementFanfare: () => { fanfarePlayed = true; }
+    };
+
+    const ach = window.ACHIEVEMENTS_DATA[0];
+    game.showAchievementToast(ach);
+
+    assert.equal(fanfarePlayed, true, 'playAchievementFanfare should be called');
+    const container = document.getElementById('achievement-toast-container');
+    assert.ok(container.children.length > 0, 'Container should hold the banner');
+    const banner = container.children[0];
+    assert.equal(banner.className, 'd3-achievement-banner');
+    assert.ok(banner.innerHTML.includes('d3-ach-flare'), 'Banner should include radial flare');
+    assert.ok(banner.innerHTML.includes('d3-ach-sheen'), 'Banner should include light sheen streak');
+    assert.ok(banner.innerHTML.includes('d3-ach-crest-wrap'), 'Banner should include crest medallion');
+  });
 });
+
 
