@@ -2245,36 +2245,86 @@ class SamuraiGame {
   }
 
   showAchievementToast(ach) {
-    if (typeof document === "undefined") return;
+    if (!ach || typeof document === "undefined") return;
+    if (!this.achievementToastQueue) this.achievementToastQueue = [];
+    this.achievementToastQueue.push(ach);
+
+    if (!this.isShowingAchievementToast) {
+      this.processAchievementToastQueue();
+    }
+  }
+
+  processAchievementToastQueue() {
+    if (!this.achievementToastQueue || this.achievementToastQueue.length === 0) {
+      this.isShowingAchievementToast = false;
+      return;
+    }
+
     const container = document.getElementById("achievement-toast-container");
-    if (!container) return;
+    if (!container) {
+      this.isShowingAchievementToast = false;
+      return;
+    }
+
+    this.isShowingAchievementToast = true;
+    const ach = this.achievementToastQueue.shift();
+
+    // 播放暗黑破壞神風格史詩凱旋號角與金鐘音效
+    if (window.samuraiAudio && typeof window.samuraiAudio.playAchievementFanfare === "function") {
+      window.samuraiAudio.playAchievementFanfare();
+    }
 
     const lang = window.getLang ? window.getLang() : "zh-TW";
     const achText = window.getAchievementText ? window.getAchievementText(ach, lang) : ach;
 
-    const toast = document.createElement("div");
-    toast.className = "achievement-toast";
-    toast.innerHTML = `
-      <div class="toast-icon">${ach.icon}</div>
-      <div class="toast-content">
-        <span class="toast-title">${window.t ? window.t("achToastUnlocked") : "🏆 成就達成！"}</span>
-        <span class="toast-name">${achText.name}</span>
+    // 獎勵預覽
+    const rewardParts = [];
+    if (ach.reward.gold) rewardParts.push(`🪙 +${ach.reward.gold}`);
+    if (ach.reward.steel) rewardParts.push(`💎 +${ach.reward.steel}`);
+    if (ach.reward.karma) rewardParts.push(`🌀 +${ach.reward.karma}`);
+
+    const banner = document.createElement("div");
+    banner.className = "d3-achievement-banner";
+    banner.innerHTML = `
+      <div class="d3-ach-flare"></div>
+      <div class="d3-ach-sheen"></div>
+      <div class="d3-ach-frame">
+        <div class="d3-ach-crest-wrap">
+          <div class="d3-ach-crest-glow"></div>
+          <div class="d3-ach-crest-icon">${ach.icon}</div>
+        </div>
+        <div class="d3-ach-body">
+          <div class="d3-ach-header-ribbon">
+            <span class="d3-ach-ribbon-wing left">✦</span>
+            <span class="d3-ach-ribbon-title">${window.t ? window.t("achToastUnlocked") : "榮譽成就達成"}</span>
+            <span class="d3-ach-ribbon-wing right">✦</span>
+          </div>
+          <div class="d3-ach-title">${achText.name}</div>
+          <div class="d3-ach-desc">${achText.desc}</div>
+          ${rewardParts.length > 0 ? `<div class="d3-ach-rewards"><span class="d3-ach-reward-tag">${rewardParts.join(" ")}</span></div>` : ""}
+        </div>
       </div>
     `;
 
-    container.appendChild(toast);
+    container.innerHTML = "";
+    container.appendChild(banner);
 
+    // 停留 4 秒後流暢向上縮小淡出，並繼續處理後續成就隊列
     setTimeout(() => {
-      toast.classList.add("fade-out");
+      banner.classList.add("fade-out");
       setTimeout(() => {
-        if (toast.parentNode) toast.parentNode.removeChild(toast);
-      }, 400);
-    }, 3500);
+        if (banner.parentNode) banner.parentNode.removeChild(banner);
+        setTimeout(() => {
+          this.processAchievementToastQueue();
+        }, 200);
+      }, 500);
+    }, 4000);
   }
-
 
   // 清理計時器（用於重置或自動測試）
   destroy() {
+    if (this.achievementToastQueue) this.achievementToastQueue = [];
+    this.isShowingAchievementToast = false;
     if (this.combatInterval) clearInterval(this.combatInterval);
     if (this.saveInterval) clearInterval(this.saveInterval);
     if (this.buffInterval) clearInterval(this.buffInterval);
