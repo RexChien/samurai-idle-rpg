@@ -92,6 +92,9 @@
       <button class="tab-btn" data-tab="prestige" onclick="window.game.switchTab('prestige')" data-i18n="tabPrestige">
         🌀 劍心轉生
       </button>
+      <button class="tab-btn" data-tab="achievements" onclick="window.game.switchTab('achievements')" data-i18n="tabAchievements">
+        🏆 榮譽成就
+      </button>
       <button class="tab-btn" data-tab="inventory" onclick="window.game.switchTab('inventory')" data-i18n="tabInventory">
         🎒 行囊裝備
       </button>
@@ -422,6 +425,54 @@
             </div>
           </div>
 
+        </div>
+      </div>
+
+      <!-- ================= 榮譽成就殿堂分頁 ================= -->
+      <div id="tab-achievements" class="tab-pane">
+        <div class="achievements-container">
+          <!-- 頂部成就橫幅 -->
+          <div class="achievements-hero">
+            <div class="ach-hero-info">
+              <h3 data-i18n="achTitle">🏆 武士榮譽成就殿堂</h3>
+              <p data-i18n="achSub">在漫長的劍道旅途中刻下屬於你的不朽功勳，領取金小判、玉鋼與輪迴魂火！</p>
+              <div class="ach-progress-row">
+                <span class="ach-progress-label"><span data-i18n="achProgressLabel">成就達成進度:</span> <b id="ach-progress-ratio">0 / 31</b></span>
+                <div class="ach-progress-bar-wrap">
+                  <div id="ach-total-bar" class="ach-progress-bar-fill" style="width: 0%;"></div>
+                </div>
+                <span id="ach-percent-text" class="ach-percent-badge">0%</span>
+              </div>
+            </div>
+            <div class="ach-hero-actions">
+              <button id="btn-claim-all-ach" class="btn-claim-all" onclick="window.game.claimAllAchievements()">
+                <span data-i18n="achClaimAllBtn">🎁 一鍵領取所有完成獎勵</span>
+                <span id="ach-claimable-badge" class="ach-badge-cnt" style="display:none;">0</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- 分類切換鈕 -->
+          <div class="ach-filter-bar">
+            <button class="ach-filter-btn active" data-filter="all" onclick="window.game.filterAchievements('all')">
+              <span data-i18n="achFilterAll">全部</span> (<span id="ach-cnt-all">31</span>)
+            </button>
+            <button class="ach-filter-btn" data-filter="combat" onclick="window.game.filterAchievements('combat')">
+              <span data-i18n="achFilterCombat">⚔️ 討伐武勳</span> (<span id="ach-cnt-combat">9</span>)
+            </button>
+            <button class="ach-filter-btn" data-filter="swords" onclick="window.game.filterAchievements('swords')">
+              <span data-i18n="achFilterSwords">🗡️ 名刀淬火</span> (<span id="ach-cnt-swords">9</span>)
+            </button>
+            <button class="ach-filter-btn" data-filter="growth" onclick="window.game.filterAchievements('growth')">
+              <span data-i18n="achFilterGrowth">⛩️ 劍道境界</span> (<span id="ach-cnt-growth">6</span>)
+            </button>
+            <button class="ach-filter-btn" data-filter="destiny" onclick="window.game.filterAchievements('destiny')">
+              <span data-i18n="achFilterDestiny">🌀 天命輪迴</span> (<span id="ach-cnt-destiny">7</span>)
+            </button>
+          </div>
+
+          <!-- 成就卡片列表 -->
+          <div id="achievements-cards-grid" class="achievements-grid"></div>
         </div>
       </div>
 
@@ -855,8 +906,12 @@
     }
   </script>
 
-  <!-- 引入多國語系、遊戲數據庫與引擎腳本 -->
+  <!-- 成就解鎖浮動通知容器 -->
+  <div id="achievement-toast-container"></div>
+
+  <!-- 引入多國語系、成就資料庫、遊戲數據庫與引擎腳本 -->
   <script src="data/i18n.js"></script>
+  <script src="data/achievements.js"></script>
   <script src="data/swords.js"></script>
   <script src="data/items.js"></script>
   <script src="data/enemies.js"></script>
