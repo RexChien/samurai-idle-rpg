@@ -1304,6 +1304,21 @@ class SamuraiGame {
       this.save();
     }, 10000);
 
+    // 行動裝置切換分頁與鎖定螢幕喚醒支援 (Visibility Lifecycle for vivo, Sharp, Pixel, Samsung, Sony)
+    document.addEventListener("visibilitychange", () => {
+      if (document.hidden) {
+        this.save();
+      } else {
+        this.checkOfflineGains();
+        this.updateCharacterUI();
+        this.updateBattleUI();
+        if (window.samuraiAudio) {
+          window.samuraiAudio.ensureContext();
+        }
+        window.dispatchEvent(new Event("resize"));
+      }
+    });
+
     // 初始 UI 渲染
     this.updateCharacterUI();
     this.updateBattleUI();
