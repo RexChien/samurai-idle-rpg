@@ -256,18 +256,40 @@ test('7. Core Game Engine (src/game.js)', async (t) => {
     assert.ok(game.player.gold > goldBefore);
   });
 
-  await t.test('supports Google Identity profile binding', () => {
-    // Mock JWT payload: {"name":"真田幸村","email":"sanada@sengoku.jp","sub":"12345"}
-    const payload = Buffer.from(JSON.stringify({
-      name: '真田幸村',
-      email: 'sanada@sengoku.jp',
-      sub: '12345'
-    })).toString('base64');
-    const fakeToken = `header.${payload}.signature`;
+  await t.test('supports New Game and Character Creation flow', () => {
+    game.startNewGameFlow();
+    game.selectCreationClass('onimusha');
+    game.selectCreationAvatar('samurai_oni');
+    const nameInput = document.getElementById('creation-name-input');
+    nameInput.value = '真田信繁';
 
-    game.handleGoogleLogin({ credential: fakeToken });
-    assert.equal(game.player.name, '真田幸村');
-    assert.equal(game.player.googleProfile.email, 'sanada@sengoku.jp');
+    game.confirmCharacterCreation();
+    assert.equal(game.player.characterCreated, true);
+    assert.equal(game.player.name, '真田信繁');
+    assert.equal(game.player.classId, 'onimusha');
+    assert.equal(game.player.cosmetics.avatar, 'samurai_oni');
+    assert.equal(game.player.equipped.weapon.quality, 'magic');
+  });
+
+  await t.test('supports Diablo-style Town Hub and World Map Waypoints', () => {
+    // Teleport to Town Hub
+    game.teleportToTown();
+    assert.equal(game.player.inTown, true);
+    assert.ok(game.player.statsTracked.townVisits >= 1);
+
+    // Pray at Town Shrine for +15% Attack buff
+    const statsBeforeBuff = game.getCalculatedStats();
+    game.prayAtTownShrine();
+    const statsAfterBuff = game.getCalculatedStats();
+    assert.equal(statsAfterBuff.hasTownBuff, true);
+    assert.ok(statsAfterBuff.atk > statsBeforeBuff.atk);
+
+    // Open World Map & travel to Zone 2
+    game.player.maxUnlockedAct = 3;
+    game.openWorldMap();
+    game.travelToZone(2);
+    assert.equal(game.player.inTown, false);
+    assert.equal(game.player.act, 2);
   });
 
   await t.test('switches among all 5 core tabs cleanly', () => {
