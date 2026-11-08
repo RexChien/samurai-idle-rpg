@@ -51,14 +51,9 @@
       </div>
 
       <div class="header-right">
-        <!-- Google 一鍵登入按鈕容器 -->
-        <div id="g_id_onload"
-             data-client_id="demo-client-id-samurai-rpg.apps.googleusercontent.com"
-             data-callback="handleGoogleLoginBridge"
-             data-auto_prompt="false">
-        </div>
-        <button class="btn btn-header btn-google" onclick="triggerGoogleLoginPrompt()" title="Google 帳號一鍵安全登入與備份">
-          <span class="g-icon">G</span> 登入綁定
+        <!-- 登入與角色綁定按鈕 -->
+        <button class="btn btn-header btn-google" id="header-auth-btn" onclick="window.game.openAuthModal()" title="Google 帳號與角色雲端綁定">
+          <span class="g-icon">G</span> <span id="header-auth-text">登入綁定</span>
         </button>
 
         <button class="btn btn-header btn-mute" id="mute-btn" onclick="toggleAudioMute()" title="切換音效靜音 (快捷鍵 M)">
@@ -345,7 +340,54 @@
       </div>
     </div>
 
-    <!-- 懸浮組件 5：全域 Toast 提示訊息容器 -->
+    <!-- 懸浮組件 5：角色與 Google 登入綁定彈窗 (Auth Modal) -->
+    <div id="auth-modal" class="modal-overlay" style="display: none;">
+      <div class="modal-card auth-modal-card">
+        <div class="modal-header">
+          <h2>🛡️ 武士身份與 Google 帳號綁定</h2>
+        </div>
+        <div class="modal-body" id="auth-modal-body">
+          <div class="auth-status-box" id="auth-status-display">
+            <!-- 狀態由 JS 動態注入 -->
+          </div>
+
+          <div class="auth-tabs-wrap">
+            <div class="auth-section">
+              <h4 style="color: var(--gold-accent); margin-bottom: 8px;">⚡ 途徑一：快速武士身份命名（推薦）</h4>
+              <p class="text-muted" style="font-size: 0.85rem; margin-bottom: 10px;">
+                無需任何繁瑣設定，直接設定您的專屬名號。存檔自動保存在瀏覽器與雲端備份代碼中，100% 絕對穩定！
+              </p>
+              <div class="auth-input-row">
+                <input type="text" id="custom-samurai-name-input" placeholder="輸入武士稱號/名稱" maxlength="16">
+                <button class="btn btn-gold" onclick="window.game.saveCustomName()">確認綁定</button>
+              </div>
+            </div>
+
+            <div class="auth-section" style="margin-top: 16px; border-top: 1px solid var(--border-muted); padding-top: 14px;">
+              <h4 style="color: #60a5fa; margin-bottom: 8px;">🌐 途徑二：Google 帳號官方一鍵登入</h4>
+              <p class="text-muted" style="font-size: 0.85rem; margin-bottom: 10px;">
+                基於 Google 官方安全政策，需要您的網址 (<code style="color: #fde047;">https://rexchien.github.io</code>) 在 Google Cloud 登記的免費 Client ID。
+              </p>
+              <div class="auth-input-row">
+                <input type="text" id="google-client-id-input" placeholder="貼上您的 Google Client ID (選填)">
+                <button class="btn btn-google" onclick="window.game.startGoogleLoginWithClientId()">
+                  <span class="g-icon">G</span> 啟動登入
+                </button>
+              </div>
+              <div style="font-size: 0.75rem; color: #94a3b8; margin-top: 6px;">
+                💡 貼心提示：如果您尚未建立 Google Client ID，請優先使用【途徑一】即可完美體驗全部遊戲功能，完全不受任何影響！
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer" style="display: flex; justify-content: space-between;">
+          <button class="btn btn-outline" onclick="window.game.closeAuthModal()">關閉視窗</button>
+          <button class="btn btn-danger btn-sm" onclick="window.game.clearAuthBinding()">解除 Google 綁定</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 懸浮組件 6：全域 Toast 提示訊息容器 -->
     <div id="toast-container" class="toast-container"></div>
   </div>
 
