@@ -465,6 +465,45 @@ describe('Game Engine & Mechanics (src/game.js)', () => {
     assert.equal(game.getDimensionMaxUnlocked(), initialMaxTier + 1);
     assert.equal(game.player.dimensions.tiers[1].amount, 0, 'Lower dimensions should reset after shift');
   });
+
+  it('localizes enemy names and combat logs into Japanese and English', () => {
+    // Enemy translation check
+    const banditEnemy = { name: "持棒野盜", title: "雜寇" };
+    const jaEnemy = window.getEnemyText(banditEnemy, "ja");
+    assert.equal(jaEnemy.name, "棒持ちの野盗");
+    assert.equal(jaEnemy.title, "雑魚");
+
+    const enEnemy = window.getEnemyText(banditEnemy, "en");
+    assert.equal(enEnemy.name, "Club-Wielding Bandit");
+    assert.equal(enEnemy.title, "Thug");
+
+    // Boss translation check
+    const bossGouen = { name: "破戒僧・豪圓", title: "【第一幕 守門狂僧】" };
+    const jaBoss = window.getEnemyText(bossGouen, "ja");
+    assert.equal(jaBoss.name, "破戒僧・豪円");
+    assert.equal(jaBoss.title, "【第一幕 守門の狂僧】");
+
+    const enBoss = window.getEnemyText(bossGouen, "en");
+    assert.equal(enBoss.name, "Fallen Monk Gouen");
+    assert.equal(enBoss.title, "【Act I Gatekeeper Monk】");
+
+    // Combat log localization check
+    window.setLanguage("ja");
+    const logBox = document.getElementById("combat-log-container");
+    logBox.children = [];
+    game.spawnEnemy();
+    game.attack(true);
+    assert.ok(logBox.children.length > 0, "Combat log should receive entry");
+    const lastLog = logBox.children[logBox.children.length - 1].innerHTML;
+    // In JA, manual strike log contains "疾風抜刀" or "刃光一閃" or "討伐"
+    assert.ok(lastLog.includes("疾風抜刀") || lastLog.includes("刃光一閃") || lastLog.includes("討伐"), "Log should contain Japanese combat terms");
+    // Should NOT contain untranslated Chinese strike prefix
+    assert.ok(!lastLog.includes("玩家疾風拔刀"), "Log should not contain untranslated Traditional Chinese strike prefix");
+
+    // Reset back to zh-TW
+    window.setLanguage("zh-TW");
+  });
 });
+
 
 
