@@ -1442,6 +1442,107 @@ nav.tab-nav::-webkit-scrollbar {
   }
 }
 
+/* ==========================================================
+   Sony Xperia 1 II / 21:9 超寬劇院比例 (CinemaWide) 適配
+   ========================================================== */
+@media (min-aspect-ratio: 2/1) and (max-width: 768px) {
+  .stage-arena {
+    height: 330px; /* 充分利用 21:9 充裕的垂直視野 */
+  }
+
+  .enemy-avatar-box {
+    width: 82px;
+    height: 82px;
+    font-size: 2.7rem;
+  }
+
+  .battle-layout {
+    gap: 16px;
+  }
+
+  .log-scroll-area {
+    max-height: 200px;
+  }
+
+  /* 避開 Sony Side Sense 側邊觸控感應條誤觸 */
+  #app-container {
+    padding-left: max(14px, var(--sal));
+    padding-right: max(14px, var(--sar));
+  }
+}
+
+/* ==========================================================
+   夏普中階 AQUOS sense / wish (70mm 緊湊寬度 & IGZO) 特殊調優
+   ========================================================== */
+@media (max-width: 375px) {
+  #app-container {
+    padding: 6px 8px calc(75px + var(--sab)) 8px;
+  }
+
+  .brand-title h1 {
+    font-size: 1.1rem;
+    letter-spacing: 0.5px;
+  }
+
+  .brand-title .badge {
+    font-size: 0.68rem;
+    padding: 1px 5px;
+  }
+
+  .res-item {
+    font-size: 0.74rem;
+    padding: 2px 6px;
+  }
+
+  .tab-btn {
+    padding: 8px 10px;
+    font-size: 0.8rem;
+    gap: 4px;
+    min-height: 42px;
+  }
+
+  .stage-arena {
+    height: 255px;
+  }
+
+  .stats-grid-mini {
+    grid-template-columns: repeat(2, 1fr);
+    font-size: 0.72rem;
+    gap: 4px 6px;
+  }
+
+  .btn-boss-challenge {
+    font-size: 0.88rem;
+    padding: 8px 10px;
+  }
+}
+
+/* ==========================================================
+   硬體加速與 GPU 渲染合成 (vivo Mali / Adreno 60Hz/120Hz 高刷流暢)
+   ========================================================== */
+.stage-arena,
+.enemy-avatar-box,
+.combo-banner,
+#slash-canvas,
+.modal-scroll-card,
+.btn-autoslash {
+  transform: translateZ(0);
+  -webkit-transform: translateZ(0);
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+
+/* Samsung S25 / A71 One UI 系統大字型與無障礙防破版保護 */
+.stat-cell,
+.whetstone-row,
+.school-bonus-list li,
+.codex-meta,
+.res-item {
+  flex-wrap: wrap;
+  word-break: break-word;
+  min-height: auto;
+}
+
 
 /* ==========================================================
    7. 浪人茶屋・社群交流與意見回饋 (Community & Feedback Tab)
