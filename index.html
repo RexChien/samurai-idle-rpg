@@ -24,11 +24,17 @@
         <h1 data-i18n="gameTitle">🗡️ 無雙劍心</h1>
         <span class="badge" data-i18n="gameSubtitle">武士之刃・放置RPG</span>
       </div>
-      <!-- 語系切換器 (Language Switcher) -->
-      <div class="lang-switch-container">
-        <button class="lang-btn active" data-lang="zh-TW" onclick="window.setLanguage('zh-TW')" title="繁體中文">繁中</button>
-        <button class="lang-btn" data-lang="en" onclick="window.setLanguage('en')" title="English">EN</button>
-        <button class="lang-btn" data-lang="ja" onclick="window.setLanguage('ja')" title="日本語">日本語</button>
+      <!-- 頂部控制項（音效開關與語系切換器） -->
+      <div class="header-controls">
+        <button id="btn-header-sound" class="header-sound-btn" onclick="toggleSound()" title="音效開關" aria-label="切換音效" data-i18n-title="soundToggleTip">
+          <span class="sound-icon" id="header-sound-icon">🔊</span>
+          <span class="sound-label" id="header-sound-label" data-i18n="settingSoundShort">音效</span>
+        </button>
+        <div class="lang-switch-container">
+          <button class="lang-btn active" data-lang="zh-TW" onclick="window.setLanguage('zh-TW')" title="繁體中文">繁中</button>
+          <button class="lang-btn" data-lang="en" onclick="window.setLanguage('en')" title="English">EN</button>
+          <button class="lang-btn" data-lang="ja" onclick="window.setLanguage('ja')" title="日本語">日本語</button>
+        </div>
       </div>
       <div class="resource-bar">
         <div class="res-item gold" data-i18n-title="resGoldTip" title="金小判（擊敵與熔煉獲得，用於鍛造與研磨）">
@@ -879,13 +885,46 @@
       animateSlash();
     })();
 
-    function toggleSound() {
-      const btn = document.getElementById("btn-toggle-sound");
-      if (window.samuraiAudio) {
-        const nextState = !window.samuraiAudio.enabled;
-        window.samuraiAudio.toggle(nextState);
-        btn.textContent = nextState ? "🔊 音效：開啟" : "🔇 音效：靜音";
+    function updateSoundUI() {
+      const isEnabled = window.samuraiAudio ? window.samuraiAudio.enabled : true;
+      const t = function(k) { return (window.I18N && window.I18N.t) ? window.I18N.t(k) : k; };
+
+      const headerBtn = document.getElementById("btn-header-sound");
+      const headerIcon = document.getElementById("header-sound-icon");
+      const headerLabel = document.getElementById("header-sound-label");
+      if (headerBtn) {
+        if (isEnabled) {
+          headerBtn.classList.remove("muted");
+          headerBtn.title = t("soundToggleTip") || "音效開關";
+        } else {
+          headerBtn.classList.add("muted");
+          headerBtn.title = (t("soundToggleTip") || "音效開關") + " (" + (t("settingSoundOff") || "靜音") + ")";
+        }
       }
+      if (headerIcon) {
+        headerIcon.textContent = isEnabled ? "🔊" : "🔇";
+      }
+      if (headerLabel) {
+        headerLabel.textContent = t("settingSoundShort") || "音效";
+      }
+
+      const settingsBtn = document.getElementById("btn-toggle-sound");
+      if (settingsBtn) {
+        settingsBtn.textContent = isEnabled ? (t("settingSoundOn") || "🔊 音效：開啟") : (t("settingSoundOff") || "🔇 音效：靜音");
+        if (isEnabled) {
+          settingsBtn.classList.remove("muted");
+        } else {
+          settingsBtn.classList.add("muted");
+        }
+      }
+    }
+    window.updateSoundUI = updateSoundUI;
+
+    function toggleSound() {
+      if (window.samuraiAudio) {
+        window.samuraiAudio.toggle();
+      }
+      updateSoundUI();
     }
 
     function voteFeature(optionId, btnEl) {
