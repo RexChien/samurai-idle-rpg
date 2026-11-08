@@ -31,6 +31,9 @@
         <div class="res-item steel" title="踏鞴玉鋼（名刀核心鍛造與強化材料）">
           💎 玉鋼: <span id="res-steel">0</span>
         </div>
+        <div class="res-item karma" title="輪迴魂火（劍心輪迴轉生獲得，用於點亮永久神龕天賦）">
+          🌀 魂火: <span id="res-karma">0</span>
+        </div>
       </div>
     </header>
 
@@ -45,6 +48,7 @@
         <div class="char-title-row">
           <span class="char-name" id="player-name">無名浪人</span>
           <span class="char-rank" id="player-title">落魄浪人</span>
+          <span id="player-faction-badge" class="faction-badge" style="background:#4b5563;color:#e5e7eb;font-size:0.75rem;padding:2px 8px;border-radius:12px;border:1px solid #6b7280;">🌾 無宿浪人</span>
         </div>
         <div class="exp-bar-wrapper">
           <span>劍理:</span>
@@ -70,17 +74,23 @@
       <button class="tab-btn active" data-tab="battle" onclick="window.game.switchTab('battle')">
         ⚔️ 討伐修煉
       </button>
+      <button class="tab-btn" data-tab="story" onclick="window.game.switchTab('story')">
+        📜 命運繪卷
+      </button>
       <button class="tab-btn" data-tab="forge" onclick="window.game.switchTab('forge')">
         ⚒️ 名刀鍛造
       </button>
       <button class="tab-btn" data-tab="dojo" onclick="window.game.switchTab('dojo')">
         ⛩️ 流派奧義
       </button>
+      <button class="tab-btn" data-tab="prestige" onclick="window.game.switchTab('prestige')">
+        🌀 劍心轉生
+      </button>
       <button class="tab-btn" data-tab="inventory" onclick="window.game.switchTab('inventory')">
         🎒 行囊裝備
       </button>
       <button class="tab-btn" data-tab="codex" onclick="window.game.switchTab('codex')">
-        📜 名刀鑑賞
+        📖 名刀鑑賞
       </button>
       <button class="tab-btn" data-tab="community" onclick="window.game.switchTab('community')">
         🏮 浪人茶屋
@@ -183,7 +193,58 @@
         </div>
       </div>
 
-      <!-- ================= 2. 名刀鍛造分頁 ================= -->
+      <!-- ================= 2. 命運繪卷故事線分頁 ================= -->
+      <div id="tab-story" class="tab-pane">
+        <div class="story-container">
+
+          <!-- 當前命運陣營旗幟 -->
+          <div id="story-faction-banner" class="faction-hero-banner">
+            <!-- 動態渲染當前陣營：無宿浪人 / 佐幕 / 維新 / 修羅 -->
+          </div>
+
+          <!-- 當前章節劇情卡 -->
+          <div class="story-act-card">
+            <div class="story-act-header">
+              <span id="story-act-tag" class="story-act-tag">第 1 幕</span>
+              <h3 id="story-act-title" style="color:#fff;font-size:1.25rem;">第一幕・尾張之風與落魄初心</h3>
+            </div>
+            <p id="story-act-summary" class="story-act-summary"></p>
+
+            <!-- 歷史劇情對白播放幕 -->
+            <div class="story-dialogue-container">
+              <div class="dialogue-title-bar">
+                <span>📜 歷練劇幕對話</span>
+              </div>
+              <div id="story-dialogue-stream" class="dialogue-scroll-stream">
+                <!-- 動態注入對白 -->
+              </div>
+            </div>
+
+            <!-- 分歧天命決斷區域 (在第 3 幕出現) -->
+            <div id="story-choice-section" class="story-choice-section" style="display:none;">
+              <h4 class="choice-prompt-title">⚡ 【天命決斷】三條之夜已至，你腰間之名刀，將為誰而揮斬？</h4>
+              <div class="story-choices-grid" id="story-choices-grid">
+                <!-- 動態注入三大分歧選項 -->
+              </div>
+            </div>
+          </div>
+
+          <!-- 七大幕天命全記錄時間軸 -->
+          <div class="story-acts-chronicle">
+            <h4 style="color:var(--border-gold);margin-bottom:12px;font-size:1.1rem;">🏮 戰國幕末・七大幕天命繪卷</h4>
+            <div id="story-acts-timeline" class="acts-timeline-grid"></div>
+          </div>
+
+          <!-- 四大歷史終章大結局錄 -->
+          <div class="story-endings-gallery">
+            <h4 style="color:#fbbf24;margin-bottom:12px;font-size:1.1rem;">🏆 歷史大結局命運錄 (Endings Archive)</h4>
+            <div id="story-endings-grid" class="endings-grid"></div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- ================= 3. 名刀鍛造分頁 ================= -->
       <div id="tab-forge" class="tab-pane">
         <div class="forge-container">
 
@@ -313,7 +374,52 @@
         </div>
       </div>
 
-      <!-- ================= 4. 行囊裝備分頁 ================= -->
+      <!-- ================= 5. 劍心轉生・修羅輪迴分頁 ================= -->
+      <div id="tab-prestige" class="tab-pane">
+        <div class="prestige-container">
+
+          <!-- 輪迴英雄總覽卡 -->
+          <div class="reincarnation-hero">
+            <div class="reincarnation-info">
+              <h3>🌀 劍心輪迴・宿命轉生</h3>
+              <p>破繭重生，勘破生死之境。將凡胎肉身化為宿命魂火，在輪迴神龕中換取永恆不滅之劍聖神力！</p>
+              <div class="reincarnation-stats-bar">
+                <div class="re-stat">輪迴次數: <span id="prestige-count" style="color:#fbbf24;font-weight:bold;">0</span> 次</div>
+                <div class="re-stat">持有魂火: <span id="prestige-karma" style="color:#38bdf8;font-weight:bold;">0</span> 🔥</div>
+                <div class="re-stat">本次可領: <span id="prestige-gain-preview" style="color:#4ade80;font-weight:bold;">+0</span> 🔥</div>
+              </div>
+            </div>
+            <button id="btn-do-reincarnate" class="btn-reincarnate" onclick="window.game.reincarnate()">
+              🌀 啟動劍心輪迴
+            </button>
+          </div>
+
+          <!-- 輪迴繼承與規則說明 -->
+          <div class="reincarnation-notice">
+            <div class="notice-col">
+              <span style="color:#4ade80;font-weight:bold;">✅ 輪迴保留（永不遺失）：</span>
+              <div>所有名刀與強化等級、圖鑑全收集、已點亮之輪迴神龕天賦、歷史大結局繪卷。</div>
+            </div>
+            <div class="notice-col">
+              <span style="color:#f59e0b;font-weight:bold;">🔄 輪迴重置（換取新生）：</span>
+              <div>角色等級重置（受輪迴宿慧天賦保留）、關卡進度重置、故事線重開（可自由重選其他分歧路線！）。</div>
+            </div>
+          </div>
+
+          <!-- 輪迴天賦神龕 (8 大永久神力) -->
+          <div class="prestige-altar-box">
+            <h4 style="color:#fbbf24;margin-bottom:14px;font-size:1.15rem;display:flex;align-items:center;gap:8px;">
+              ⛩️ 輪迴天賦神龕（永久全域加成・跨轉生繼承）
+            </h4>
+            <div id="prestige-perks-grid" class="prestige-perks-grid">
+              <!-- 動態注入 8 大神力卡片 -->
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- ================= 6. 行囊裝備分頁 ================= -->
       <div id="tab-inventory" class="tab-pane">
         <div class="inv-section-title">🗡️ 當前佩戴名刀</div>
         <div id="equip-weapon-display" style="margin-bottom:20px;"></div>
@@ -532,6 +638,22 @@
     </div>
   </div>
 
+  <!-- 歷史大結局展示 Modal -->
+  <div id="ending-modal" class="modal-overlay">
+    <div class="modal-scroll-card ending-card-modal">
+      <div id="ending-modal-icon" style="font-size:3.5rem;margin-bottom:8px;">🏆</div>
+      <div id="ending-modal-title" class="modal-title" style="color:#fbbf24;font-size:1.4rem;">史詩天命終章</div>
+      <div id="ending-modal-tagline" style="color:#38bdf8;font-size:0.95rem;margin-bottom:14px;font-weight:bold;"></div>
+      <div id="ending-modal-epilogue" class="modal-body" style="text-align:left;line-height:1.8;white-space:pre-line;background:rgba(15,12,20,0.7);padding:14px;border-radius:6px;border:1px solid rgba(212,175,55,0.25);"></div>
+      <div style="margin:16px 0;background:rgba(251,191,36,0.1);padding:10px;border-radius:6px;border:1px dashed #fbbf24;color:#fbbf24;font-size:0.9rem;">
+        🎁 獲得歷史通關天命獎勵：<b id="ending-modal-reward"></b>
+      </div>
+      <button class="btn-modal-close" onclick="document.getElementById('ending-modal').classList.remove('active')">
+        銘記天命・繼續前行
+      </button>
+    </div>
+  </div>
+
   <!-- 櫻花飄落與刀光畫布腳本 -->
   <script>
     // 1. 櫻花粒子背景引擎 (Sakura Petals Canvas)
@@ -718,6 +840,8 @@
   <script src="data/swords.js"></script>
   <script src="data/items.js"></script>
   <script src="data/enemies.js"></script>
+  <script src="data/story.js"></script>
+  <script src="data/prestige.js"></script>
   <script src="src/audio.js"></script>
   <script src="src/game.js"></script>
 </body>
